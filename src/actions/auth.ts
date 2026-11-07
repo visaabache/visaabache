@@ -21,14 +21,19 @@ export async function loginAction(localeRaw: string, _prev: ActionState, fd: For
   const email = String(data.email || "").trim().toLowerCase();
   const { ip } = await getRequestMeta();
   if (!(await rateLimit(`login:${ip}`, 20, 900)) || !(await rateLimit(`login:${email}`, 8, 900))) {
-    return { error: t.common.tooManyRequests };
+    return { error: t.common.tooManyRequests, data: { email } };
   }
   const user = await prisma.user.findUnique({ where: { email } });
   // Always run bcrypt to avoid user enumeration through timing.
   const ok = await verifyPasswordOrDummy(String(data.password || ""), user?.passwordHash);
   if (!user || !ok || !user.isActive) {
     await audit(user?.id, "auth.login_failed", "User", user?.id, { email });
-    return { error: t.auth.invalidCredentials };
+    return { error: t.auth.invalidCredentials, data: { email } };
+  }
+  // The admin sign-in page only lets staff in; a customer account gets the same generic error (no account probing).
+  if (data.area === "admin" && !isStaffRole(user.role)) {
+    await audit(user.id, "auth.admin_login_denied", "User", user.id);
+    return { error: t.auth.invalidCredentials, data: { email } };
   }
   await createSession(user);
   await audit(user.id, "auth.login", "User", user.id);

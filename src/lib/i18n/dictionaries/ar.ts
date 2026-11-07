@@ -325,6 +325,9 @@ const ar: Dictionary = {
     loginForMore: "سجل الدخول إلى حسابك للاطلاع على التفاصيل ورفع الوثائق والتواصل مع مستشارك.",
   },
   auth: {
+    adminLoginTitle: "فضاء الإدارة",
+    adminLoginSubtitle: "تسجيل الدخول مخصص لفريق VISA ABACHE.",
+    backToSite: "العودة إلى الموقع",
     loginTitle: "مرحباً بعودتك",
     loginSubtitle: "سجل الدخول لمتابعة ملفاتك.",
     registerTitle: "أنشئ حسابك",

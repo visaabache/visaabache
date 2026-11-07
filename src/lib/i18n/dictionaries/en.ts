@@ -324,6 +324,9 @@ const en = {
     loginForMore: "Log in to your account to see details, upload documents and contact your advisor.",
   },
   auth: {
+    adminLoginTitle: "Administration",
+    adminLoginSubtitle: "Sign-in reserved for the VISA ABACHE team.",
+    backToSite: "Back to website",
     loginTitle: "Welcome back",
     loginSubtitle: "Log in to follow your applications.",
     registerTitle: "Create your account",

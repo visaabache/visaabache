@@ -115,7 +115,7 @@ if (!ADMIN_PASSWORD) {
   admin.on("pageerror", (e) => errors.push(`${admin.url()}: ${e.message.slice(0, 120)}`));
   admin.on("dialog", (d) => d.accept());
   await step("login as owner", async () => {
-    await admin.goto(BASE + "/fr/login");
+    await admin.goto(BASE + "/fr/admin/login");
     await admin.fill("#email", ADMIN_EMAIL);
     await admin.fill("#password", ADMIN_PASSWORD);
     await admin.click("button[type=submit]");

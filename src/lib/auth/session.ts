@@ -96,7 +96,7 @@ export async function requireUser(locale: Locale, next?: string): Promise<Curren
 
 export async function requireStaff(locale: Locale, permission?: Permission): Promise<CurrentUser> {
   const user = await getCurrentUser();
-  if (!user) redirect(`/${locale}/login?next=/${locale}/admin`);
+  if (!user) redirect(`/${locale}/admin/login`);
   if (!isStaffRole(user.role)) redirect(`/${locale}/account`);
   if (permission && !can(user.role, permission)) redirect(`/${locale}/admin?denied=1`);
   return user;

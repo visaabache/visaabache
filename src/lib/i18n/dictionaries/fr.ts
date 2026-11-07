@@ -325,6 +325,9 @@ const fr: Dictionary = {
     loginForMore: "Connectez-vous à votre espace pour voir le détail, téléverser des documents et contacter votre conseiller.",
   },
   auth: {
+    adminLoginTitle: "Espace administration",
+    adminLoginSubtitle: "Connexion réservée à l'équipe VISA ABACHE.",
+    backToSite: "Retour au site",
     loginTitle: "Bon retour",
     loginSubtitle: "Connectez-vous pour suivre vos dossiers.",
     registerTitle: "Créer votre compte",

@@ -33,7 +33,7 @@ npm run db:seed                   # statuses, destinations, services, packages, 
 npm run dev                       # http://localhost:3000
 ```
 
-The owner account comes from `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD`. You can also run `npm run admin:create -- you@domain.ma "First" "Last"`. Then sign in at `/fr/login`; staff accounts land on `/fr/admin`.
+The owner account comes from `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD`. You can also run `npm run admin:create -- you@domain.ma "First" "Last"`. Then sign in at `/fr/admin/login` (staff-only sign-in page; customer accounts are refused there). Customers use `/fr/login`.
 
 ## Scripts
 

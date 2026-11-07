@@ -8,14 +8,15 @@ import { SubmitButton } from "@/components/ui/submit-button";
 
 type Action = (p: ActionState, f: FormData) => Promise<ActionState>;
 
-export function LoginForm({ action, next, labels, forgotHref }: { action: Action; next?: string; forgotHref: string; labels: { email: string; password: string; forgot: string; submit: string } }) {
+export function LoginForm({ action, next, labels, forgotHref, area }: { action: Action; next?: string; forgotHref: string; area?: "admin"; labels: { email: string; password: string; forgot: string; submit: string } }) {
   const [state, formAction] = useActionState(action, {} as ActionState);
   return (
     <form action={formAction} className="space-y-4">
       {state.error && <Alert tone="error">{state.error}</Alert>}
       {next && <input type="hidden" name="next" value={next} />}
+      {area && <input type="hidden" name="area" value={area} />}
       <Field label={labels.email} htmlFor="email" required>
-        <Input id="email" name="email" type="email" required autoComplete="email" dir="ltr" />
+        <Input id="email" name="email" type="email" required autoComplete="email" dir="ltr" defaultValue={typeof state.data?.email === "string" ? state.data.email : undefined} />
       </Field>
       <Field label={labels.password} htmlFor="password" required>
         <Input id="password" name="password" type="password" required autoComplete="current-password" />
