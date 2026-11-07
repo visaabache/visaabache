@@ -9,6 +9,8 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { WhatsAppFloat } from "@/components/layout/whatsapp";
 import { PromoBanner } from "@/components/layout/promo-banner";
+import { ScrollProgress } from "@/components/motion/scroll-progress";
+import { SpotlightTracker } from "@/components/motion/spotlight-tracker";
 
 export default async function SiteLayout({ children, params }: { children: ReactNode; params: Promise<{ locale: string }> }) {
   const locale = asLocale((await params).locale);
@@ -21,6 +23,8 @@ export default async function SiteLayout({ children, params }: { children: React
   });
   return (
     <div className="flex min-h-screen flex-col">
+      <ScrollProgress />
+      <SpotlightTracker />
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:start-2 focus:top-2 focus:z-50 focus:rounded focus:bg-white focus:p-2">
         Skip to content
       </a>

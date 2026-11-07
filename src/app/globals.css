@@ -18,7 +18,107 @@
   :focus-visible { outline-color: #c9a45c; }
 }
 
+@property --angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
 @layer components {
+  /* ── 2026 motion & surface system ───────────────────────────── */
+  .glass {
+    @apply border border-white/15 bg-white/[0.07] shadow-[0_8px_32px_-8px_rgba(0,0,0,.35)] backdrop-blur-xl;
+  }
+  .glass-light {
+    @apply border border-white/60 bg-white/70 shadow-[0_8px_32px_-12px_rgba(16,39,71,.25)] backdrop-blur-xl;
+  }
+  .text-gradient-gold {
+    background: linear-gradient(100deg, #f4ead4 0%, #c9a45c 30%, #fff3d6 50%, #c9a45c 70%, #e9d4a9 100%);
+    background-size: 220% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: gradient-x 7s ease infinite;
+  }
+  .text-gradient-navy {
+    background: linear-gradient(100deg, #102747, #2f4f85 40%, #c9a45c 60%, #102747);
+    background-size: 220% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: gradient-x 9s ease infinite;
+  }
+  /* Animated conic border (rotating light around a card) */
+  .border-glow {
+    position: relative;
+    isolation: isolate;
+  }
+  .border-glow::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(from var(--angle), transparent 0deg, rgba(201,164,92,.9) 60deg, transparent 140deg, transparent 220deg, rgba(125,151,194,.7) 280deg, transparent 360deg);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: border-spin 6s linear infinite;
+    z-index: -1;
+  }
+  /* Cursor-following spotlight (coordinates set by <SpotlightTracker />) */
+  .spotlight {
+    position: relative;
+    overflow: hidden;
+  }
+  .spotlight::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity .3s ease;
+    background: radial-gradient(420px circle at var(--x, 50%) var(--y, 50%), rgba(201,164,92,.16), transparent 45%);
+  }
+  .spotlight:hover::after { opacity: 1; }
+  .mask-fade-x {
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  }
+  .mask-radial {
+    -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+    mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+  }
+  .noise::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: .06;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .btn-shine { position: relative; overflow: hidden; }
+  .btn-shine::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-120%) skewX(-20deg);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent);
+    transition: transform .8s cubic-bezier(.2,.7,.2,1);
+  }
+  .btn-shine:hover::after { transform: translateX(120%) skewX(-20deg); }
+  .reveal-stagger > * { opacity: 0; transform: translateY(18px); transition: opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1); }
+  .reveal-stagger.is-visible > * { opacity: 1; transform: none; }
+  .reveal-stagger.is-visible > *:nth-child(2) { transition-delay: .08s; }
+  .reveal-stagger.is-visible > *:nth-child(3) { transition-delay: .16s; }
+  .reveal-stagger.is-visible > *:nth-child(4) { transition-delay: .24s; }
+  .reveal-stagger.is-visible > *:nth-child(5) { transition-delay: .32s; }
+  .reveal-stagger.is-visible > *:nth-child(6) { transition-delay: .4s; }
+  .reveal-stagger.is-visible > *:nth-child(n+7) { transition-delay: .48s; }
+  .flight-path { stroke-dasharray: 4 7; animation: dash 30s linear infinite; }
+  @keyframes dash { to { stroke-dashoffset: -400; } }
+
   .bg-hero {
     background:
       radial-gradient(1200px 600px at 85% -10%, rgba(201,164,92,.22), transparent 60%),
@@ -36,8 +136,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
-  .reveal { opacity: 1; transform: none; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+  .reveal, .reveal-stagger > * { opacity: 1; transform: none; }
+  .motion-path { display: none; }
 }
 
 @media print {

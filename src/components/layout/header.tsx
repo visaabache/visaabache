@@ -9,6 +9,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { Logo } from "./logo";
 import { LanguageSwitcher } from "./language-switcher";
 import { MobileMenu } from "./mobile-menu";
+import { FloatingHeader } from "@/components/motion/floating-header";
 
 export function Header({ locale, dict, user }: { locale: Locale; dict: Dictionary; user: CurrentUser | null }) {
   const l = (p: string) => `/${locale}${p}`;
@@ -23,14 +24,14 @@ export function Header({ locale, dict, user }: { locale: Locale; dict: Dictionar
   const staff = user && isStaffRole(user.role);
 
   return (
-    <header className="no-print sticky top-0 z-40 border-b border-slate-200/70 bg-white/90 backdrop-blur-md">
+    <FloatingHeader>
       <div className="container flex h-16 items-center justify-between gap-4">
         <Link href={l("")} aria-label="VISA ABACHE" className="shrink-0">
           <Logo />
         </Link>
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">
           {links.map((x) => (
-            <Link key={x.href} href={x.href} className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-navy-50 hover:text-navy-800">
+            <Link key={x.href} href={x.href} className="relative rounded-full px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-navy-50 hover:text-navy-800">
               {x.label}
             </Link>
           ))}
@@ -56,7 +57,7 @@ export function Header({ locale, dict, user }: { locale: Locale; dict: Dictionar
               {dict.nav.login}
             </Link>
           )}
-          <ButtonLink href={l("/apply")} size="md">
+          <ButtonLink href={l("/apply")} size="md" className="btn-shine">
             {dict.common.applyForAssistance}
           </ButtonLink>
         </div>
@@ -105,6 +106,6 @@ export function Header({ locale, dict, user }: { locale: Locale; dict: Dictionar
           </div>
         </MobileMenu>
       </div>
-    </header>
+    </FloatingHeader>
   );
 }

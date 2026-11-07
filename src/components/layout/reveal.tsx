@@ -4,7 +4,7 @@ import { useEffect } from "react";
 /** Adds a subtle fade-up animation to elements with the .reveal class when they enter the viewport. */
 export function RevealObserver() {
   useEffect(() => {
-    const els = document.querySelectorAll(".reveal:not(.is-visible)");
+    const els = document.querySelectorAll(".reveal:not(.is-visible), .reveal-stagger:not(.is-visible)");
     if (!("IntersectionObserver" in window)) {
       els.forEach((e) => e.classList.add("is-visible"));
       return;

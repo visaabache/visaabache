@@ -8,12 +8,14 @@ import { toNumber, cn } from "@/lib/utils";
 import { Card, Flag, Badge } from "@/components/ui/misc";
 import { DynamicIcon } from "@/components/ui/icons";
 import { ButtonLink } from "@/components/ui/button";
+import { Aurora } from "@/components/motion/aurora";
+import { AnimatedHeadline } from "@/components/motion/animated-headline";
 
 export function CountryCard({ c, locale, dict }: { c: Country; locale: Locale; dict: Dictionary }) {
   return (
     <Link
       href={`/${locale}/visas/${c.slug}`}
-      className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm transition hover:-translate-y-0.5 hover:border-gold-300 hover:shadow-soft"
+      className="spotlight group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm transition hover:-translate-y-0.5 hover:border-gold-300 hover:shadow-soft"
     >
       <Flag code={c.isoCode} className="h-8 w-12" />
       <div className="min-w-0 flex-1">
@@ -38,8 +40,8 @@ export function ServicePrice({ s, locale, dict }: { s: Pick<Service, "priceType"
 export function ServiceCard({ s, locale, dict }: { s: Service; locale: Locale; dict: Dictionary }) {
   return (
     <Link href={`/${locale}/services/${s.slug}`} className="group">
-      <Card className="flex h-full flex-col p-6 transition duration-300 group-hover:-translate-y-1 group-hover:shadow-premium">
-        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-navy-800 text-gold-400 transition group-hover:bg-gold-500 group-hover:text-navy-900">
+      <Card className="spotlight flex h-full flex-col rounded-3xl p-6 transition duration-300 group-hover:-translate-y-1 group-hover:border-gold-200 group-hover:shadow-premium">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-navy-800 text-gold-400 transition duration-500 group-hover:rotate-6 group-hover:scale-110 group-hover:bg-gold-500 group-hover:text-navy-900">
           <DynamicIcon name={s.icon} className="h-6 w-6" />
         </div>
         <h3 className="text-lg font-semibold text-navy-800">{tr(s.name, locale)}</h3>
@@ -130,12 +132,13 @@ export function FaqList({ items, locale }: { items: { id: string; question: unkn
 
 export function PageHero({ title, subtitle, children }: { title: string; subtitle?: string; children?: React.ReactNode }) {
   return (
-    <section className="bg-hero relative overflow-hidden text-white">
-      <div className="bg-grid absolute inset-0 opacity-40" aria-hidden />
+    <section className="noise relative overflow-hidden bg-navy-950 text-white">
+      <Aurora />
+      <div className="bg-grid mask-radial absolute inset-0 opacity-40" aria-hidden />
       <div className="container relative py-14 sm:py-20">
-        <div className="gold-line mb-5" />
-        <h1 className="max-w-3xl animate-fade-up font-display text-4xl font-semibold leading-tight sm:text-5xl">{title}</h1>
-        {subtitle && <p className="mt-4 max-w-2xl animate-fade-up text-lg text-navy-100 [animation-delay:.1s]">{subtitle}</p>}
+        <div className="gold-line mb-5 animate-fade-in" />
+        <AnimatedHeadline text={title} className="max-w-3xl font-display text-4xl font-semibold leading-tight tracking-tight sm:text-5xl" />
+        {subtitle && <p className="mt-4 max-w-2xl animate-fade-up text-lg text-navy-100 [animation-delay:.25s]">{subtitle}</p>}
         {children}
       </div>
     </section>

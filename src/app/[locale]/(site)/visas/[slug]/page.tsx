@@ -15,6 +15,7 @@ import { Alert, Badge, Card, Flag, Prose } from "@/components/ui/misc";
 import { WhatsAppIcon } from "@/components/ui/icons";
 import { FaqList } from "@/components/site/cards";
 import { SetWhatsAppMessage } from "@/components/layout/whatsapp";
+import { Aurora } from "@/components/motion/aurora";
 
 async function load(slug: string) {
   return prisma.country.findFirst({
@@ -110,14 +111,15 @@ export default async function CountryPage({ params }: { params: Promise<{ locale
         ]}
       />
 
-      <section className="bg-hero relative overflow-hidden text-white">
-        <div className="bg-grid absolute inset-0 opacity-40" aria-hidden />
+      <section className="noise relative overflow-hidden bg-navy-950 text-white">
+        <Aurora />
+        <div className="bg-grid mask-radial absolute inset-0 opacity-40" aria-hidden />
         <div className="container relative py-12 sm:py-16">
           <nav className="mb-6 text-sm text-navy-200" aria-label="Breadcrumb">
             <Link href={`/${locale}`} className="hover:text-white">{t.nav.home}</Link> / <Link href={`/${locale}/visas`} className="hover:text-white">{t.nav.visas}</Link> / <span className="text-white">{name}</span>
           </nav>
           <div className="flex flex-wrap items-center gap-5">
-            <Flag code={c.isoCode} className="h-14 w-20 rounded-md shadow-premium" alt={name} />
+            <Flag code={c.isoCode} className="h-14 w-20 animate-float rounded-md shadow-premium" alt={name} />
             <div>
               <h1 className="font-display text-4xl font-semibold sm:text-5xl">{t.nav.visas} — {name}</h1>
               <div className="mt-2 flex flex-wrap gap-2">

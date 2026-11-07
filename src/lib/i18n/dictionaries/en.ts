@@ -108,6 +108,18 @@ const en = {
     cndp: "Personal data processed in accordance with Moroccan Law 09-08.",
   },
   home: {
+    heroHighlight: "Simpler.",
+    heroCardStatus: "Application status",
+    heroCardStatusValue: "In preparation · France",
+    heroCardDocs: "Documents verified",
+    heroCardNext: "Next step: appointment guidance",
+    heroCardSecure: "Encrypted & private",
+    heroCardExample: "Example",
+    statDestinations: "Destinations covered",
+    statLanguages: "Languages: FR · AR · EN",
+    statServices: "Services under one roof",
+    statEncryption: "Document encryption",
+    marqueeTitle: "Destinations we guide you to",
     heroBadge: "Visa assistance · Morocco",
     heroTitle: "Your Visa Journey, Made Simpler.",
     heroSubtitle:

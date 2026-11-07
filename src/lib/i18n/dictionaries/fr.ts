@@ -109,6 +109,18 @@ const fr: Dictionary = {
     cndp: "Données personnelles traitées conformément à la loi marocaine 09-08.",
   },
   home: {
+    heroHighlight: "simplifié.",
+    heroCardStatus: "Statut du dossier",
+    heroCardStatusValue: "En préparation · France",
+    heroCardDocs: "Documents vérifiés",
+    heroCardNext: "Prochaine étape : rendez-vous",
+    heroCardSecure: "Chiffré & confidentiel",
+    heroCardExample: "Exemple",
+    statDestinations: "Destinations couvertes",
+    statLanguages: "Langues : FR · AR · EN",
+    statServices: "Services réunis en un seul endroit",
+    statEncryption: "Chiffrement des documents",
+    marqueeTitle: "Les destinations où nous vous accompagnons",
     heroBadge: "Assistance visa · Maroc",
     heroTitle: "Votre parcours visa, simplifié.",
     heroSubtitle:

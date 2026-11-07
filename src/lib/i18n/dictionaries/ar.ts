@@ -109,6 +109,18 @@ const ar: Dictionary = {
     cndp: "تتم معالجة المعطيات الشخصية وفقاً للقانون المغربي 09-08.",
   },
   home: {
+    heroHighlight: "سهولة.",
+    heroCardStatus: "حالة الملف",
+    heroCardStatusValue: "قيد التحضير · فرنسا",
+    heroCardDocs: "تم التحقق من الوثائق",
+    heroCardNext: "الخطوة التالية: الموعد",
+    heroCardSecure: "مشفر وسري",
+    heroCardExample: "مثال",
+    statDestinations: "وجهة مغطاة",
+    statLanguages: "لغات: العربية · FR · EN",
+    statServices: "خدمة في مكان واحد",
+    statEncryption: "تشفير الوثائق",
+    marqueeTitle: "الوجهات التي نرافقك إليها",
     heroBadge: "مساعدة في التأشيرات · المغرب",
     heroTitle: "رحلتك نحو التأشيرة، بكل سهولة.",
     heroSubtitle:
