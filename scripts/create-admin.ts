@@ -6,9 +6,13 @@
  */
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { PrismaNeon } from "@prisma/adapter-neon";
 import { createInterface } from "node:readline/promises";
 
-const prisma = new PrismaClient();
+// Neon (serverless Postgres) is reached over its HTTPS/WebSocket driver; other databases over TCP.
+const prisma = /\.neon\.tech/.test(process.env.DATABASE_URL || "")
+  ? new PrismaClient({ adapter: new PrismaNeon({ connectionString: process.env.DATABASE_URL! }) })
+  : new PrismaClient();
 
 async function main() {
   const [email, firstName = "Admin", lastName = "VISA ABACHE"] = process.argv.slice(2);

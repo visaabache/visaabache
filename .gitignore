@@ -14,3 +14,7 @@ next-env.d.ts
 /tests/e2e/screenshots
 .DS_Store
 .next-dev
+.open-next
+.wrangler
+*.cf-build-bak
+.dev.vars

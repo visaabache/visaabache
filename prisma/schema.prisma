@@ -897,3 +897,11 @@ model AutomationRun {
   summary    Json?
   error      String?
 }
+
+// Encrypted file blobs for STORAGE_DRIVER=db (hosts without a persistent disk or object storage,
+// e.g. Cloudflare Workers free plan). Content is AES-256-GCM ciphertext.
+model StoredFile {
+  key       String   @id
+  data      Bytes
+  createdAt DateTime @default(now())
+}

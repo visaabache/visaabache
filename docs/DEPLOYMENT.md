@@ -61,6 +61,32 @@ To update: `git pull && docker compose up -d --build`.
 3. Set the build command to `npm run vercel-build` (or `npx prisma migrate deploy && npm run build`) and the start command to `npm start`.
 4. Run `npm run db:seed` once from your machine with the production `DATABASE_URL`.
 
+## 3D. Cloudflare Workers + Neon (current test deployment)
+
+Live test URL: **https://app.visa-abache.workers.dev**. Worker `app`, Cloudflare account *Flyabroadevisa*; database: Neon project `visa-abache` (Frankfurt).
+
+| Piece | How it is set up |
+|---|---|
+| Adapter | `@opennextjs/cloudflare` (`open-next.config.ts`), worker entry `cf-worker.ts`, config `wrangler.jsonc` |
+| Database | Neon Postgres through the Neon serverless driver (`DB_DRIVER=neon`); one Prisma client per request (`src/lib/db.ts`) |
+| Documents | `STORAGE_DRIVER=db`: AES-256-GCM ciphertext stored in the `StoredFile` table (no R2 needed). Switch to R2 (`STORAGE_DRIVER=s3` + R2 S3 keys) once volumes grow |
+| Static files | Served from the Workers KV namespace `visa-abache-static-assets`, uploaded by `scripts/cf-upload-assets.mjs` |
+| Automations | Cron Trigger `0 * * * *` in `wrangler.jsonc` → `/api/cron/run` |
+| Secrets | `DATABASE_URL`, `SESSION_SECRET`, `DOCUMENT_ENCRYPTION_KEY`, `CRON_SECRET` (set with `wrangler secret`) |
+| Email | `EMAIL_DRIVER=console` (emails only appear in the worker logs). SMTP is not possible on Workers: use Resend (`EMAIL_DRIVER=resend` + `RESEND_API_KEY` secret) |
+
+**Plan requirement:** the Workers **Free** plan allows 10 ms of CPU per request; server-rendered pages need 10–25 ms, so a share of requests fail with error 1102. Use **Workers Paid** ($5/month). No code change is needed after upgrading.
+
+Deploy updates:
+
+```bash
+export CLOUDFLARE_ACCOUNT_ID=81ab4316522f206e49bd94884d21b968 CLOUDFLARE_API_TOKEN=<token>
+npm run cf:deploy                 # build → upload static files to KV → wrangler deploy
+DATABASE_URL=<neon url> node scripts/neon-migrate.mjs   # when new migrations exist
+```
+
+Custom domain later: Cloudflare dashboard → Workers & Pages → `app` → Settings → Domains & Routes → *Add custom domain*. Then update `APP_URL` in `wrangler.jsonc` and redeploy.
+
 ## 4. Scheduled automation (cron)
 
 Call this every hour:

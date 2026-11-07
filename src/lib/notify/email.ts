@@ -7,7 +7,9 @@ export async function sendEmail(msg: EmailMessage): Promise<{ ok: boolean; error
   const from = process.env.EMAIL_FROM || "VISA ABACHE <no-reply@visaabache.ma>";
   try {
     if (driver === "smtp") {
-      const nodemailer = await import("nodemailer");
+      // Resolved at runtime only (not bundled): SMTP needs raw TCP sockets, unavailable on Cloudflare Workers — use EMAIL_DRIVER=resend there.
+      const mod = process.env.NODEMAILER_MODULE || "nodemailer";
+      const nodemailer: typeof import("nodemailer") = await import(/* webpackIgnore: true */ mod);
       const transport = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port: Number(process.env.SMTP_PORT || 587),

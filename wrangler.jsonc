@@ -1,0 +1,23 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "app",
+  "main": "cf-worker.ts",
+  "compatibility_date": "2025-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  // Static build files are served from Workers KV by cf-worker.ts (uploaded by scripts/cf-upload-assets.mjs).
+  "kv_namespaces": [{ "binding": "STATIC_ASSETS", "id": "fb967ffb2e284be0b85b9080d8987d5f" }],
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  // Hourly business automations (see cf-worker.ts)
+  "triggers": { "crons": ["0 * * * *"] },
+  // Non-secret configuration. Secrets (DATABASE_URL, SESSION_SECRET, DOCUMENT_ENCRYPTION_KEY, CRON_SECRET…)
+  // are set with `wrangler secret put` and never committed.
+  "vars": {
+    "APP_URL": "https://app.visa-abache.workers.dev",
+    "STORAGE_DRIVER": "db",
+    "EMAIL_DRIVER": "console",
+    "UPLOAD_MAX_MB": "4",
+    "DB_DRIVER": "neon"
+  }
+}
