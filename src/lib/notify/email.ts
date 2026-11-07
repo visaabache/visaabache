@@ -43,7 +43,7 @@ function escapeHtml(s: string) {
 /** Branded, table-based email layout (works in Gmail/Outlook). Body text is escaped; URLs become links. */
 export function renderEmailHtml(opts: { subject: string; text: string; locale: string; footer: string; cta?: { label: string; url: string } }) {
   const rtl = opts.locale === "ar";
-  const logoUrl = `${(process.env.APP_URL || "").replace(/\/$/, "")}/brand/visa-abache-mark-512.png`;
+  const logoUrl = `${(process.env.APP_URL || "").replace(/\/$/, "")}/brand/visa-abache-logo-email.png`;
   const paragraphs = escapeHtml(opts.text)
     .split(/\n{2,}/)
     .map((p) =>
@@ -59,7 +59,7 @@ export function renderEmailHtml(opts: { subject: string; text: string; locale: s
 <body style="margin:0;background:#f4f6fa;font-family:Arial,Helvetica,sans-serif;color:#1f2937">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6fa;padding:24px 0"><tr><td align="center">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden">
-<tr><td style="background:#102747;padding:20px 28px;color:#ffffff;font-size:20px;font-weight:700;letter-spacing:2px"><img src="${logoUrl}" width="36" height="36" alt="" style="vertical-align:middle;border:0;border-radius:8px;margin-right:12px">VISA <span style="color:#C9A45C">ABACHE</span></td></tr>
+<tr><td style="background:#102747;padding:20px 28px;color:#ffffff;font-size:20px;font-weight:700;letter-spacing:2px"><img src="${logoUrl}" width="200" height="47" alt="VISA ABACHE" style="display:block;border:0;height:auto;max-width:200px"></td></tr>
 <tr><td style="padding:28px;font-size:15px;text-align:${rtl ? "right" : "left"}">${paragraphs}${cta}</td></tr>
 <tr><td style="padding:18px 28px;background:#fbf7ef;color:#6b7280;font-size:12px;line-height:1.5;text-align:${rtl ? "right" : "left"}">${escapeHtml(opts.footer)}</td></tr>
 </table></td></tr></table></body></html>`;
