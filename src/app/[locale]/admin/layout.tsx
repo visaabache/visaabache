@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ExternalLink, LogOut } from "lucide-react";
+import { ExternalLink, LogOut, UserRound } from "lucide-react";
 import { asLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n";
 import { requireStaff } from "@/lib/auth/session";
@@ -78,6 +78,7 @@ export default async function AdminLayout({ children, params }: { children: Reac
           <p className="truncate text-sm text-slate-500"><span className="font-semibold text-navy-800">{user.firstName} {user.lastName}</span> · {t.admin.users.roles[user.role]}</p>
           <div className="flex items-center gap-3">
             <LanguageSwitcher locale={locale} />
+            <Link href={`/${locale}/account/profile`} className="flex items-center gap-1 text-sm text-slate-600 hover:text-navy-800" title={t.account.changePassword}><UserRound className="h-4 w-4" /><span className="hidden sm:inline">{t.account.profile}</span></Link>
             <Link href={`/${locale}`} target="_blank" className="hidden items-center gap-1 text-sm text-slate-600 hover:text-navy-800 sm:flex"><ExternalLink className="h-4 w-4" />{n.viewSite}</Link>
             <form action={logoutAction.bind(null, locale)}><button className="rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label={t.nav.logout}><LogOut className="h-4 w-4" /></button></form>
           </div>
