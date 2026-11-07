@@ -15,7 +15,7 @@ export function InvoiceView({ inv, locale, t, settings }: { inv: Invoice; locale
     <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm shadow-soft print:border-0 print:p-0 print:shadow-none sm:p-10" id="invoice">
       <div className="flex flex-wrap items-start justify-between gap-6">
         <div>
-          <Logo />
+          <Logo animated={false} />
           <div className="mt-3 space-y-0.5 text-xs text-slate-500">
             <p className="font-semibold text-slate-700">{b.legalName || b.name}</p>
             {b.address && <p>{b.address}</p>}

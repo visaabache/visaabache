@@ -117,6 +117,14 @@
   .reveal-stagger.is-visible > *:nth-child(6) { transition-delay: .4s; }
   .reveal-stagger.is-visible > *:nth-child(n+7) { transition-delay: .48s; }
   .flight-path { stroke-dasharray: 4 7; animation: dash 30s linear infinite; }
+  /* Brand mark: the plane glides forward along its take-off path, the trail flows behind it */
+  .logo-plane { animation: logo-fly 3.6s cubic-bezier(.45,0,.25,1) infinite; transform-box: view-box; }
+  .logo-trail { animation: logo-trail 1.4s linear infinite; }
+  @keyframes logo-fly {
+    0%, 100% { transform: translate(-1.6px, 2px); }
+    50% { transform: translate(1.2px, -1.5px); }
+  }
+  @keyframes logo-trail { to { stroke-dashoffset: -9.4; } }
   @keyframes dash { to { stroke-dashoffset: -400; } }
 
   .bg-hero {

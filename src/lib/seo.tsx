@@ -20,7 +20,7 @@ export async function pageMetadata(opts: {
   const languages: Record<string, string> = {};
   for (const l of locales) languages[l === "ar" ? "ar-MA" : l === "fr" ? "fr-MA" : "en"] = appUrl(`/${l}${opts.path}`);
   languages["x-default"] = appUrl(`/fr${opts.path}`);
-  const image = opts.image || s.seo.ogImageUrl || undefined;
+  const image = opts.image || s.seo.ogImageUrl || appUrl("/brand/visa-abache-logo-dark.png");
   return {
     title: { absolute: title },
     description,

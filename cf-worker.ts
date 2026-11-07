@@ -11,7 +11,7 @@ type KV = { getWithMetadata(key: string, type: "arrayBuffer"): Promise<{ value: 
 type Env = { CRON_SECRET?: string; APP_URL?: string; STATIC_ASSETS?: KV; [k: string]: unknown };
 type Ctx = { waitUntil(p: Promise<unknown>): void };
 
-const STATIC_PREFIXES = ["/_next/static/", "/flags/"];
+const STATIC_PREFIXES = ["/_next/static/", "/flags/", "/brand/"];
 
 async function serveAsset(env: Env, pathname: string): Promise<Response | null> {
   if (!env.STATIC_ASSETS) return null;
