@@ -21,7 +21,7 @@ export function FloatingHeader({ children }: { children: ReactNode }) {
         className={cn(
           "mx-auto transition-all duration-500",
           scrolled
-            ? "max-w-6xl rounded-2xl border border-slate-200/70 bg-white/95 shadow-[0_12px_40px_-16px_rgba(16,39,71,.35)] backdrop-blur-xl"
+            ? "max-w-7xl rounded-2xl border border-slate-200/70 bg-white/95 shadow-[0_12px_40px_-16px_rgba(16,39,71,.35)] backdrop-blur-xl"
             : "max-w-none border-b border-slate-200/60 bg-white/85 backdrop-blur-md",
         )}
       >

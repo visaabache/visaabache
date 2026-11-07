@@ -31,7 +31,7 @@ export function Header({ locale, dict, user }: { locale: Locale; dict: Dictionar
         </Link>
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">
           {links.map((x) => (
-            <Link key={x.href} href={x.href} className="relative rounded-full px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-navy-50 hover:text-navy-800">
+            <Link key={x.href} href={x.href} className="relative whitespace-nowrap rounded-full px-2.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-navy-50 hover:text-navy-800 xl:px-3">
               {x.label}
             </Link>
           ))}
