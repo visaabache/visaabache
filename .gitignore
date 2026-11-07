@@ -1,0 +1,15 @@
+node_modules
+.next
+out
+coverage
+*.tsbuildinfo
+next-env.d.ts
+.env
+.env.local
+.env.*.local
+/storage
+/backups
+/public/flags
+/test-results
+/tests/e2e/screenshots
+.DS_Store

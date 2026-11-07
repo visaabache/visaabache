@@ -1,0 +1,899 @@
+// VISA ABACHE — database schema (PostgreSQL)
+// Localized content is stored as JSON objects: { "fr": "...", "ar": "...", "en": "..." }
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ───────────────────────────── Users & auth ─────────────────────────────
+
+enum Role {
+  CUSTOMER
+  STAFF // applications, customers, inquiries, support
+  ADMIN // everything except users & security settings
+  OWNER // full access
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  passwordHash    String
+  firstName       String
+  lastName        String
+  phone           String?
+  whatsappOptIn   Boolean   @default(false)
+  city            String?
+  address         String?
+  locale          String    @default("fr")
+  role            Role      @default(CUSTOMER)
+  isActive        Boolean   @default(true)
+  marketingOptIn  Boolean   @default(false)
+  emailVerifiedAt DateTime?
+  lastLoginAt     DateTime?
+  anonymizedAt    DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  sessions        Session[]
+  tokens          VerificationToken[]
+  applications    Application[]       @relation("ApplicationCustomer")
+  documents       Document[]          @relation("DocumentOwner")
+  uploads         Document[]          @relation("DocumentUploader")
+  notifications   Notification[]
+  payments        Payment[]           @relation("PaymentCustomer")
+  invoices        Invoice[]
+  tickets         Ticket[]            @relation("TicketCustomer")
+  ticketMessages  TicketMessage[]
+  consents        ConsentRecord[]
+  dataRequests    DataRequest[]
+  inquiries       Inquiry[]
+  notes           ApplicationNote[]
+  statusChanges   ApplicationStatusHistory[]
+  auditLogs       AuditLog[]
+  testimonials    Testimonial[]
+  assignedApps    Application[]       @relation("ApplicationAssignee")
+
+  @@index([role])
+  @@index([createdAt])
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  tokenHash  String   @unique
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+enum TokenType {
+  PASSWORD_RESET
+  EMAIL_VERIFY
+}
+
+model VerificationToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  type      TokenType
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model RateLimit {
+  key     String   @id
+  count   Int
+  resetAt DateTime
+}
+
+// ───────────────────────────── Destinations & visa content ─────────────────────────────
+
+enum Region {
+  EUROPE
+  NORTH_AMERICA
+  ASIA
+  OTHER
+}
+
+model Country {
+  id               String    @id @default(cuid())
+  slug             String    @unique
+  isoCode          String // ISO 3166-1 alpha-2, used for flags
+  name             Json
+  region           Region
+  isSchengen       Boolean   @default(false)
+  isActive         Boolean   @default(true)
+  isPopular        Boolean   @default(false)
+  sortOrder        Int       @default(0)
+  summary          Json? // short intro
+  eligibility      Json? // markdown per locale
+  procedure        Json? // markdown per locale
+  appointmentInfo  Json? // markdown per locale
+  processingInfo   Json? // indicative processing time text
+  officialFeesInfo Json? // official government/consular fees (NOT Visa Abache fees)
+  importantNotes   Json?
+  seoTitle         Json?
+  seoDescription   Json?
+  lastVerifiedAt   DateTime? // when the owner last checked the official source
+  verificationNote String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  visaTypes      VisaType[]
+  checklistItems ChecklistItem[]
+  questions      Question[]
+  links          OfficialLink[]
+  faqs           Faq[]
+  applications   Application[]
+  testimonials   Testimonial[]
+
+  @@index([region, isActive])
+}
+
+model VisaType {
+  id             String   @id @default(cuid())
+  countryId      String
+  country        Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  code           String // e.g. "tourism", "business", "student"
+  name           Json
+  description    Json?
+  processingInfo Json? // indicative
+  officialFee    Json? // text, e.g. "Check official fee on france-visas.gouv.fr"
+  isActive       Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  applications Application[]
+
+  @@unique([countryId, code])
+}
+
+model ChecklistItem {
+  id          String   @id @default(cuid())
+  countryId   String
+  country     Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  visaTypeCodes String[] // empty = applies to all visa types of the country
+  title       Json
+  description Json?
+  required    Boolean  @default(true)
+  // Optional rule based on wizard answers: { "question": "employment", "op": "eq"|"neq"|"in", "value": "employed" | ["a","b"] }
+  condition   Json?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([countryId])
+}
+
+enum QuestionType {
+  SELECT
+  YES_NO
+  TEXT
+  NUMBER
+  DATE
+}
+
+// Destination-specific questions asked in the application wizard.
+// countryId = null → asked for every destination.
+model Question {
+  id            String       @id @default(cuid())
+  countryId     String?
+  country       Country?     @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  key           String
+  label         Json
+  help          Json?
+  type          QuestionType
+  options       Json? // [{ "value": "employed", "label": { "fr": "...", ... } }]
+  required      Boolean      @default(true)
+  visaTypeCodes String[]
+  sortOrder     Int          @default(0)
+  isActive      Boolean      @default(true)
+
+  @@unique([countryId, key])
+}
+
+enum LinkType {
+  GOVERNMENT
+  EMBASSY
+  CONSULATE
+  VISA_CENTER
+  OTHER
+}
+
+model OfficialLink {
+  id        String   @id @default(cuid())
+  countryId String
+  country   Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  label     Json
+  url       String
+  type      LinkType @default(GOVERNMENT)
+  sortOrder Int      @default(0)
+}
+
+enum FaqScope {
+  GENERAL
+  COUNTRY
+  SERVICE
+}
+
+model Faq {
+  id          String   @id @default(cuid())
+  scope       FaqScope @default(GENERAL)
+  countryId   String?
+  country     Country? @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  serviceId   String?
+  service     Service? @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  question    Json
+  answer      Json
+  sortOrder   Int      @default(0)
+  isPublished Boolean  @default(true)
+  showOnHome  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ───────────────────────────── Services & packages ─────────────────────────────
+
+enum ServiceCategory {
+  VISA
+  ADMINISTRATIVE
+  TRAVEL
+  STUDY
+}
+
+enum PriceType {
+  FIXED
+  FROM
+  QUOTE
+}
+
+model Service {
+  id               String          @id @default(cuid())
+  slug             String          @unique
+  category         ServiceCategory
+  icon             String          @default("file-text")
+  name             Json
+  shortDescription Json
+  description      Json? // markdown
+  features         Json? // { fr: string[], ar: string[], en: string[] }
+  disclaimer       Json?
+  priceType        PriceType       @default(FROM)
+  price            Decimal?        @db.Decimal(10, 2)
+  isActive         Boolean         @default(true)
+  isFeatured       Boolean         @default(false)
+  sortOrder        Int             @default(0)
+  seoTitle         Json?
+  seoDescription   Json?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  inquiries Inquiry[]
+  faqs      Faq[]
+}
+
+model Package {
+  id             String    @id @default(cuid())
+  slug           String    @unique
+  name           Json
+  description    Json?
+  features       Json? // { fr: string[], ... }
+  price          Decimal   @db.Decimal(10, 2)
+  compareAtPrice Decimal?  @db.Decimal(10, 2)
+  countrySlugs   String[] // empty = all destinations
+  isActive       Boolean   @default(true)
+  isHighlighted  Boolean   @default(false)
+  isPromotional  Boolean   @default(false)
+  promoEndsAt    DateTime?
+  sortOrder      Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  applications Application[]
+}
+
+enum DiscountType {
+  PERCENT
+  FIXED
+}
+
+model DiscountCode {
+  id           String       @id @default(cuid())
+  code         String       @unique
+  description  String?
+  type         DiscountType
+  value        Decimal      @db.Decimal(10, 2)
+  maxUses      Int?
+  usedCount    Int          @default(0)
+  minAmount    Decimal?     @db.Decimal(10, 2)
+  packageSlugs String[]
+  validFrom    DateTime?
+  validUntil   DateTime?
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+
+  applications Application[]
+}
+
+// ───────────────────────────── Applications ─────────────────────────────
+
+enum StatusKind {
+  OPEN
+  WAITING_CUSTOMER
+  COMPLETED
+  CANCELLED
+}
+
+model ApplicationStatus {
+  id             String     @id @default(cuid())
+  key            String     @unique
+  label          Json
+  description    Json? // shown to the customer
+  color          String     @default("#2f4f85")
+  kind           StatusKind @default(OPEN)
+  sortOrder      Int        @default(0)
+  isInitial      Boolean    @default(false)
+  isActive       Boolean    @default(true)
+  notifyCustomer Boolean    @default(true)
+  createdAt      DateTime   @default(now())
+
+  applications Application[]
+  historyFrom  ApplicationStatusHistory[] @relation("FromStatus")
+  historyTo    ApplicationStatusHistory[] @relation("ToStatus")
+}
+
+model Application {
+  id              String             @id @default(cuid())
+  reference       String             @unique
+  userId          String
+  user            User               @relation("ApplicationCustomer", fields: [userId], references: [id], onDelete: Restrict)
+  countryId       String
+  country         Country            @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  visaTypeId      String?
+  visaType        VisaType?          @relation(fields: [visaTypeId], references: [id], onDelete: SetNull)
+  packageId       String?
+  package         Package?           @relation(fields: [packageId], references: [id], onDelete: SetNull)
+  statusId        String
+  status          ApplicationStatus  @relation(fields: [statusId], references: [id], onDelete: Restrict)
+  assigneeId      String?
+  assignee        User?              @relation("ApplicationAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  isDraft         Boolean            @default(true)
+  locale          String             @default("fr")
+
+  // Applicant
+  firstName       String
+  lastName        String
+  email           String
+  phone           String
+  dateOfBirth     DateTime?
+  nationality     String?
+  passportNumber  String?
+  passportExpiry  DateTime?
+  city            String?
+  // Travel
+  purpose         String?
+  departureDate   DateTime?
+  returnDate      DateTime?
+  travelers       Int                @default(1)
+  additionalInfo  String?
+
+  answers           Json? // destination-specific answers { key: value }
+  checklist         Json? // generated checklist snapshot [{ id, title, description, required }]
+
+  // Pricing (Visa Abache service fees only — official fees are paid by the customer to the authority)
+  discountCodeId  String?
+  discountCode    DiscountCode?      @relation(fields: [discountCodeId], references: [id], onDelete: SetNull)
+  subtotal        Decimal            @default(0) @db.Decimal(10, 2)
+  discountAmount  Decimal            @default(0) @db.Decimal(10, 2)
+  totalAmount     Decimal            @default(0) @db.Decimal(10, 2)
+
+  deadline        DateTime?
+  priority        Int                @default(0) // 0 normal, 1 high
+  submittedAt     DateTime?
+  completedAt     DateTime?
+  cancelledAt     DateTime?
+  archivedAt      DateTime?
+  lastReminderAt  DateTime?
+  consentAt       DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  history          ApplicationStatusHistory[]
+  notes            ApplicationNote[]
+  documents        Document[]
+  documentRequests DocumentRequest[]
+  payments         Payment[]
+  invoices         Invoice[]
+  tickets          Ticket[]
+  testimonial      Testimonial?
+
+  @@index([userId])
+  @@index([statusId])
+  @@index([isDraft, archivedAt])
+  @@index([createdAt])
+}
+
+model ApplicationStatusHistory {
+  id            String             @id @default(cuid())
+  applicationId String
+  application   Application        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  fromStatusId  String?
+  fromStatus    ApplicationStatus? @relation("FromStatus", fields: [fromStatusId], references: [id], onDelete: SetNull)
+  toStatusId    String
+  toStatus      ApplicationStatus  @relation("ToStatus", fields: [toStatusId], references: [id], onDelete: Restrict)
+  note          String? // visible to the customer
+  changedById   String?
+  changedBy     User?              @relation(fields: [changedById], references: [id], onDelete: SetNull)
+  createdAt     DateTime           @default(now())
+
+  @@index([applicationId])
+}
+
+model ApplicationNote {
+  id            String      @id @default(cuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  authorId      String?
+  author        User?       @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  body          String
+  createdAt     DateTime    @default(now())
+}
+
+enum DocumentDirection {
+  CUSTOMER_UPLOAD
+  SHARED_BY_STAFF
+}
+
+enum DocumentStatus {
+  PENDING_REVIEW
+  ACCEPTED
+  REJECTED
+}
+
+model Document {
+  id              String            @id @default(cuid())
+  applicationId   String?
+  application     Application?      @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  ownerId         String
+  owner           User              @relation("DocumentOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  uploadedById    String?
+  uploadedBy      User?             @relation("DocumentUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+  requestId       String?
+  request         DocumentRequest?  @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  checklistItemId String?
+  label           String
+  originalName    String
+  mimeType        String
+  size            Int
+  storageKey      String            @unique
+  sha256          String
+  encrypted       Boolean           @default(true)
+  direction       DocumentDirection @default(CUSTOMER_UPLOAD)
+  status          DocumentStatus    @default(PENDING_REVIEW)
+  reviewNote      String?
+  reviewedAt      DateTime?
+  createdAt       DateTime          @default(now())
+
+  payments Payment[]
+
+  @@index([applicationId])
+  @@index([ownerId])
+}
+
+enum RequestStatus {
+  OPEN
+  FULFILLED
+  CANCELLED
+}
+
+model DocumentRequest {
+  id            String        @id @default(cuid())
+  applicationId String
+  application   Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  title         String
+  description   String?
+  dueDate       DateTime?
+  status        RequestStatus @default(OPEN)
+  lastRemindedAt DateTime?
+  createdAt     DateTime      @default(now())
+  fulfilledAt   DateTime?
+
+  documents Document[]
+
+  @@index([applicationId, status])
+}
+
+// ───────────────────────────── Payments & invoices ─────────────────────────────
+
+enum PaymentMethod {
+  CARD
+  BANK_TRANSFER
+  CASH
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING // created, waiting for provider or customer
+  AWAITING_VERIFICATION // customer declared a transfer, admin must verify
+  CONFIRMED // confirmed by provider callback or by an administrator
+  FAILED
+  CANCELLED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  reference         String        @unique
+  userId            String
+  user              User          @relation("PaymentCustomer", fields: [userId], references: [id], onDelete: Restrict)
+  applicationId     String?
+  application       Application?  @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  invoiceId         String?
+  invoice           Invoice?      @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  amount            Decimal       @db.Decimal(10, 2)
+  currency          String        @default("MAD")
+  method            PaymentMethod
+  status            PaymentStatus @default(PENDING)
+  provider          String        @default("MANUAL") // MANUAL | CMI
+  providerTxnId     String?
+  providerPayload   Json?
+  proofDocumentId   String?
+  proofDocument     Document?     @relation(fields: [proofDocumentId], references: [id], onDelete: SetNull)
+  confirmedAt       DateTime?
+  confirmedById     String?
+  verificationNote  String?
+  refundedAmount    Decimal       @default(0) @db.Decimal(10, 2)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  refunds Refund[]
+
+  @@index([status])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Refund {
+  id          String   @id @default(cuid())
+  paymentId   String
+  payment     Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  amount      Decimal  @db.Decimal(10, 2)
+  reason      String
+  reference   String?
+  processedById String?
+  createdAt   DateTime @default(now())
+}
+
+enum InvoiceStatus {
+  ISSUED
+  PARTIALLY_PAID
+  PAID
+  CANCELLED
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  number        String        @unique
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  applicationId String?
+  application   Application?  @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  status        InvoiceStatus @default(ISSUED)
+  issueDate     DateTime      @default(now())
+  dueDate       DateTime?
+  items         Json // [{ description, quantity, unitPrice, total }]
+  subtotal      Decimal       @db.Decimal(10, 2)
+  discount      Decimal       @default(0) @db.Decimal(10, 2)
+  total         Decimal       @db.Decimal(10, 2)
+  amountPaid    Decimal       @default(0) @db.Decimal(10, 2)
+  currency      String        @default("MAD")
+  billingName   String
+  billingEmail  String
+  billingPhone  String?
+  billingAddress String?
+  notes         String?
+  lastReminderAt DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  payments Payment[]
+
+  @@index([status])
+  @@index([userId])
+}
+
+// Sequential counters (invoice numbers must be sequential and gap-free per year)
+model Counter {
+  key   String @id
+  value Int    @default(0)
+}
+
+// ───────────────────────────── Communication ─────────────────────────────
+
+enum InquiryType {
+  SERVICE
+  CONTACT
+  CONSULTATION
+}
+
+enum InquiryStatus {
+  NEW
+  IN_PROGRESS
+  CLOSED
+}
+
+model Inquiry {
+  id        String        @id @default(cuid())
+  type      InquiryType
+  serviceId String?
+  service   Service?      @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  userId    String?
+  user      User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name      String
+  email     String
+  phone     String?
+  subject   String?
+  message   String
+  data      Json?
+  locale    String        @default("fr")
+  status    InquiryStatus @default(NEW)
+  internalNote String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([status])
+}
+
+enum TicketStatus {
+  OPEN
+  ANSWERED
+  CLOSED
+}
+
+model Ticket {
+  id            String       @id @default(cuid())
+  userId        String
+  user          User         @relation("TicketCustomer", fields: [userId], references: [id], onDelete: Cascade)
+  applicationId String?
+  application   Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  subject       String
+  status        TicketStatus @default(OPEN)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  messages TicketMessage[]
+
+  @@index([status])
+}
+
+model TicketMessage {
+  id        String   @id @default(cuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId  String?
+  author    User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  fromStaff Boolean  @default(false)
+  body      String
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt])
+}
+
+enum Channel {
+  EMAIL
+  WHATSAPP
+  IN_APP
+}
+
+model NotificationTemplate {
+  id        String   @id @default(cuid())
+  key       String
+  channel   Channel
+  locale    String
+  subject   String?
+  body      String
+  isActive  Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+
+  @@unique([key, channel, locale])
+}
+
+model NotificationLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  channel     Channel
+  recipient   String
+  templateKey String?
+  subject     String?
+  status      String // SENT | FAILED | SKIPPED
+  error       String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// ───────────────────────────── Marketing & content ─────────────────────────────
+
+enum TestimonialSource {
+  CUSTOMER_SUBMITTED
+  GOOGLE_REVIEW
+  ADMIN_ENTERED
+}
+
+model Testimonial {
+  id              String            @id @default(cuid())
+  userId          String?
+  user            User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  applicationId   String?           @unique
+  application     Application?      @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  countryId       String?
+  country         Country?          @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  displayName     String
+  city            String?
+  rating          Int
+  content         String
+  locale          String            @default("fr")
+  source          TestimonialSource @default(CUSTOMER_SUBMITTED)
+  consentToPublish Boolean          @default(false)
+  isVerified      Boolean           @default(false) // verified as a real customer by the owner
+  isPublished     Boolean           @default(false)
+  verificationNote String?
+  createdAt       DateTime          @default(now())
+}
+
+enum ArticleCategory {
+  VISA_INFO
+  TRAVEL_ADVICE
+  ADMIN_PROCEDURES
+  OPPORTUNITIES
+}
+
+model Article {
+  id             String          @id @default(cuid())
+  slug           String          @unique
+  category       ArticleCategory
+  title          Json
+  excerpt        Json?
+  content        Json // markdown per locale
+  coverImageUrl  String?
+  authorName     String          @default("VISA ABACHE")
+  tags           String[]
+  isPublished    Boolean         @default(false)
+  publishedAt    DateTime?
+  seoTitle       Json?
+  seoDescription Json?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([isPublished, publishedAt])
+}
+
+model Banner {
+  id        String    @id @default(cuid())
+  title     Json
+  text      Json?
+  ctaLabel  Json?
+  ctaUrl    String?
+  variant   String    @default("gold") // gold | navy
+  isActive  Boolean   @default(true)
+  startsAt  DateTime?
+  endsAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model LegalPage {
+  id        String   @id @default(cuid())
+  slug      String   @unique // privacy, terms, cookies, refunds, disclaimer
+  title     Json
+  content   Json // markdown per locale
+  version   String   @default("1.0")
+  updatedAt DateTime @updatedAt
+}
+
+// ───────────────────────────── Settings, compliance, audit ─────────────────────────────
+
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+enum ConsentType {
+  PRIVACY_POLICY
+  TERMS
+  DATA_PROCESSING // processing of identity documents for the requested service
+  MARKETING
+  WHATSAPP
+}
+
+model ConsentRecord {
+  id        String      @id @default(cuid())
+  userId    String?
+  user      User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  email     String?
+  type      ConsentType
+  version   String
+  granted   Boolean
+  context   String? // e.g. "register", "application:VA-..."
+  ip        String?
+  userAgent String?
+  createdAt DateTime    @default(now())
+
+  @@index([userId])
+}
+
+enum DataRequestType {
+  ACCESS_EXPORT
+  RECTIFICATION
+  DELETION
+  OPPOSITION
+}
+
+enum DataRequestStatus {
+  PENDING
+  COMPLETED
+  REJECTED
+}
+
+model DataRequest {
+  id          String            @id @default(cuid())
+  userId      String?
+  user        User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  email       String
+  type        DataRequestType
+  details     String?
+  status      DataRequestStatus @default(PENDING)
+  response    String?
+  createdAt   DateTime          @default(now())
+  completedAt DateTime?
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action     String
+  entityType String?
+  entityId   String?
+  metadata   Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([entityType, entityId])
+}
+
+model AutomationRun {
+  id         String    @id @default(cuid())
+  trigger    String // CRON | MANUAL
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  summary    Json?
+  error      String?
+}

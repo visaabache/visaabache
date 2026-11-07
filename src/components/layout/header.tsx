@@ -1,0 +1,110 @@
+import Link from "next/link";
+import { LayoutDashboard, LogOut, Search, ShieldCheck, UserRound } from "lucide-react";
+import type { Locale } from "@/lib/i18n/config";
+import type { Dictionary } from "@/lib/i18n";
+import type { CurrentUser } from "@/lib/auth/session";
+import { isStaffRole } from "@/lib/auth/permissions";
+import { logoutAction } from "@/actions/auth";
+import { ButtonLink } from "@/components/ui/button";
+import { Logo } from "./logo";
+import { LanguageSwitcher } from "./language-switcher";
+import { MobileMenu } from "./mobile-menu";
+
+export function Header({ locale, dict, user }: { locale: Locale; dict: Dictionary; user: CurrentUser | null }) {
+  const l = (p: string) => `/${locale}${p}`;
+  const links = [
+    { href: l("/visas"), label: dict.nav.visas },
+    { href: l("/services"), label: dict.nav.services },
+    { href: l("/pricing"), label: dict.nav.pricing },
+    { href: l("/blog"), label: dict.nav.blog },
+    { href: l("/about"), label: dict.nav.about },
+    { href: l("/contact"), label: dict.nav.contact },
+  ];
+  const staff = user && isStaffRole(user.role);
+
+  return (
+    <header className="no-print sticky top-0 z-40 border-b border-slate-200/70 bg-white/90 backdrop-blur-md">
+      <div className="container flex h-16 items-center justify-between gap-4">
+        <Link href={l("")} aria-label="VISA ABACHE" className="shrink-0">
+          <Logo />
+        </Link>
+        <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">
+          {links.map((x) => (
+            <Link key={x.href} href={x.href} className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-navy-50 hover:text-navy-800">
+              {x.label}
+            </Link>
+          ))}
+        </nav>
+        <div className="hidden items-center gap-3 lg:flex">
+          <LanguageSwitcher locale={locale} />
+          <Link href={l("/track")} className="rounded-lg p-2 text-slate-500 hover:bg-navy-50 hover:text-navy-800" title={dict.nav.track} aria-label={dict.nav.track}>
+            <Search className="h-4 w-4" />
+          </Link>
+          {user ? (
+            <>
+              {staff && (
+                <Link href={l("/admin")} className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm font-medium text-navy-700 hover:bg-navy-50">
+                  <ShieldCheck className="h-4 w-4" /> {dict.nav.admin}
+                </Link>
+              )}
+              <Link href={l("/account")} className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm font-medium text-navy-700 hover:bg-navy-50">
+                <UserRound className="h-4 w-4" /> {dict.nav.account}
+              </Link>
+            </>
+          ) : (
+            <Link href={l("/login")} className="text-sm font-medium text-navy-700 hover:text-navy-900">
+              {dict.nav.login}
+            </Link>
+          )}
+          <ButtonLink href={l("/apply")} size="md">
+            {dict.common.applyForAssistance}
+          </ButtonLink>
+        </div>
+        <MobileMenu label={dict.nav.menu}>
+          <nav className="flex flex-col gap-1" aria-label="Mobile">
+            {[{ href: l(""), label: dict.nav.home }, ...links, { href: l("/faq"), label: dict.nav.faq }, { href: l("/track"), label: dict.nav.track }].map((x) => (
+              <Link key={x.href} href={x.href} className="rounded-lg px-3 py-3 text-base font-medium text-navy-800 hover:bg-navy-50">
+                {x.label}
+              </Link>
+            ))}
+          </nav>
+          <div className="my-4 h-px bg-slate-200" />
+          <div className="flex flex-col gap-2">
+            <ButtonLink href={l("/apply")} size="lg">
+              {dict.common.applyForAssistance}
+            </ButtonLink>
+            {user ? (
+              <>
+                {staff && (
+                  <ButtonLink href={l("/admin")} variant="outline" size="lg">
+                    <LayoutDashboard className="h-4 w-4" /> {dict.nav.admin}
+                  </ButtonLink>
+                )}
+                <ButtonLink href={l("/account")} variant="outline" size="lg">
+                  <UserRound className="h-4 w-4" /> {dict.nav.account}
+                </ButtonLink>
+                <form action={logoutAction.bind(null, locale)}>
+                  <button className="flex w-full items-center justify-center gap-2 py-3 text-sm text-slate-500">
+                    <LogOut className="h-4 w-4" /> {dict.nav.logout}
+                  </button>
+                </form>
+              </>
+            ) : (
+              <>
+                <ButtonLink href={l("/login")} variant="outline" size="lg">
+                  {dict.nav.login}
+                </ButtonLink>
+                <ButtonLink href={l("/register")} variant="ghost" size="lg">
+                  {dict.nav.register}
+                </ButtonLink>
+              </>
+            )}
+          </div>
+          <div className="mt-6 flex justify-center">
+            <LanguageSwitcher locale={locale} />
+          </div>
+        </MobileMenu>
+      </div>
+    </header>
+  );
+}

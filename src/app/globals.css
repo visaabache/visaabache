@@ -1,0 +1,46 @@
+@import "@fontsource-variable/inter";
+@import "@fontsource/playfair-display/500.css";
+@import "@fontsource/playfair-display/600.css";
+@import "@fontsource/cairo/400.css";
+@import "@fontsource/cairo/600.css";
+@import "@fontsource/cairo/700.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { scroll-behavior: smooth; -webkit-tap-highlight-color: transparent; }
+  body { @apply bg-white font-sans text-slate-800 antialiased; }
+  html[dir="rtl"] body, html[dir="rtl"] .font-display { font-family: "Cairo", "Inter Variable", system-ui, sans-serif; }
+  html[dir="rtl"] .font-display { font-weight: 700; letter-spacing: 0; }
+  ::selection { @apply bg-gold-200 text-navy-900; }
+  :focus-visible { outline-color: #c9a45c; }
+}
+
+@layer components {
+  .bg-hero {
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(201,164,92,.22), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(47,79,133,.55), transparent 60%),
+      linear-gradient(160deg, #0b1b33 0%, #102747 55%, #172f56 100%);
+  }
+  .bg-grid {
+    background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+  .gold-line { @apply h-px w-16 bg-gradient-to-r from-gold-500 to-transparent; }
+  .reveal { opacity: 0; transform: translateY(14px); transition: opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1); }
+  .reveal.is-visible { opacity: 1; transform: none; }
+  .rtl-flip { @apply rtl:-scale-x-100; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+  .reveal { opacity: 1; transform: none; }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; }
+}
