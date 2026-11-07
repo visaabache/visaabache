@@ -61,9 +61,9 @@ export function Header({ locale, dict, user }: { locale: Locale; dict: Dictionar
           </ButtonLink>
         </div>
         <MobileMenu label={dict.nav.menu}>
-          <nav className="flex flex-col gap-1" aria-label="Mobile">
+          <nav className="flex flex-col divide-y divide-slate-100" aria-label="Mobile">
             {[{ href: l(""), label: dict.nav.home }, ...links, { href: l("/faq"), label: dict.nav.faq }, { href: l("/track"), label: dict.nav.track }].map((x) => (
-              <Link key={x.href} href={x.href} className="rounded-lg px-3 py-3 text-base font-medium text-navy-800 hover:bg-navy-50">
+              <Link key={x.href} href={x.href} className="px-2 py-3.5 text-base font-medium text-navy-800 hover:bg-navy-50">
                 {x.label}
               </Link>
             ))}
