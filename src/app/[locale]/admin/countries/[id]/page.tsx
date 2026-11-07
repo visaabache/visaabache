@@ -14,8 +14,9 @@ import { ConfirmForm } from "@/components/admin/confirm-form";
 import { AdminPageHeader } from "@/components/admin/page-header";
 import { ChecklistEditor, CountryForm, FaqEditor, LinkEditor, QuestionEditor, VisaTypeEditor } from "@/components/admin/country-editors";
 
-export default async function EditCountry({ params }: { params: Promise<{ locale: string; id: string }> }) {
+export default async function EditCountry({ params, searchParams }: { params: Promise<{ locale: string; id: string }>; searchParams: Promise<{ edit?: string; add?: string }> }) {
   const { locale: l, id } = await params;
+  const sp = await searchParams;
   const locale = asLocale(l);
   const t = getDictionary(locale);
   const tc = t.admin.content;
@@ -32,6 +33,7 @@ export default async function EditCountry({ params }: { params: Promise<{ locale
     prisma.question.findMany({ where: { countryId: null }, orderBy: { sortOrder: "asc" } }),
     prisma.country.findMany({ where: { id: { not: id } }, orderBy: { sortOrder: "asc" }, select: { id: true, name: true } }),
   ]);
+  const state = { editId: sp.edit, add: sp.add, base: `/${locale}/admin/countries/${id}` };
   const section = (sid: string, title: string, children: React.ReactNode, desc?: string) => (
     <Card id={sid} className="scroll-mt-20"><CardHeader title={title} description={desc} /><div className="p-5">{children}</div></Card>
   );
@@ -49,18 +51,18 @@ export default async function EditCountry({ params }: { params: Promise<{ locale
       </nav>
       {!c.lastVerifiedAt && <Alert tone="warning">{t.country.notVerified}</Alert>}
       {section("main", t.common.details, <CountryForm c={c} locale={locale} t={t} />)}
-      {section("types", tc.visaTypes, <VisaTypeEditor countryId={c.id} items={c.visaTypes} locale={locale} t={t} />)}
+      {section("types", tc.visaTypes, <VisaTypeEditor countryId={c.id} items={c.visaTypes} locale={locale} t={t} state={state} />)}
       {section("checklist", tc.checklist, <>
-        <ChecklistEditor countryId={c.id} items={c.checklistItems} questions={[...globalQs, ...c.questions]} locale={locale} t={t} />
+        <ChecklistEditor countryId={c.id} items={c.checklistItems} questions={[...globalQs, ...c.questions]} locale={locale} t={t} state={state} />
         <div className="mt-4 border-t border-slate-100 pt-4">
           <ActionForm action={copyChecklistAction.bind(null, locale, c.id)} inline submitLabel={tc.copyChecklistFrom} submitSize="sm" submitVariant="outline">
             <Select name="fromCountryId" className="h-9 w-64">{others.map((o) => <option key={o.id} value={o.id}>{tr(o.name, locale)}</option>)}</Select>
           </ActionForm>
         </div>
       </>, t.country.checklistNote)}
-      {section("questions", tc.questions, <QuestionEditor countryId={c.id} items={c.questions} locale={locale} t={t} />)}
-      {section("links", tc.links, <LinkEditor countryId={c.id} items={c.links} locale={locale} t={t} />, t.country.officialLinksNote)}
-      {section("faqs", tc.faqs, <FaqEditor scope="COUNTRY" parentId={c.id} items={c.faqs} locale={locale} t={t} />)}
+      {section("questions", tc.questions, <QuestionEditor countryId={c.id} items={c.questions} locale={locale} t={t} state={state} />)}
+      {section("links", tc.links, <LinkEditor countryId={c.id} items={c.links} locale={locale} t={t} state={state} />, t.country.officialLinksNote)}
+      {section("faqs", tc.faqs, <FaqEditor scope="COUNTRY" parentId={c.id} items={c.faqs} locale={locale} t={t} state={state} />)}
     </div>
   );
 }

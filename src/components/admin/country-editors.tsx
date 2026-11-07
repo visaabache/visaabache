@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Trash2 } from "lucide-react";
 import type { ChecklistItem, Country, Faq, OfficialLink, Question, VisaType } from "@prisma/client";
 import type { Locale } from "@/lib/i18n/config";
@@ -22,12 +23,49 @@ function DeleteBtn({ action, t }: { action: () => Promise<void>; t: Dictionary }
 
 function Item({ title, children, open }: { title: React.ReactNode; children: React.ReactNode; open?: boolean }) {
   return (
-    <details open={open} className="group rounded-xl border border-slate-200 bg-white">
+    <details open={open} className="group rounded-xl border border-gold-300 bg-white ring-1 ring-gold-200">
       <summary className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 text-sm font-medium [&::-webkit-details-marker]:hidden">
         <span className="min-w-0 truncate">{title}</span><span className="text-slate-400 group-open:rotate-90">›</span>
       </summary>
       <div className="space-y-3 border-t border-slate-100 p-4">{children}</div>
     </details>
+  );
+}
+
+export type EditState = { editId?: string; add?: string; base: string };
+
+/**
+ * Compact list: only the item being edited (?edit=id) or added (?add=section) renders a full form.
+ * Keeps very large editors (dozens of checklist rules) light and fast.
+ */
+function EditableList<T extends { id: string }>({ section, items, title, form, del, state, t }: {
+  section: string; items: T[]; title: (x: T) => React.ReactNode; form: (x: T | null) => React.ReactNode; del: (x: T) => () => Promise<void>; state: EditState; t: Dictionary;
+}) {
+  const href = (q: string) => `${state.base}?${q}#${section}`;
+  return (
+    <div className="space-y-2">
+      {items.map((x) =>
+        state.editId === x.id ? (
+          <Item key={x.id} title={title(x)} open>
+            {form(x)}
+            <div className="flex items-center justify-between">
+              <DeleteBtn action={del(x)} t={t} />
+              <Link href={`${state.base}#${section}`} className="text-xs text-slate-500 underline">{t.common.close}</Link>
+            </div>
+          </Item>
+        ) : (
+          <div key={x.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm">
+            <span className="min-w-0 flex-1 truncate">{title(x)}</span>
+            <Link href={href(`edit=${x.id}`)} scroll={false} className="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-navy-700 hover:bg-navy-50">{t.common.edit}</Link>
+          </div>
+        ),
+      )}
+      {state.add === section ? (
+        <Item title={`+ ${t.admin.content.new}`} open>{form(null)}</Item>
+      ) : (
+        <Link href={href(`add=${section}`)} scroll={false} className="inline-flex rounded-lg border border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-navy-700 hover:bg-slate-50">+ {t.admin.content.new}</Link>
+      )}
+    </div>
   );
 }
 
@@ -65,7 +103,7 @@ export function CountryForm({ c, locale, t }: { c: Country | null; locale: Local
   );
 }
 
-export function VisaTypeEditor({ countryId, items, locale, t }: { countryId: string; items: VisaType[]; locale: Locale; t: Dictionary }) {
+export function VisaTypeEditor({ countryId, items, locale, t, state }: { countryId: string; items: VisaType[]; locale: Locale; t: Dictionary; state: EditState }) {
   const tc = t.admin.content;
   const form = (v: VisaType | null) => (
     <ActionForm action={saveVisaTypeAction.bind(null, locale, countryId, v?.id ?? null)} submitLabel={v ? t.common.save : t.common.add} submitSize="sm" resetOnSuccess={!v}>
@@ -80,20 +118,10 @@ export function VisaTypeEditor({ countryId, items, locale, t }: { countryId: str
       <LocalizedInput name="officialFee" label={tc.officialFees} value={v?.officialFee} />
     </ActionForm>
   );
-  return (
-    <div className="space-y-2">
-      {items.map((v) => (
-        <Item key={v.id} title={<><code className="text-xs text-slate-500">{v.code}</code> — {tr(v.name, locale)}{!v.isActive && " (off)"}</>}>
-          {form(v)}
-          <DeleteBtn action={deleteVisaTypeAction.bind(null, locale, v.id)} t={t} />
-        </Item>
-      ))}
-      <Item title={`+ ${tc.new}`}>{form(null)}</Item>
-    </div>
-  );
+  return <EditableList section="types" items={items} state={state} t={t} form={form} title={(x) => <><code className="text-xs text-slate-500">{x.code}</code> — {tr(x.name, locale)}{!x.isActive && " (off)"}</>} del={(x) => deleteVisaTypeAction.bind(null, locale, x.id)} />;
 }
 
-export function ChecklistEditor({ countryId, items, questions, locale, t }: { countryId: string; items: ChecklistItem[]; questions: Question[]; locale: Locale; t: Dictionary }) {
+export function ChecklistEditor({ countryId, items, questions, locale, t, state }: { countryId: string; items: ChecklistItem[]; questions: Question[]; locale: Locale; t: Dictionary; state: EditState }) {
   const tc = t.admin.content;
   const form = (i: ChecklistItem | null) => {
     const cond = (i?.condition || {}) as { question?: string; op?: string; value?: string | string[] };
@@ -117,20 +145,10 @@ export function ChecklistEditor({ countryId, items, questions, locale, t }: { co
       </ActionForm>
     );
   };
-  return (
-    <div className="space-y-2">
-      {items.map((i) => (
-        <Item key={i.id} title={<>{i.required ? "●" : "○"} {tr(i.title, locale)}{i.condition ? " ⚙" : ""}{i.visaTypeCodes.length ? ` [${i.visaTypeCodes.join(",")}]` : ""}{!i.isActive && " (off)"}</>}>
-          {form(i)}
-          <DeleteBtn action={deleteChecklistItemAction.bind(null, locale, i.id)} t={t} />
-        </Item>
-      ))}
-      <Item title={`+ ${tc.new}`}>{form(null)}</Item>
-    </div>
-  );
+  return <EditableList section="checklist" items={items} state={state} t={t} form={form} title={(x) => <>{x.required ? "●" : "○"} {tr(x.title, locale)}{x.condition ? " ⚙" : ""}{x.visaTypeCodes.length ? ` [${x.visaTypeCodes.join(",")}]` : ""}{!x.isActive && " (off)"}</>} del={(x) => deleteChecklistItemAction.bind(null, locale, x.id)} />;
 }
 
-export function QuestionEditor({ countryId, items, locale, t }: { countryId: string | null; items: Question[]; locale: Locale; t: Dictionary }) {
+export function QuestionEditor({ countryId, items, locale, t, state }: { countryId: string | null; items: Question[]; locale: Locale; t: Dictionary; state: EditState }) {
   const tc = t.admin.content;
   const optText = (q: Question | null) =>
     Array.isArray(q?.options) ? (q!.options as { value: string; label: Record<string, string> }[]).map((o) => [o.value, o.label.fr, o.label.ar, o.label.en].join(" | ")).join("\n") : "";
@@ -148,20 +166,10 @@ export function QuestionEditor({ countryId, items, locale, t }: { countryId: str
       <Field label={tc.visaTypeCodes}><Input name="visaTypeCodes" defaultValue={q?.visaTypeCodes.join(", ")} dir="ltr" /></Field>
     </ActionForm>
   );
-  return (
-    <div className="space-y-2">
-      {items.map((q) => (
-        <Item key={q.id} title={<><code className="text-xs text-slate-500">{q.key}</code> — {tr(q.label, locale)} <span className="text-xs text-slate-400">({q.type})</span></>}>
-          {form(q)}
-          <DeleteBtn action={deleteQuestionAction.bind(null, locale, q.id)} t={t} />
-        </Item>
-      ))}
-      <Item title={`+ ${tc.new}`}>{form(null)}</Item>
-    </div>
-  );
+  return <EditableList section="questions" items={items} state={state} t={t} form={form} title={(x) => <><code className="text-xs text-slate-500">{x.key}</code> — {tr(x.label, locale)} <span className="text-xs text-slate-400">({x.type})</span></>} del={(x) => deleteQuestionAction.bind(null, locale, x.id)} />;
 }
 
-export function LinkEditor({ countryId, items, locale, t }: { countryId: string; items: OfficialLink[]; locale: Locale; t: Dictionary }) {
+export function LinkEditor({ countryId, items, locale, t, state }: { countryId: string; items: OfficialLink[]; locale: Locale; t: Dictionary; state: EditState }) {
   const tc = t.admin.content;
   const form = (l: OfficialLink | null) => (
     <ActionForm action={saveLinkAction.bind(null, locale, countryId, l?.id ?? null)} submitLabel={l ? t.common.save : t.common.add} submitSize="sm" resetOnSuccess={!l}>
@@ -173,20 +181,10 @@ export function LinkEditor({ countryId, items, locale, t }: { countryId: string;
       <Field label={tc.sortOrder} className="max-w-[120px]"><Input name="sortOrder" type="number" defaultValue={l?.sortOrder ?? items.length} /></Field>
     </ActionForm>
   );
-  return (
-    <div className="space-y-2">
-      {items.map((l) => (
-        <Item key={l.id} title={<>{tr(l.label, locale)} <span className="text-xs text-slate-400" dir="ltr">{l.url}</span></>}>
-          {form(l)}
-          <DeleteBtn action={deleteLinkAction.bind(null, locale, l.id)} t={t} />
-        </Item>
-      ))}
-      <Item title={`+ ${tc.new}`}>{form(null)}</Item>
-    </div>
-  );
+  return <EditableList section="links" items={items} state={state} t={t} form={form} title={(x) => <>{tr(x.label, locale)} <span className="text-xs text-slate-400" dir="ltr">{x.url}</span></>} del={(x) => deleteLinkAction.bind(null, locale, x.id)} />;
 }
 
-export function FaqEditor({ scope, parentId, items, locale, t }: { scope: "GENERAL" | "COUNTRY" | "SERVICE"; parentId: string | null; items: Faq[]; locale: Locale; t: Dictionary }) {
+export function FaqEditor({ scope, parentId, items, locale, t, state }: { scope: "GENERAL" | "COUNTRY" | "SERVICE"; parentId: string | null; items: Faq[]; locale: Locale; t: Dictionary; state: EditState }) {
   const tc = t.admin.content;
   const form = (f: Faq | null) => (
     <ActionForm action={saveFaqAction.bind(null, locale, scope, parentId, f?.id ?? null)} submitLabel={f ? t.common.save : t.common.add} submitSize="sm" resetOnSuccess={!f}>
@@ -199,15 +197,5 @@ export function FaqEditor({ scope, parentId, items, locale, t }: { scope: "GENER
       </div>
     </ActionForm>
   );
-  return (
-    <div className="space-y-2">
-      {items.map((f) => (
-        <Item key={f.id} title={<>{tr(f.question, locale)}{!f.isPublished && " (off)"}{f.showOnHome && " ★"}</>}>
-          {form(f)}
-          <DeleteBtn action={deleteFaqAction.bind(null, locale, f.id)} t={t} />
-        </Item>
-      ))}
-      <Item title={`+ ${tc.new}`}>{form(null)}</Item>
-    </div>
-  );
+  return <EditableList section="faqs" items={items} state={state} t={t} form={form} title={(x) => <>{tr(x.question, locale)}{!x.isPublished && " (off)"}{x.showOnHome && " ★"}</>} del={(x) => deleteFaqAction.bind(null, locale, x.id)} />;
 }

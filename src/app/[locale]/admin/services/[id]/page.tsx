@@ -12,8 +12,9 @@ import { AdminPageHeader } from "@/components/admin/page-header";
 import { ServiceForm } from "@/components/admin/content-forms";
 import { FaqEditor } from "@/components/admin/country-editors";
 
-export default async function EditService({ params }: { params: Promise<{ locale: string; id: string }> }) {
+export default async function EditService({ params, searchParams }: { params: Promise<{ locale: string; id: string }>; searchParams: Promise<{ edit?: string; add?: string }> }) {
   const { locale: l, id } = await params;
+  const sp = await searchParams;
   const locale = asLocale(l);
   const t = getDictionary(locale);
   await requireStaff(locale, "content.manage");
@@ -23,7 +24,7 @@ export default async function EditService({ params }: { params: Promise<{ locale
     <div className="max-w-5xl space-y-6">
       <AdminPageHeader title={s ? tr(s.name, locale) : `${t.admin.nav.services} — ${t.admin.content.new}`} actions={s && <ConfirmForm action={deleteServiceAction.bind(null, locale, s.id)} confirm={t.admin.content.deleteConfirm}><Button variant="danger">{t.common.delete}</Button></ConfirmForm>} />
       <Card className="p-6"><ServiceForm s={s} locale={locale} t={t} /></Card>
-      {s && <Card><CardHeader title={t.admin.content.faqs} /><div className="p-5"><FaqEditor scope="SERVICE" parentId={s.id} items={s.faqs} locale={locale} t={t} /></div></Card>}
+      {s && <Card><CardHeader title={t.admin.content.faqs} /><div className="p-5"><FaqEditor scope="SERVICE" parentId={s.id} items={s.faqs} locale={locale} t={t} state={{ editId: sp.edit, add: sp.add, base: `/${locale}/admin/services/${s.id}` }} /></div></Card>}
     </div>
   );
 }

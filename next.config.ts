@@ -15,7 +15,7 @@ const csp = [
   // The CMI hosted payment page receives an auto-submitted form.
   "form-action 'self' https://*.cmi.co.ma https://testpayment.cmi.co.ma https://payment.cmi.co.ma",
   "object-src 'none'",
-  isProd ? "upgrade-insecure-requests" : "",
+  isProd && (process.env.APP_URL || "").startsWith("https:") ? "upgrade-insecure-requests" : "",
 ]
   .filter(Boolean)
   .join("; ");
@@ -27,10 +27,11 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
-  ...(isProd ? [{ key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" }] : []),
+  ...(isProd && (process.env.APP_URL || "").startsWith("https:") ? [{ key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" }] : []),
 ];
 
 const nextConfig: NextConfig = {
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   poweredByHeader: false,
   reactStrictMode: true,
   experimental: {
