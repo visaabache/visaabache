@@ -19,7 +19,7 @@ export function Footer({ locale, dict, settings }: { locale: Locale; dict: Dicti
     <footer className="no-print bg-navy-900 text-navy-100">
       <div className="container grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-4">
-          <Logo light className="h-14" />
+          <Logo className="h-16" />
           <p className="text-sm leading-relaxed text-navy-200">{dict.footer.about}</p>
           <p className="text-xs italic text-gold-300">{dict.meta.tagline}</p>
           {socials.length > 0 && (

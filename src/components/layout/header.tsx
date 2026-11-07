@@ -27,7 +27,7 @@ export function Header({ locale, dict, user }: { locale: Locale; dict: Dictionar
     <FloatingHeader>
       <div className="container flex h-16 items-center justify-between gap-4">
         <Link href={l("")} aria-label="VISA ABACHE" className="shrink-0">
-          <Logo className="h-10 sm:h-11" />
+          <Logo className="h-11 sm:h-12" />
         </Link>
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">
           {links.map((x) => (

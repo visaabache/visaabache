@@ -69,7 +69,7 @@ export default async function AdminLayout({ children, params }: { children: Reac
     <div className="min-h-screen bg-slate-50 lg:grid lg:grid-cols-[260px_minmax(0,1fr)]">
       <aside className="no-print border-b border-slate-200 bg-navy-900 text-navy-100 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:border-0">
         <div className="flex items-center justify-between p-4 lg:p-5">
-          <Link href={a("")}><Logo light className="h-10" /></Link>
+          <Link href={a("")}><Logo className="h-11" /></Link>
         </div>
         <AdminNav groups={groups} menuLabel={t.nav.menu} />
       </aside>
