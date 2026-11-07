@@ -2,7 +2,7 @@
   "name": "visa-abache",
   "version": "1.0.0",
   "private": true,
-  "description": "VISA ABACHE — visa assistance & digital administrative services platform (Morocco)",
+  "description": "VISA ABACHE \u2014 visa assistance & digital administrative services platform (Morocco)",
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && node scripts/copy-flags.mjs && next build",
@@ -17,7 +17,8 @@
     "db:reset": "prisma migrate reset --force",
     "admin:create": "tsx scripts/create-admin.ts",
     "backup": "bash scripts/backup.sh",
-    "postinstall": "prisma generate && node scripts/copy-flags.mjs"
+    "postinstall": "prisma generate && node scripts/copy-flags.mjs",
+    "vercel-build": "prisma migrate deploy && npm run build"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

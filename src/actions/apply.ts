@@ -18,6 +18,7 @@ import { notify, notifyAdmins } from "@/lib/notify";
 import { getSettings } from "@/lib/settings";
 import { audit } from "@/lib/audit";
 import { emailSchema, LEGAL_VERSION, nameSchema, phoneSchema } from "@/lib/validation";
+import { countryWizardExtra } from "@/lib/wizard-data";
 import { round2, toNumber } from "@/lib/utils";
 import type { ActionState } from "@/lib/action-state";
 
@@ -257,4 +258,9 @@ export async function submitApplicationAction(localeRaw: string, input: z.input<
     );
   }
   return { ok: true, data: { reference: app.reference, applicationId: app.id } };
+}
+
+/** Wizard helper: destination-specific questions and checklist rules, loaded when a destination is selected. */
+export async function loadCountryWizardAction(localeRaw: string, slug: string) {
+  return countryWizardExtra(String(slug).slice(0, 80), asLocale(localeRaw));
 }

@@ -7,14 +7,13 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { pageMetadata } from "@/lib/seo";
 import { toNumber, toWhatsAppNumber } from "@/lib/utils";
 import { ApplyWizard, type WizardData } from "@/components/apply/wizard";
+import { countryWizardExtra, mapQuestion } from "@/lib/wizard-data";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const locale = asLocale((await params).locale);
   const t = getDictionary(locale);
   return pageMetadata({ locale, path: "/apply", title: t.apply.title, description: t.apply.subtitle });
 }
-
-type QuestionRow = { key: string; label: unknown; help: unknown; type: string; options: unknown; required: boolean; visaTypeCodes: string[] };
 
 export default async function ApplyPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ country?: string; type?: string; package?: string; draft?: string }> }) {
   const locale = asLocale((await params).locale);
@@ -24,27 +23,13 @@ export default async function ApplyPage({ params, searchParams }: { params: Prom
     prisma.country.findMany({
       where: { isActive: true },
       orderBy: { sortOrder: "asc" },
-      include: {
-        visaTypes: { where: { isActive: true }, orderBy: { sortOrder: "asc" } },
-        questions: { where: { isActive: true }, orderBy: { sortOrder: "asc" } },
-        checklistItems: { where: { isActive: true }, orderBy: { sortOrder: "asc" } },
-      },
+      include: { visaTypes: { where: { isActive: true }, orderBy: { sortOrder: "asc" } } },
     }),
     prisma.question.findMany({ where: { countryId: null, isActive: true }, orderBy: { sortOrder: "asc" } }),
     prisma.package.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
     getCurrentUser(),
     getSettings(),
   ]);
-
-  const q = (x: QuestionRow) => ({
-    key: x.key,
-    label: tr(x.label, locale),
-    help: tr(x.help, locale),
-    type: x.type,
-    required: x.required,
-    visaTypeCodes: x.visaTypeCodes,
-    options: Array.isArray(x.options) ? (x.options as { value: string; label: unknown }[]).map((o) => ({ value: o.value, label: tr(o.label, locale) })) : [],
-  });
 
   let draft: WizardData["draft"] = null;
   if (sp.draft && user) {
@@ -69,6 +54,7 @@ export default async function ApplyPage({ params, searchParams }: { params: Prom
     }
   }
 
+  const initialSlug = draft?.country || sp.country || "";
   const data: WizardData = {
     countries: countries.map((c) => ({
       slug: c.slug,
@@ -76,13 +62,9 @@ export default async function ApplyPage({ params, searchParams }: { params: Prom
       iso: c.isoCode,
       region: c.region,
       visaTypes: c.visaTypes.map((v) => ({ code: v.code, name: tr(v.name, locale) })),
-      questions: c.questions.map(q),
-      checklist: c.checklistItems.map((i) => ({
-        id: i.id, title: tr(i.title, locale), description: tr(i.description, locale), required: i.required, visaTypeCodes: i.visaTypeCodes,
-        condition: i.condition, isActive: i.isActive, sortOrder: i.sortOrder,
-      })),
     })),
-    globalQuestions: globalQs.map(q),
+    globalQuestions: globalQs.map((x) => mapQuestion(x, locale)),
+    initialExtra: initialSlug ? { [initialSlug]: await countryWizardExtra(initialSlug, locale) } : {},
     packages: packages
       .filter((p) => !p.isPromotional || !p.promoEndsAt || p.promoEndsAt > new Date())
       .map((p) => ({ slug: p.slug, name: tr(p.name, locale), description: tr(p.description, locale), price: toNumber(p.price), features: trList(p.features, locale), countrySlugs: p.countrySlugs, highlighted: p.isHighlighted })),

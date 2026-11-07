@@ -1,10 +1,10 @@
 "use client";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Check, CheckCircle2, Circle, FileUp, Loader2, PartyPopper, Search, Tag } from "lucide-react";
 import type { Dictionary } from "@/lib/i18n/dictionaries/en";
 import { buildChecklist } from "@/lib/domain/checklist";
-import { saveDraftAction, submitApplicationAction, uploadDocumentAction, checkDiscountAction } from "@/actions/apply";
+import { saveDraftAction, submitApplicationAction, uploadDocumentAction, checkDiscountAction, loadCountryWizardAction } from "@/actions/apply";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
 import { Alert, Card } from "@/components/ui/misc";
@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 
 type Q = { key: string; label: string; help: string; type: string; required: boolean; visaTypeCodes: string[]; options: { value: string; label: string }[] };
 type CL = { id: string; title: string; description: string; required: boolean; visaTypeCodes: string[]; condition: unknown; isActive: boolean; sortOrder: number };
+type Extra = { questions: Q[]; checklist: CL[] };
 type Doc = { id: string; label: string; name: string; checklistItemId: string | null };
 type Details = Record<
   "firstName" | "lastName" | "email" | "phone" | "dateOfBirth" | "nationality" | "passportNumber" | "passportExpiry" | "city" | "purpose" | "departureDate" | "returnDate" | "travelers" | "additionalInfo",
@@ -20,8 +21,9 @@ type Details = Record<
 >;
 
 export type WizardData = {
-  countries: { slug: string; name: string; iso: string; region: string; visaTypes: { code: string; name: string }[]; questions: Q[]; checklist: CL[] }[];
+  countries: { slug: string; name: string; iso: string; region: string; visaTypes: { code: string; name: string }[] }[];
   globalQuestions: Q[];
+  initialExtra: Record<string, Extra | null>;
   packages: { slug: string; name: string; description: string; price: number; features: string[]; countrySlugs: string[]; highlighted: boolean }[];
   user: { email: string; firstName: string; lastName: string; phone: string; city: string } | null;
   initial: { country: string; visaType: string; package: string };
@@ -77,11 +79,24 @@ export function ApplyWizard({ locale, data, t }: { locale: string; data: WizardD
   const [filter, setFilter] = useState("");
 
   const c = data.countries.find((x) => x.slug === country);
+  // Destination-specific questions and checklist rules are loaded on demand (keeps the page light on mobile).
+  const [extras, setExtras] = useState<Record<string, Extra | null>>(data.initialExtra);
+  useEffect(() => {
+    if (!country || country in extras) return;
+    let cancelled = false;
+    loadCountryWizardAction(locale, country).then((x) => {
+      if (!cancelled) setExtras((e) => ({ ...e, [country]: x as Extra | null }));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [country, extras, locale]);
+  const extra = extras[country];
   const questions = useMemo(
-    () => [...data.globalQuestions, ...(c?.questions || [])].filter((q) => !q.visaTypeCodes.length || q.visaTypeCodes.includes(visaType)),
-    [data.globalQuestions, c, visaType],
+    () => [...data.globalQuestions, ...(extra?.questions || [])].filter((q) => !q.visaTypeCodes.length || q.visaTypeCodes.includes(visaType)),
+    [data.globalQuestions, extra, visaType],
   );
-  const previewChecklist = useMemo(() => (c ? buildChecklist(c.checklist, visaType || null, answers) : []), [c, visaType, answers]) as unknown as CL[];
+  const previewChecklist = useMemo(() => (extra ? buildChecklist(extra.checklist, visaType || null, answers) : []), [extra, visaType, answers]) as unknown as CL[];
   const availablePackages = data.packages.filter((p) => !p.countrySlugs.length || p.countrySlugs.includes(country));
   const selectedPkg = availablePackages.find((p) => p.slug === pkg);
   const total = selectedPkg ? Math.max(0, selectedPkg.price - (discount?.amount || 0)) : 0;

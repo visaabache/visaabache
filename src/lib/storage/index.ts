@@ -69,7 +69,8 @@ export function storage(): StorageDriver {
   return driver;
 }
 
-export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+// Default 10 MB. On hosts with request-body limits (e.g. Vercel ≈ 4.5 MB) set UPLOAD_MAX_MB=4.
+export const MAX_UPLOAD_BYTES = Math.max(1, Number(process.env.UPLOAD_MAX_MB) || 10) * 1024 * 1024;
 
 export const ALLOWED_TYPES: Record<string, string> = {
   "application/pdf": "pdf",

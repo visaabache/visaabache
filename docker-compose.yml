@@ -1,0 +1,46 @@
+# Single-server deployment (VPS): app + PostgreSQL + hourly automation runner.
+#   cp .env.example .env   # fill in secrets
+#   docker compose up -d --build
+#   docker compose exec app npm run db:seed
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: visaabache
+      POSTGRES_USER: visaabache
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U visaabache"]
+      interval: 10s
+      retries: 5
+
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://visaabache:${POSTGRES_PASSWORD}@db:5432/visaabache
+      DIRECT_URL: postgresql://visaabache:${POSTGRES_PASSWORD}@db:5432/visaabache
+      STORAGE_LOCAL_DIR: /data/storage
+    volumes:
+      - appdata:/data
+    ports:
+      - "127.0.0.1:3000:3000" # put a TLS reverse proxy (Caddy/Nginx) in front
+    depends_on:
+      db:
+        condition: service_healthy
+
+  cron:
+    image: curlimages/curl:8.10.1
+    restart: unless-stopped
+    env_file: .env
+    entrypoint: ["sh", "-c", "while true; do curl -fsS -H \"Authorization: Bearer $$CRON_SECRET\" http://app:3000/api/cron/run >/dev/null || echo 'cron failed'; sleep 3600; done"]
+    depends_on:
+      - app
+
+volumes:
+  pgdata:
+  appdata:
