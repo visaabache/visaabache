@@ -110,10 +110,10 @@ export async function replyTicketAction(localeRaw: string, ticketId: string, _p:
   if (!ticket || ticket.status === "CLOSED") return { error: t.account.ticketClosed };
   const body = String(fd.get("body") || "").trim().slice(0, 5000);
   if (!body) return { error: t.common.invalidForm };
-  await prisma.$transaction([
-    prisma.ticketMessage.create({ data: { ticketId, authorId: user.id, body } }),
-    prisma.ticket.update({ where: { id: ticketId }, data: { status: "OPEN" } }),
-  ]);
+  await prisma.$transaction(async (tx) => {
+    await tx.ticketMessage.create({ data: { ticketId, authorId: user.id, body } });
+    await tx.ticket.update({ where: { id: ticketId }, data: { status: "OPEN" } });
+  });
   return { ok: true };
 }
 

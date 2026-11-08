@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { notFound } from "next/navigation";
 import { Archive, ArchiveRestore, Download, Eye, FileArchive, FileText, Trash2 } from "lucide-react";
 import { asLocale } from "@/lib/i18n/config";

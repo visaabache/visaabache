@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { notFound } from "next/navigation";
 import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, Circle, Clock, ExternalLink, FileText, Landmark, ListChecks, Receipt, Route, ShieldCheck } from "lucide-react";
 import { asLocale } from "@/lib/i18n/config";

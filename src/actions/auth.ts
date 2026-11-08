@@ -127,10 +127,10 @@ export async function resetPasswordAction(localeRaw: string, _prev: ActionState,
   if (password !== String(fd.get("confirmPassword") || "")) return { error: t.auth.passwordMismatch };
   const rec = await prisma.verificationToken.findUnique({ where: { tokenHash: hashToken(token) } });
   if (!rec || rec.usedAt || rec.expiresAt < new Date() || rec.type !== "PASSWORD_RESET") return { error: t.auth.resetInvalid };
-  await prisma.$transaction([
-    prisma.user.update({ where: { id: rec.userId }, data: { passwordHash: await hashPassword(password) } }),
-    prisma.verificationToken.update({ where: { id: rec.id }, data: { usedAt: new Date() } }),
-  ]);
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({ where: { id: rec.userId }, data: { passwordHash: await hashPassword(password) } });
+    await tx.verificationToken.update({ where: { id: rec.id }, data: { usedAt: new Date() } });
+  });
   await destroyAllSessions(rec.userId);
   await audit(rec.userId, "auth.password_reset", "User", rec.userId);
   return { ok: true, message: t.auth.resetDone, redirectTo: `/${locale}/login` };

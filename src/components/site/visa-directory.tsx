@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { ArrowRight, Search } from "lucide-react";
 
 type C = { slug: string; iso: string; name: string; region: string; schengen: boolean };

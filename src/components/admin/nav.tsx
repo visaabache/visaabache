@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3, BookOpen, Briefcase, FileText, Flag, FolderOpen, Globe, HelpCircle, Inbox, LayoutDashboard, List, Lock, Mail, Megaphone, Menu,

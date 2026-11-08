@@ -214,25 +214,25 @@ export async function submitApplicationAction(localeRaw: string, input: z.input<
   const { ip, userAgent } = await getRequestMeta();
   const status = await getInitialStatus();
   const now = new Date();
-  await prisma.$transaction([
-    prisma.application.update({
+  await prisma.$transaction(async (tx) => {
+    await tx.application.update({
       where: { id: app.id },
       data: {
         isDraft: false, submittedAt: now, consentAt: now, statusId: status.id, packageId: pkg?.id ?? null, discountCodeId: discountId,
         subtotal, discountAmount, totalAmount: round2(subtotal - discountAmount),
       },
-    }),
-    prisma.applicationStatusHistory.create({ data: { applicationId: app.id, toStatusId: status.id } }),
-    prisma.consentRecord.createMany({
+    });
+    await tx.applicationStatusHistory.create({ data: { applicationId: app.id, toStatusId: status.id } });
+    await tx.consentRecord.createMany({
       data: [
         { userId: user.id, email: app.email, type: "TERMS", version: LEGAL_VERSION, granted: true, context: `application:${app.reference}`, ip, userAgent },
         { userId: user.id, email: app.email, type: "DATA_PROCESSING", version: LEGAL_VERSION, granted: true, context: `application:${app.reference}`, ip, userAgent },
         ...(d.consentWhatsapp ? [{ userId: user.id, email: app.email, type: "WHATSAPP" as const, version: LEGAL_VERSION, granted: true, context: `application:${app.reference}`, ip, userAgent }] : []),
       ],
-    }),
-    ...(discountId ? [prisma.discountCode.update({ where: { id: discountId }, data: { usedCount: { increment: 1 } } })] : []),
-    ...(d.consentWhatsapp ? [prisma.user.update({ where: { id: user.id }, data: { whatsappOptIn: true } })] : []),
-  ]);
+    });
+    if (discountId) await tx.discountCode.update({ where: { id: discountId }, data: { usedCount: { increment: 1 } } });
+    if (d.consentWhatsapp) await tx.user.update({ where: { id: user.id }, data: { whatsappOptIn: true } });
+  });
   await audit(user.id, "application.submitted", "Application", app.id, { reference: app.reference });
 
   if (pkg && subtotal - discountAmount > 0) await ensureApplicationInvoice(app.id);

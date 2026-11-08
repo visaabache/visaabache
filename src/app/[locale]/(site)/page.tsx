@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { ArrowRight, BadgeCheck, FileCheck, HeartHandshake, Lock, MapPinned, ScrollText, ShieldCheck, Sparkles, UserRoundCheck, Wallet, Plane } from "lucide-react";
 import { asLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n";

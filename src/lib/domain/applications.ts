@@ -35,8 +35,8 @@ export async function changeApplicationStatus(applicationId: string, statusId: s
   if (app.statusId === statusId && !opts.note) return app;
 
   const now = new Date();
-  await prisma.$transaction([
-    prisma.application.update({
+  await prisma.$transaction(async (tx) => {
+    await tx.application.update({
       where: { id: applicationId },
       data: {
         statusId,
@@ -44,11 +44,11 @@ export async function changeApplicationStatus(applicationId: string, statusId: s
         cancelledAt: status.kind === "CANCELLED" ? now : app.cancelledAt,
         archivedAt: status.kind === "OPEN" || status.kind === "WAITING_CUSTOMER" ? null : app.archivedAt,
       },
-    }),
-    prisma.applicationStatusHistory.create({
+    });
+    await tx.applicationStatusHistory.create({
       data: { applicationId, fromStatusId: app.statusId, toStatusId: statusId, note: opts.note || null, changedById: opts.actorId ?? null },
-    }),
-  ]);
+    });
+  });
   await audit(opts.actorId, "application.status_changed", "Application", applicationId, { from: app.status.key, to: status.key });
 
   if (!opts.silent && status.notifyCustomer && !app.isDraft) {

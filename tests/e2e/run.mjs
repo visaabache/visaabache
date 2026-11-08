@@ -30,10 +30,13 @@ async function step(name, fn) {
 }
 
 const browser = await chromium.launch();
+// Optional extra request headers, e.g. E2E_HEADERS='{"Cloudflare-Workers-Version-Overrides":"app=\\"<version-id>\\""}'
+// to test a not-yet-promoted Cloudflare Worker version.
+const EXTRA = process.env.E2E_HEADERS ? JSON.parse(process.env.E2E_HEADERS) : undefined;
 const errors = [];
 
 console.log("Public site");
-const pub = await browser.newPage();
+const pub = await browser.newPage({ extraHTTPHeaders: EXTRA });
 pub.on("pageerror", (e) => errors.push(`${pub.url()}: ${e.message.slice(0, 120)}`));
 for (const path of ["/fr", "/ar", "/en", "/fr/visas", "/fr/visas/france", "/ar/visas/canada", "/fr/services", "/fr/pricing", "/fr/blog", "/fr/faq", "/fr/contact", "/fr/legal/privacy", "/fr/track", "/sitemap.xml", "/robots.txt"]) {
   await step(`GET ${path}`, async () => {
@@ -55,7 +58,7 @@ await step("no horizontal overflow on mobile", async () => {
 });
 
 console.log("Customer journey");
-const customer = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+const customer = await browser.newPage({ viewport: { width: 1280, height: 900 }, extraHTTPHeaders: EXTRA });
 customer.on("pageerror", (e) => errors.push(`${customer.url()}: ${e.message.slice(0, 120)}`));
 const email = `e2e${Date.now()}@example.com`;
 let reference = "";
@@ -111,7 +114,7 @@ console.log("Admin");
 if (!ADMIN_PASSWORD) {
   console.log("  (skipped: set ADMIN_PASSWORD)");
 } else {
-  const admin = await browser.newPage({ viewport: { width: 1400, height: 900 } });
+  const admin = await browser.newPage({ viewport: { width: 1400, height: 900 }, extraHTTPHeaders: EXTRA });
   admin.on("pageerror", (e) => errors.push(`${admin.url()}: ${e.message.slice(0, 120)}`));
   admin.on("dialog", (d) => d.accept());
   await step("login as owner", async () => {

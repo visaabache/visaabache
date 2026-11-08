@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { asLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n";
 import { formatDate, tr } from "@/lib/i18n/localized";

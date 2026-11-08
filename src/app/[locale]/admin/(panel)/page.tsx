@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { AlertTriangle, CheckCircle2, Circle, Clock, FileSearch, FolderPlus, Hourglass, Inbox, MessagesSquare, TrendingUp, Wallet, Banknote } from "lucide-react";
 import { asLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n";

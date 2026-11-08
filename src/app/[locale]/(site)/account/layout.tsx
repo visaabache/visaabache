@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { Bell, FileText, FolderOpen, LayoutDashboard, LifeBuoy, LogOut, Receipt, UserRound, Wallet } from "lucide-react";
 import { asLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n";

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { Trash2 } from "lucide-react";
 import type { ChecklistItem, Country, Faq, OfficialLink, Question, VisaType } from "@prisma/client";
 import type { Locale } from "@/lib/i18n/config";

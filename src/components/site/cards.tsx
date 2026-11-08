@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { ArrowRight, Check, Star } from "lucide-react";
 import type { Country, Package, Service, Testimonial } from "@prisma/client";
 import type { Locale } from "@/lib/i18n/config";

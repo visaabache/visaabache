@@ -52,10 +52,10 @@ export async function staffReplyTicketAction(locale: string, ticketId: string, _
   if (!body) return { error: getDictionary(asLocale(locale)).common.invalidForm };
   const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, include: { user: true } });
   if (!ticket) return { error: "Not found" };
-  await prisma.$transaction([
-    prisma.ticketMessage.create({ data: { ticketId, authorId: actor.id, fromStaff: true, body } }),
-    prisma.ticket.update({ where: { id: ticketId }, data: { status: "ANSWERED" } }),
-  ]);
+  await prisma.$transaction(async (tx) => {
+    await tx.ticketMessage.create({ data: { ticketId, authorId: actor.id, fromStaff: true, body } });
+    await tx.ticket.update({ where: { id: ticketId }, data: { status: "ANSWERED" } });
+  });
   const l = asLocale(ticket.user.locale);
   await notify({
     key: "ticket_reply",

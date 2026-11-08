@@ -91,13 +91,13 @@ export async function refundPayment(paymentId: string, actorId: string, amount: 
   const amt = round2(Math.min(amount, remaining));
   if (amt <= 0) throw new Error("Nothing left to refund");
   const refunded = round2(toNumber(payment.refundedAmount) + amt);
-  await prisma.$transaction([
-    prisma.refund.create({ data: { paymentId, amount: amt, reason, reference, processedById: actorId } }),
-    prisma.payment.update({
+  await prisma.$transaction(async (tx) => {
+    await tx.refund.create({ data: { paymentId, amount: amt, reason, reference, processedById: actorId } });
+    await tx.payment.update({
       where: { id: paymentId },
       data: { refundedAmount: refunded, status: refunded >= toNumber(payment.amount) - 0.001 ? "REFUNDED" : "PARTIALLY_REFUNDED" },
-    }),
-  ]);
+    });
+  });
   if (payment.invoiceId) await recalcInvoice(payment.invoiceId);
   await audit(actorId, "payment.refunded", "Payment", paymentId, { amount: amt, reason });
   const locale = asLocale(payment.user.locale);

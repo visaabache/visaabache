@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import type { Banner } from "@prisma/client";
 import { Sparkles } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";

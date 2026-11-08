@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { notFound } from "next/navigation";
 import { AlertTriangle, CheckCircle2, Circle, Download, FileText } from "lucide-react";
 import { asLocale } from "@/lib/i18n/config";

@@ -9,6 +9,8 @@
   "workers_dev": true,
   "preview_urls": false,
   "observability": { "enabled": true },
+  // Deployment id, used by the page cache in cf-worker.ts so a new deploy never serves HTML from an older one.
+  "version_metadata": { "binding": "CF_VERSION_METADATA" },
   // Hourly business automations (see cf-worker.ts)
   "triggers": { "crons": ["0 * * * *"] },
   // Non-secret configuration. Secrets (DATABASE_URL, SESSION_SECRET, DOCUMENT_ENCRYPTION_KEY, CRON_SECRET…)

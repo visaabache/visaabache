@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { notFound } from "next/navigation";
 import { Mail, Phone } from "lucide-react";
 import { asLocale } from "@/lib/i18n/config";

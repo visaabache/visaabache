@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { Download, Eye } from "lucide-react";
 import type { PaymentStatus } from "@prisma/client";
 import { asLocale } from "@/lib/i18n/config";

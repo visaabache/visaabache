@@ -1,6 +1,6 @@
 "use client";
 import { useActionState } from "react";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import type { ActionState } from "@/lib/action-state";
 import { Checkbox, Field, Input } from "@/components/ui/form";
 import { Alert } from "@/components/ui/misc";

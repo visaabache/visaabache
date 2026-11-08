@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState, useTransition } from "react";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { ArrowLeft, ArrowRight, Check, CheckCircle2, Circle, FileUp, Loader2, PartyPopper, Search, Tag } from "lucide-react";
 import type { Dictionary } from "@/lib/i18n/dictionaries/en";
 import { buildChecklist } from "@/lib/domain/checklist";
