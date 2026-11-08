@@ -92,6 +92,14 @@ const fr: Dictionary = {
     logout: "Déconnexion",
     menu: "Menu",
   },
+  credits: {
+    title: "Crédits photos",
+    intro: "Les photos des destinations proviennent de Wikimedia Commons et sont utilisées selon leurs licences libres. Les images ont été redimensionnées et recadrées pour le site. Merci aux photographes.",
+    photo: "Photo",
+    by: "par",
+    license: "Licence",
+    source: "Source",
+  },
   footer: {
     about: "Assistance visa indépendante et services administratifs digitaux, basée au Maroc.",
     quickLinks: "Liens rapides",
@@ -105,6 +113,7 @@ const fr: Dictionary = {
     cookies: "Politique cookies",
     refunds: "Remboursement & annulation",
     disclaimer: "Mentions légales",
+    photoCredits: "Crédits photos",
     cookieSettings: "Paramètres cookies",
     cndp: "Données personnelles traitées conformément à la loi marocaine 09-08.",
   },

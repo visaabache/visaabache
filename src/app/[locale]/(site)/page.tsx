@@ -10,6 +10,7 @@ import { JsonLd, pageMetadata } from "@/lib/seo";
 import { appUrl, whatsappLink } from "@/lib/utils";
 import { ButtonLink } from "@/components/ui/button";
 import { Flag, SectionHeading, Card } from "@/components/ui/misc";
+import { DestinationPhoto } from "@/components/site/destination-photo";
 import { WhatsAppIcon } from "@/components/ui/icons";
 import { FaqList, ServiceCard, TestimonialCard } from "@/components/site/cards";
 import { DestinationSearch } from "@/components/site/destination-search";
@@ -175,22 +176,26 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </Link>
         </div>
         <div className="reveal-stagger mt-10 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          {popular.map((c) => (
+          {popular.map((c, i) => (
             <Link
               key={c.id}
               href={l(`/visas/${c.slug}`)}
-              className="spotlight group relative flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-gold-300 hover:shadow-premium sm:p-5"
+              className="group relative isolate flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-3xl bg-navy-900 p-4 text-white shadow-soft ring-1 ring-black/5 transition duration-500 hover:-translate-y-1 hover:shadow-premium sm:aspect-[4/3] sm:p-5 lg:aspect-[3/4]"
             >
-              <div className="flex items-center justify-between">
-                <Flag code={c.isoCode} className="h-9 w-14 rounded-md transition duration-500 group-hover:scale-110 sm:h-10 sm:w-16" />
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-navy-50 text-navy-700 transition group-hover:bg-gold-500 group-hover:text-navy-900">
-                  <ArrowRight className="rtl-flip h-4 w-4 -rotate-45 transition group-hover:rotate-0" />
-                </span>
-              </div>
-              <div>
-                <p className="font-semibold text-navy-800">{tr(c.name, locale)}</p>
-                <p className="text-xs text-slate-500">{c.isSchengen ? t.visas.schengen : t.regions[c.region]}</p>
-              </div>
+              <DestinationPhoto
+                slug={c.slug}
+                alt={tr(c.name, locale)}
+                priority={i < 4}
+                sizes="(min-width: 1024px) 25vw, 50vw"
+                className="absolute inset-0 -z-10 h-full w-full transition duration-700 ease-out group-hover:scale-110"
+              />
+              <div className="absolute inset-0 -z-10 bg-gradient-to-t from-navy-950/95 via-navy-950/35 to-navy-950/5" aria-hidden />
+              <span className="absolute end-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/25 backdrop-blur transition duration-300 group-hover:bg-gold-500 group-hover:text-navy-900">
+                <ArrowRight className="rtl-flip h-4 w-4 -rotate-45 transition group-hover:rotate-0" />
+              </span>
+              <Flag code={c.isoCode} className="mb-3 h-7 w-10 rounded shadow-md ring-1 ring-white/30 transition duration-500 group-hover:scale-110" />
+              <p className="font-display text-xl font-semibold leading-tight sm:text-2xl">{tr(c.name, locale)}</p>
+              <p className="mt-0.5 text-xs text-white/75">{c.isSchengen ? t.visas.schengen : t.regions[c.region]}</p>
             </Link>
           ))}
         </div>

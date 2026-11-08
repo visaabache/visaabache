@@ -61,6 +61,7 @@ export function Footer({ locale, dict, settings }: { locale: Locale; dict: Dicti
               [l("/legal/refunds"), dict.footer.refunds],
               [l("/legal/cookies"), dict.footer.cookies],
               [l("/legal/disclaimer"), dict.footer.disclaimer],
+              [l("/credits"), dict.footer.photoCredits],
             ].map(([href, label]) => (
               <li key={href}>
                 <Link href={href} className="hover:text-white">

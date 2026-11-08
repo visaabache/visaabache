@@ -91,6 +91,14 @@ const en = {
     logout: "Log out",
     menu: "Menu",
   },
+  credits: {
+    title: "Photo credits",
+    intro: "Destination photos come from Wikimedia Commons and are used under their free licenses. Images were resized and cropped for the website. Thank you to the photographers.",
+    photo: "Photo",
+    by: "by",
+    license: "License",
+    source: "Source",
+  },
   footer: {
     about: "Independent visa assistance and digital administrative services based in Morocco.",
     quickLinks: "Quick links",
@@ -104,6 +112,7 @@ const en = {
     cookies: "Cookie policy",
     refunds: "Refund & cancellation policy",
     disclaimer: "Legal notice",
+    photoCredits: "Photo credits",
     cookieSettings: "Cookie settings",
     cndp: "Personal data processed in accordance with Moroccan Law 09-08.",
   },

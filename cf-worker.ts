@@ -16,7 +16,7 @@ type KV = {
 type Env = { CRON_SECRET?: string; APP_URL?: string; STATIC_ASSETS?: KV; CF_VERSION_METADATA?: { id?: string }; [k: string]: unknown };
 type Ctx = { waitUntil(p: Promise<unknown>): void };
 
-const STATIC_PREFIXES = ["/_next/static/", "/flags/", "/brand/"];
+const STATIC_PREFIXES = ["/_next/static/", "/flags/", "/brand/", "/images/"];
 
 async function serveAsset(env: Env, pathname: string): Promise<Response | null> {
   if (!env.STATIC_ASSETS) return null;
@@ -56,7 +56,7 @@ function withAssets(env: Env): Env {
  */
 const PAGE_TTL = 12 * 60 * 60;
 const CONTENT_VERSION_KEY = "pagecache:content-version";
-const CACHEABLE_PAGE = /^\/(fr|ar|en)(\/(visas|services|blog)(\/[a-z0-9-]+)?|\/legal\/[a-z0-9-]+|\/(pricing|faq|about|contact|track))?\/?$/;
+const CACHEABLE_PAGE = /^\/(fr|ar|en)(\/(visas|services|blog)(\/[a-z0-9-]+)?|\/legal\/[a-z0-9-]+|\/(pricing|faq|about|contact|track|credits))?\/?$/;
 const ADMIN_PATH = /^\/(fr|ar|en)\/admin(\/|$)/;
 const KEPT_HEADERS = [
   "content-type", "content-language", "content-security-policy", "x-frame-options", "x-content-type-options",

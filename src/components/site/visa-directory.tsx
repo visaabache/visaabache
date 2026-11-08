@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "@/components/ui/link";
 import { ArrowRight, Search } from "lucide-react";
+import { DestinationPhoto } from "@/components/site/destination-photo";
 
 type C = { slug: string; iso: string; name: string; region: string; schengen: boolean };
 
@@ -32,16 +33,22 @@ export function VisaDirectory({ countries, locale, regions, placeholder, schenge
             <h2 className="mb-5 flex items-center gap-3 font-display text-2xl font-semibold text-navy-800">
               {regions[r]} <span className="text-sm font-normal text-slate-400">({list.length})</span>
             </h2>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
               {list.map((c) => (
-                <Link key={c.slug} href={`/${locale}/visas/${c.slug}`} className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm transition hover:-translate-y-0.5 hover:border-gold-300 hover:shadow-soft">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={`/flags/${c.iso}.svg`} alt="" className="h-8 w-12 rounded-[3px] object-cover shadow-sm ring-1 ring-black/5" loading="lazy" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-navy-800">{c.name}</p>
-                    {c.schengen && <p className="text-xs text-slate-500">{schengenLabel}</p>}
+                <Link key={c.slug} href={`/${locale}/visas/${c.slug}`} className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-gold-300 hover:shadow-premium">
+                  <div className="relative aspect-[16/10] overflow-hidden bg-navy-900">
+                    <DestinationPhoto slug={c.slug} alt={c.name} sizes="(min-width: 1024px) 25vw, 50vw" className="h-full w-full transition duration-700 ease-out group-hover:scale-110" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-navy-950/50 to-transparent" aria-hidden />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={`/flags/${c.iso}.svg`} alt="" className="absolute bottom-2.5 start-2.5 h-6 w-9 rounded-[3px] object-cover shadow-md ring-1 ring-white/40" loading="lazy" />
                   </div>
-                  <ArrowRight className="rtl-flip h-4 w-4 text-slate-300 group-hover:text-gold-600" />
+                  <div className="flex items-center gap-2 p-3 sm:p-3.5">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold text-navy-800">{c.name}</p>
+                      {c.schengen && <p className="truncate text-xs text-slate-500">{schengenLabel}</p>}
+                    </div>
+                    <ArrowRight className="rtl-flip h-4 w-4 shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-gold-600 rtl:group-hover:-translate-x-0.5" />
+                  </div>
                 </Link>
               ))}
             </div>

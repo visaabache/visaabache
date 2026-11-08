@@ -29,6 +29,7 @@ const config: Config = {
         "fade-up": { "0%": { opacity: "0", transform: "translateY(12px)" }, "100%": { opacity: "1", transform: "none" } },
         "fade-in": { "0%": { opacity: "0" }, "100%": { opacity: "1" } },
         shimmer: { "100%": { transform: "translateX(100%)" } },
+        "ken-burns": { "0%": { transform: "scale(1.04)" }, "100%": { transform: "scale(1.14) translate(-1.5%, -1%)" } },
         "word-in": { "0%": { opacity: "0", transform: "translateY(0.6em) rotate(2deg)", filter: "blur(8px)" }, "100%": { opacity: "1", transform: "none", filter: "blur(0)" } },
         aurora: {
           "0%,100%": { transform: "translate3d(0,0,0) scale(1) rotate(0deg)" },
@@ -49,6 +50,7 @@ const config: Config = {
       animation: {
         "fade-up": "fade-up .6s cubic-bezier(.2,.7,.2,1) both",
         "fade-in": "fade-in .4s ease-out both",
+        "ken-burns": "ken-burns 24s ease-out both alternate infinite",
         "word-in": "word-in .8s cubic-bezier(.2,.7,.2,1) both",
         aurora: "aurora 18s ease-in-out infinite",
         "aurora-slow": "aurora 26s ease-in-out infinite reverse",

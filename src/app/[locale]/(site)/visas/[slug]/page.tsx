@@ -1,5 +1,7 @@
 import Link from "@/components/ui/link";
 import { notFound } from "next/navigation";
+import { DestinationPhoto, PhotoCredit } from "@/components/site/destination-photo";
+import { photoFor } from "@/lib/destination-photos";
 import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, Circle, Clock, ExternalLink, FileText, Landmark, ListChecks, Receipt, Route, ShieldCheck } from "lucide-react";
 import { asLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n";
@@ -111,9 +113,19 @@ export default async function CountryPage({ params }: { params: Promise<{ locale
         ]}
       />
 
-      <section className="noise relative overflow-hidden bg-navy-950 text-white">
-        <Aurora />
-        <div className="bg-grid mask-radial absolute inset-0 opacity-40" aria-hidden />
+      <section className="noise relative isolate overflow-hidden bg-navy-950 text-white">
+        {photoFor(c.slug) ? (
+          <>
+            <DestinationPhoto slug={c.slug} alt={name} priority sizes="100vw" className="absolute inset-0 -z-10 h-full w-full animate-ken-burns" />
+            <div className="absolute inset-0 -z-10 bg-gradient-to-r from-navy-950/90 via-navy-950/70 to-navy-950/20 rtl:bg-gradient-to-l" aria-hidden />
+            <div className="absolute inset-0 -z-10 bg-gradient-to-t from-navy-950/70 to-transparent" aria-hidden />
+          </>
+        ) : (
+          <>
+            <Aurora />
+            <div className="bg-grid mask-radial absolute inset-0 opacity-40" aria-hidden />
+          </>
+        )}
         <div className="container relative py-12 sm:py-16">
           <nav className="mb-6 text-sm text-navy-200" aria-label="Breadcrumb">
             <Link href={`/${locale}`} className="hover:text-white">{t.nav.home}</Link> / <Link href={`/${locale}/visas`} className="hover:text-white">{t.nav.visas}</Link> / <span className="text-white">{name}</span>
@@ -139,6 +151,7 @@ export default async function CountryPage({ params }: { params: Promise<{ locale
               </a>
             )}
           </div>
+          <PhotoCredit slug={c.slug} label={t.credits.photo} className="mt-10 text-white/55" />
         </div>
       </section>
 
