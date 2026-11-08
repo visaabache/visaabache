@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return pageMetadata({ locale, path: "/credits", title: t.credits.title, description: t.credits.intro.slice(0, 160) });
 }
 
-/** Attribution for every third-party photo used on the site (required by CC BY / CC BY-SA). */
+/** Credits for every third-party photo used on the site. */
 export default async function CreditsPage({ params }: { params: Promise<{ locale: string }> }) {
   const locale = asLocale((await params).locale);
   const t = getDictionary(locale);
@@ -36,7 +36,7 @@ export default async function CreditsPage({ params }: { params: Promise<{ locale
                   {p.licenseUrl ? <a className="text-navy-700 underline" href={p.licenseUrl} target="_blank" rel="noopener noreferrer license">{p.license}</a> : p.license}
                 </p>
                 <p className="text-slate-600">
-                  {t.credits.source}: <a className="text-navy-700 underline" href={p.page} target="_blank" rel="noopener noreferrer">Wikimedia Commons</a>
+                  {t.credits.source}: <a className="text-navy-700 underline" href={p.page} target="_blank" rel="noopener noreferrer">Pixabay</a>
                 </p>
               </div>
             </li>

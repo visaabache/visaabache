@@ -93,7 +93,7 @@ const en = {
   },
   credits: {
     title: "Photo credits",
-    intro: "Destination photos come from Wikimedia Commons and are used under their free licenses. Images were resized and cropped for the website. Thank you to the photographers.",
+    intro: "Destination photos come from Pixabay and are used under the Pixabay Content License (free for commercial use). Images were resized and cropped for the website. Thank you to the photographers.",
     photo: "Photo",
     by: "by",
     license: "License",

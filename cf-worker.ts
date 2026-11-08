@@ -22,7 +22,7 @@ async function serveAsset(env: Env, pathname: string): Promise<Response | null> 
   if (!env.STATIC_ASSETS) return null;
   const { value, metadata } = await env.STATIC_ASSETS.getWithMetadata(decodeURIComponent(pathname), "arrayBuffer");
   if (!value) return null;
-  const immutable = pathname.startsWith("/_next/static/");
+  const immutable = pathname.startsWith("/_next/static/") || pathname.startsWith("/images/destinations/");
   return new Response(value, {
     headers: {
       "Content-Type": metadata?.ct || "application/octet-stream",

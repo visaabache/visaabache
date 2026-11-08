@@ -94,7 +94,7 @@ const fr: Dictionary = {
   },
   credits: {
     title: "Crédits photos",
-    intro: "Les photos des destinations proviennent de Wikimedia Commons et sont utilisées selon leurs licences libres. Les images ont été redimensionnées et recadrées pour le site. Merci aux photographes.",
+    intro: "Les photos des destinations proviennent de Pixabay et sont utilisées selon la licence de contenu Pixabay (utilisation commerciale gratuite). Les images ont été redimensionnées et recadrées pour le site. Merci aux photographes.",
     photo: "Photo",
     by: "par",
     license: "Licence",
