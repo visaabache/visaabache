@@ -107,7 +107,7 @@ export default async function AdminApplication({ params }: { params: Promise<{ l
                 <CardHeader title={ta.changeStatus} />
                 <div className="p-5">
                   <ActionForm action={changeStatusAction.bind(null, locale, app.id)} submitLabel={ta.update} resetOnSuccess>
-                    <Select name="statusId" defaultValue={app.statusId}>
+                    <Select key={app.statusId} name="statusId" defaultValue={app.statusId}>
                       {statuses.map((s) => <option key={s.id} value={s.id}>{tr(s.label, locale)}{s.notifyCustomer ? " ✉" : ""}</option>)}
                     </Select>
                     <Textarea name="note" rows={3} placeholder={ta.statusNote} maxLength={2000} />
