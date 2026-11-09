@@ -6,7 +6,7 @@ import { dir, htmlLang, isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n";
 import { getSettings } from "@/lib/settings";
 import { CookieConsent } from "@/components/layout/cookie-consent";
-import { RevealObserver } from "@/components/layout/reveal";
+import { RevealObserver, REVEAL_SCRIPT } from "@/components/layout/reveal";
 import { appUrl } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -30,7 +30,10 @@ export default async function RootLayout({ children, params }: { children: React
   const dict = getDictionary(locale);
   const settings = await getSettings();
   return (
-    <html lang={htmlLang[locale]} dir={dir(locale)}>
+    <html lang={htmlLang[locale]} dir={dir(locale)} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: REVEAL_SCRIPT }} />
+      </head>
       <body className="min-h-screen">
         {children}
         <RevealObserver />
