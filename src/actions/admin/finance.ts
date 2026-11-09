@@ -11,6 +11,7 @@ import { notify } from "@/lib/notify";
 import { audit } from "@/lib/audit";
 import { money, str } from "@/lib/form-data";
 import type { ActionState } from "@/lib/action-state";
+import { customerAccountsEnabled, customerApplicationPath } from "@/lib/features";
 
 const METHODS: PaymentMethod[] = ["CARD", "BANK_TRANSFER", "CASH", "OTHER"];
 
@@ -101,7 +102,7 @@ export async function cancelInvoiceAction(locale: string, invoiceId: string) {
 
 export async function sendInvoiceReminderAction(locale: string, invoiceId: string) {
   const actor = await assertPermission("finance.manage");
-  const inv = await prisma.invoice.findUnique({ where: { id: invoiceId }, include: { user: true } });
+  const inv = await prisma.invoice.findUnique({ where: { id: invoiceId }, include: { user: true, application: { select: { id: true, reference: true } } } });
   if (!inv) return;
   const l = asLocale(inv.user.locale);
   await notify({
@@ -112,7 +113,7 @@ export async function sendInvoiceReminderAction(locale: string, invoiceId: strin
     phone: inv.user.phone,
     whatsappOptIn: inv.user.whatsappOptIn,
     vars: { firstName: inv.user.firstName, invoiceNumber: inv.number, amount: `${invoiceBalance(inv).toFixed(2)} MAD` },
-    link: `/${l}/account/invoices/${inv.id}`,
+    link: customerAccountsEnabled() || !inv.application ? `/${l}/account/invoices/${inv.id}` : customerApplicationPath(l, inv.application),
   });
   await prisma.invoice.update({ where: { id: invoiceId }, data: { lastReminderAt: new Date() } });
   await audit(actor.id, "invoice.reminder_sent", "Invoice", invoiceId);

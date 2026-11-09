@@ -8,6 +8,7 @@ import { round2, toNumber } from "../utils";
 import { recalcInvoice } from "./invoices";
 import { paymentReference } from "./references";
 import { audit } from "../audit";
+import { customerAccountsEnabled, customerApplicationPath } from "@/lib/features";
 
 export async function createPayment(input: {
   userId: string;
@@ -70,8 +71,8 @@ export async function confirmPayment(paymentId: string, opts: { actorId?: string
       paymentReference: payment.reference,
       invoiceNumber: payment.invoice?.number ?? "",
     },
-    link: `/${locale}/account/payments`,
-    ctaLabel: tr({ fr: "Voir mes paiements", ar: "عرض مدفوعاتي", en: "View my payments" }, locale),
+    link: await paymentsLink(locale, payment.invoiceId),
+    ctaLabel: customerAccountsEnabled() ? tr({ fr: "Voir mes paiements", ar: "عرض مدفوعاتي", en: "View my payments" }, locale) : tr({ fr: "Suivre mon dossier", ar: "تتبع ملفي", en: "Track my file" }, locale),
   });
   return updated;
 }
@@ -107,6 +108,13 @@ export async function refundPayment(paymentId: string, actorId: string, amount: 
     userId: payment.userId,
     email: payment.user.email,
     vars: { firstName: payment.user.firstName, amount: `${amt.toFixed(2)} MAD`, paymentReference: payment.reference },
-    link: `/${locale}/account/payments`,
+    link: await paymentsLink(locale, payment.invoiceId),
   });
+}
+
+/** Customer link for payment e-mails: their payments page, or the tracking page of the related application. */
+async function paymentsLink(locale: string, invoiceId: string | null) {
+  if (customerAccountsEnabled()) return `/${locale}/account/payments`;
+  const inv = invoiceId ? await prisma.invoice.findUnique({ where: { id: invoiceId }, select: { application: { select: { id: true, reference: true } } } }) : null;
+  return inv?.application ? customerApplicationPath(locale, inv.application) : `/${locale}/track`;
 }

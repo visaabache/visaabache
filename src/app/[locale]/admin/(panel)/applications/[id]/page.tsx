@@ -21,6 +21,7 @@ import { WhatsAppIcon } from "@/components/ui/icons";
 import { ActionForm } from "@/components/forms/action-form";
 import { ConfirmForm } from "@/components/admin/confirm-form";
 import { StatusTimeline } from "@/components/account/timeline";
+import { customerApplicationPath } from "@/lib/features";
 
 type ChecklistSnap = { id: string; title: unknown; required: boolean }[];
 
@@ -55,7 +56,7 @@ export default async function AdminApplication({ params }: { params: Promise<{ l
   const answers = (app.answers as Record<string, string>) || {};
   const openRequests = app.documentRequests.filter((r) => r.status === "OPEN");
   const customerLocale = asLocale(app.locale);
-  const link = appUrl(`/${customerLocale}/account/applications/${app.id}`);
+  const link = appUrl(customerApplicationPath(customerLocale, app));
   const waStatus = whatsappLink(app.phone, `${await renderWhatsAppText("application_status_changed", customerLocale, { firstName: app.firstName, reference: app.reference, status: tr(app.status.label, customerLocale), note: "", link })}`);
   const waDocs = openRequests.length
     ? whatsappLink(app.phone, await renderWhatsAppText("documents_reminder", customerLocale, { firstName: app.firstName, reference: app.reference, documents: openRequests.map((r) => `• ${r.title}`).join("\n"), link }))

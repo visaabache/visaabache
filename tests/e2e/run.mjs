@@ -19,7 +19,12 @@ const pdf = join(mkdtempSync(join(tmpdir(), "va-e2e-")), "passport.pdf");
 writeFileSync(pdf, "%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n");
 
 let failures = 0;
+// Optional pause before each step / admin page (E2E_SLOW_MS), to stay within Cloudflare's free-plan CPU allowance.
+const SLOW = Number(process.env.E2E_SLOW_MS || 0);
+const pause = () => (SLOW ? new Promise((r) => setTimeout(r, SLOW)) : Promise.resolve());
+
 async function step(name, fn) {
+  await pause();
   try {
     await fn();
     console.log(`  ✓ ${name}`);
@@ -62,7 +67,7 @@ const customer = await browser.newPage({ viewport: { width: 1280, height: 900 },
 customer.on("pageerror", (e) => errors.push(`${customer.url()}: ${e.message.slice(0, 120)}`));
 const email = `e2e${Date.now()}@example.com`;
 let reference = "";
-await step("apply wizard (account, checklist, upload, package, submit)", async () => {
+await step("guest application (no account, no upload) → tracking code", async () => {
   await customer.goto(BASE + "/fr/apply?country=france");
   await customer.click("text=Tout accepter").catch(() => {});
   await customer.click('button:has-text("Court séjour — Tourisme")');
@@ -70,17 +75,13 @@ await step("apply wizard (account, checklist, upload, package, submit)", async (
   await customer.fill('input[autocomplete="family-name"]', "Client");
   await customer.fill('input[type="email"]', email);
   await customer.fill('input[type="tel"]', "0612345678");
-  await customer.fill('input[type="password"]', "Password12345");
-  await customer.check("fieldset input[type=checkbox]");
+  if (await customer.$('input[type="password"]')) throw new Error("account step still shown");
   await customer.click('button:has-text("Continuer")');
   await customer.selectOption("select", "employed");
   for (const b of await customer.$$('button:has-text("Non")')) await b.click();
   await customer.click('button:has-text("Continuer")');
   await customer.waitForSelector("text=Attestation de travail");
-  await customer.click('button:has-text("Enregistrer et continuer")');
-  await customer.waitForSelector("text=Téléversez vos documents");
-  await (await customer.$("input[type=file]")).setInputFiles(pdf);
-  await customer.waitForSelector("text=Téléversé");
+  if (await customer.$("input[type=file]")) throw new Error("upload still shown");
   await customer.click('button:has-text("Continuer")');
   await customer.click('button:has-text("Assistance visa standard")');
   await customer.click('button:has-text("Continuer")');
@@ -90,16 +91,19 @@ await step("apply wizard (account, checklist, upload, package, submit)", async (
   reference = (await customer.textContent('[data-testid="reference"]')).trim();
   if (!/^VA-\d{2}-[A-Z0-9]{6}$/.test(reference)) throw new Error(`bad reference ${reference}`);
 });
-await step("dashboard shows unpaid invoice", async () => {
-  await customer.goto(BASE + "/fr/account/invoices");
-  await customer.waitForSelector("text=À payer");
-});
-await step("public tracking by reference + email", async () => {
+await step("tracking page by code shows status, checklist and amount due", async () => {
   await customer.goto(BASE + "/fr/track");
-  await customer.fill("input[name=reference]", reference);
-  await customer.fill("input[name=email]", email);
+  await customer.fill("input[name=code]", reference.toLowerCase());
   await customer.click('button:has-text("Suivre")');
   await customer.waitForSelector("text=Nouvelle demande");
+  await customer.waitForSelector("text=Documents à préparer");
+  await customer.waitForSelector("text=Reste à payer");
+});
+await step("customer login and dashboard are disabled", async () => {
+  await customer.goto(BASE + "/fr/account");
+  if (!customer.url().includes("/track")) throw new Error(`account reachable: ${customer.url()}`);
+  await customer.goto(BASE + "/fr/register");
+  if (!customer.url().includes("/apply")) throw new Error(`register reachable: ${customer.url()}`);
 });
 await step("documents require authentication", async () => {
   const r = await pub.request.get(BASE + "/api/documents/doesnotexist");
@@ -124,12 +128,13 @@ if (!ADMIN_PASSWORD) {
     await admin.click("button[type=submit]");
     await admin.waitForURL("**/admin");
   });
-  await step("customer is redirected away from admin", async () => {
+  await step("visitors are sent to the admin sign-in", async () => {
     await customer.goto(BASE + "/fr/admin");
-    if (!customer.url().includes("/account")) throw new Error("customer reached admin");
+    if (!customer.url().includes("/admin/login")) throw new Error("visitor reached admin");
   });
   await step("all admin sections load", async () => {
     for (const p of ["", "/applications", "/customers", "/inquiries", "/support", "/payments", "/invoices", "/invoices/new", "/reports", "/countries", "/countries/questions", "/services", "/services/new", "/packages", "/statuses", "/articles", "/articles/new", "/faqs", "/legal", "/testimonials", "/banners", "/discounts", "/templates", "/settings", "/users", "/compliance", "/automation", "/audit"]) {
+      await pause();
       const r = await admin.goto(BASE + "/fr/admin" + p);
       if (r.status() !== 200) throw new Error(`${p} → ${r.status()}`);
     }
@@ -149,12 +154,12 @@ if (!ADMIN_PASSWORD) {
     await admin.click('details button:has-text("Enregistrer")');
     await admin.waitForSelector("text=Payée");
   });
-  await step("customer sees requested documents and paid invoice", async () => {
-    await customer.goto(BASE + "/fr/account/applications");
-    await customer.click(`text=${reference}`);
+  await step("tracking page shows new status, requested documents and payment", async () => {
+    await customer.goto(BASE + `/fr/track?code=${reference}`);
+    await customer.waitForSelector("text=En cours d'étude");
     await customer.waitForSelector("text=Documents demandés par votre conseiller");
-    await customer.goto(BASE + "/fr/account/invoices");
-    await customer.waitForSelector("text=Payée");
+    await customer.waitForSelector("text=Relevés bancaires");
+    await customer.waitForSelector("text=Réglé — merci !");
   });
   await step("run automations", async () => {
     await admin.goto(BASE + "/fr/admin/automation");

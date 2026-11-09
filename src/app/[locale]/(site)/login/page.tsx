@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { asLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n";
 import { pageMetadata } from "@/lib/seo";
+import { customerAccountsEnabled } from "@/lib/features";
 import { getCurrentUser } from "@/lib/auth/session";
 import { isStaffRole } from "@/lib/auth/permissions";
 import { safeNext } from "@/lib/validation";
@@ -19,6 +20,8 @@ export default async function LoginPage({ params, searchParams }: { params: Prom
   const locale = asLocale((await params).locale);
   const { next } = await searchParams;
   const t = getDictionary(locale);
+  // Customer accounts off: only staff sign in, on the admin sign-in page.
+  if (!customerAccountsEnabled()) redirect(`/${locale}/admin/login`);
   const user = await getCurrentUser();
   if (user) redirect(safeNext(next, isStaffRole(user.role) ? `/${locale}/admin` : `/${locale}/account`));
   return (

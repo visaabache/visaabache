@@ -8,6 +8,7 @@ import { pageMetadata } from "@/lib/seo";
 import { toNumber, toWhatsAppNumber } from "@/lib/utils";
 import { ApplyWizard, type WizardData } from "@/components/apply/wizard";
 import { countryWizardExtra, mapQuestion } from "@/lib/wizard-data";
+import { customerAccountsEnabled } from "@/lib/features";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const locale = asLocale((await params).locale);
@@ -19,6 +20,7 @@ export default async function ApplyPage({ params, searchParams }: { params: Prom
   const locale = asLocale((await params).locale);
   const sp = await searchParams;
   const t = getDictionary(locale);
+  const accounts = customerAccountsEnabled();
   const [countries, globalQs, packages, user, settings] = await Promise.all([
     prisma.country.findMany({
       where: { isActive: true },
@@ -27,7 +29,7 @@ export default async function ApplyPage({ params, searchParams }: { params: Prom
     }),
     prisma.question.findMany({ where: { countryId: null, isActive: true }, orderBy: { sortOrder: "asc" } }),
     prisma.package.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
-    getCurrentUser(),
+    accounts ? getCurrentUser() : null,
     getSettings(),
   ]);
 
@@ -71,6 +73,7 @@ export default async function ApplyPage({ params, searchParams }: { params: Prom
     user: user ? { email: user.email, firstName: user.firstName, lastName: user.lastName, phone: user.phone || "", city: user.city || "" } : null,
     initial: { country: sp.country || "", visaType: sp.type || "", package: sp.package || "" },
     whatsappNumber: settings.whatsapp.enabled ? toWhatsAppNumber(settings.whatsapp.number) : "",
+    accounts,
     draft,
   };
 

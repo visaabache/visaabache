@@ -10,6 +10,7 @@ import { Logo } from "./logo";
 import { LanguageSwitcher } from "./language-switcher";
 import { MobileMenu } from "./mobile-menu";
 import { FloatingHeader } from "@/components/motion/floating-header";
+import { customerAccountsEnabled } from "@/lib/features";
 
 export function Header({ locale, dict, user }: { locale: Locale; dict: Dictionary; user: CurrentUser | null }) {
   const l = (p: string) => `/${locale}${p}`;
@@ -22,6 +23,8 @@ export function Header({ locale, dict, user }: { locale: Locale; dict: Dictionar
     { href: l("/contact"), label: dict.nav.contact },
   ];
   const staff = user && isStaffRole(user.role);
+  // Customer accounts off: customers follow their file with a tracking code; only staff sign in (via /admin/login).
+  const accounts = customerAccountsEnabled();
 
   return (
     <FloatingHeader>
@@ -38,10 +41,23 @@ export function Header({ locale, dict, user }: { locale: Locale; dict: Dictionar
         </nav>
         <div className="hidden items-center gap-3 lg:flex">
           <LanguageSwitcher locale={locale} />
-          <Link href={l("/track")} className="rounded-lg p-2 text-slate-500 hover:bg-navy-50 hover:text-navy-800" title={dict.nav.track} aria-label={dict.nav.track}>
-            <Search className="h-4 w-4" />
-          </Link>
-          {user ? (
+          {accounts && (
+            <Link href={l("/track")} className="rounded-lg p-2 text-slate-500 hover:bg-navy-50 hover:text-navy-800" title={dict.nav.track} aria-label={dict.nav.track}>
+              <Search className="h-4 w-4" />
+            </Link>
+          )}
+          {!accounts ? (
+            <>
+              {staff && (
+                <Link href={l("/admin")} className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm font-medium text-navy-700 hover:bg-navy-50">
+                  <ShieldCheck className="h-4 w-4" /> {dict.nav.admin}
+                </Link>
+              )}
+              <Link href={l("/track")} className="flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-navy-700 hover:text-navy-900">
+                <Search className="h-4 w-4" /> {dict.nav.track}
+              </Link>
+            </>
+          ) : user ? (
             <>
               {staff && (
                 <Link href={l("/admin")} className="flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm font-medium text-navy-700 hover:bg-navy-50">
@@ -63,7 +79,7 @@ export function Header({ locale, dict, user }: { locale: Locale; dict: Dictionar
         </div>
         <MobileMenu label={dict.nav.menu}>
           <nav className="flex flex-col divide-y divide-slate-100" aria-label="Mobile">
-            {[{ href: l(""), label: dict.nav.home }, ...links, { href: l("/faq"), label: dict.nav.faq }, { href: l("/track"), label: dict.nav.track }].map((x) => (
+            {[{ href: l(""), label: dict.nav.home }, ...links, { href: l("/faq"), label: dict.nav.faq }, ...(accounts ? [{ href: l("/track"), label: dict.nav.track }] : [])].map((x) => (
               <Link key={x.href} href={x.href} className="px-2 py-3.5 text-base font-medium text-navy-800 hover:bg-navy-50">
                 {x.label}
               </Link>
@@ -74,7 +90,18 @@ export function Header({ locale, dict, user }: { locale: Locale; dict: Dictionar
             <ButtonLink href={l("/apply")} size="lg">
               {dict.common.applyForAssistance}
             </ButtonLink>
-            {user ? (
+            {!accounts ? (
+              <>
+                <ButtonLink href={l("/track")} variant="outline" size="lg">
+                  <Search className="h-4 w-4" /> {dict.nav.track}
+                </ButtonLink>
+                {staff && (
+                  <ButtonLink href={l("/admin")} variant="ghost" size="lg">
+                    <LayoutDashboard className="h-4 w-4" /> {dict.nav.admin}
+                  </ButtonLink>
+                )}
+              </>
+            ) : user ? (
               <>
                 {staff && (
                   <ButtonLink href={l("/admin")} variant="outline" size="lg">

@@ -13,6 +13,7 @@ import { notify } from "@/lib/notify";
 import { audit } from "@/lib/audit";
 import { date, int, str } from "@/lib/form-data";
 import type { ActionState } from "@/lib/action-state";
+import { customerAccountsEnabled, customerApplicationPath } from "@/lib/features";
 
 const path = (locale: string, id: string) => `/${asLocale(locale)}/admin/applications/${id}`;
 
@@ -75,8 +76,8 @@ export async function reviewDocumentAction(locale: string, appId: string, docId:
       phone: app.phone,
       whatsappOptIn: app.user.whatsappOptIn,
       vars: { firstName: app.firstName, reference: app.reference, document: doc.label, note },
-      link: `/${l}/account/applications/${app.id}`,
-      ctaLabel: tr({ fr: "Téléverser", ar: "رفع", en: "Upload" }, l),
+      link: customerApplicationPath(l, app),
+      ctaLabel: customerAccountsEnabled() ? tr({ fr: "Téléverser", ar: "رفع", en: "Upload" }, l) : tr({ fr: "Suivre mon dossier", ar: "تتبع ملفي", en: "Track my file" }, l),
     });
   }
   revalidatePath(path(locale, appId));
@@ -96,7 +97,7 @@ export async function shareDocumentAction(locale: string, appId: string, _p: Act
     });
     const l = asLocale(app.locale);
     await prisma.notification.create({
-      data: { userId: app.userId, title: `${app.reference} — ${tr({ fr: "Nouveau document disponible", ar: "وثيقة جديدة متاحة", en: "New document available" }, l)}`, body: str(fd, "label") || file.name, link: `/${l}/account/applications/${app.id}` },
+      data: { userId: app.userId, title: `${app.reference} — ${tr({ fr: "Nouveau document disponible", ar: "وثيقة جديدة متاحة", en: "New document available" }, l)}`, body: str(fd, "label") || file.name, link: customerApplicationPath(l, app) },
     });
     revalidatePath(path(locale, appId));
     return { ok: true, message: t.common.success };

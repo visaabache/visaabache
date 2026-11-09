@@ -230,9 +230,9 @@ export const generalFaqs = [
   {
     q: L("Comment suivre mon dossier ?", "كيف أتتبع ملفي؟", "How do I track my application?"),
     a: L(
-      "Depuis votre espace client, ou via la page « Suivre mon dossier » avec votre référence et votre e-mail. Vous recevez aussi des notifications à chaque étape.",
-      "من حسابك، أو عبر صفحة «تتبع ملفي» باستعمال المرجع وبريدك الإلكتروني. كما تتوصل بإشعارات في كل مرحلة.",
-      "From your client dashboard, or via the 'Track my application' page with your reference and email. You also receive notifications at each step.",
+      "Sur la page « Suivre mon dossier », avec le code de suivi reçu après votre demande (ex. VA-26-XXXXXX). Votre conseiller vous tient aussi informé par WhatsApp ou e-mail à chaque étape.",
+      "عبر صفحة «تتبع ملفي» باستعمال رمز التتبع الذي توصلت به بعد طلبك (مثال: VA-26-XXXXXX). كما يبقيك مستشارك على اطلاع عبر واتساب أو البريد الإلكتروني في كل مرحلة.",
+      "On the 'Track my file' page, with the tracking code you received after applying (e.g. VA-26-XXXXXX). Your advisor also keeps you informed by WhatsApp or email at each step.",
     ),
     home: false,
   },

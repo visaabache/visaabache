@@ -20,6 +20,8 @@
     "STORAGE_DRIVER": "db",
     "EMAIL_DRIVER": "console",
     "UPLOAD_MAX_MB": "4",
-    "DB_DRIVER": "neon"
+    "DB_DRIVER": "neon",
+    // Customer accounts/uploads off: guests apply and follow their file with a tracking code ("on" to re-enable)
+    "CUSTOMER_ACCOUNTS": "off"
   }
 }

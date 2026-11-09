@@ -4,7 +4,10 @@ import { Bell, FileText, FolderOpen, LayoutDashboard, LifeBuoy, LogOut, Receipt,
 import { asLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n";
 import { fmt } from "@/lib/i18n/localized";
-import { requireUser } from "@/lib/auth/session";
+import { getCurrentUser, requireUser } from "@/lib/auth/session";
+import { isStaffRole } from "@/lib/auth/permissions";
+import { customerAccountsEnabled } from "@/lib/features";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { logoutAction } from "@/actions/auth";
 import { AccountNavLink } from "@/components/account/nav-link";
@@ -14,6 +17,11 @@ export const metadata = { robots: { index: false, follow: false } };
 export default async function AccountLayout({ children, params }: { children: ReactNode; params: Promise<{ locale: string }> }) {
   const locale = asLocale((await params).locale);
   const t = getDictionary(locale);
+  // Customer accounts off: the customer area is gone (customers use the tracking page); staff keep their profile page.
+  if (!customerAccountsEnabled()) {
+    const me = await getCurrentUser();
+    if (!me || !isStaffRole(me.role)) redirect(`/${locale}/track`);
+  }
   const user = await requireUser(locale, `/${locale}/account`);
   const unread = await prisma.notification.count({ where: { userId: user.id, readAt: null } });
   const l = (p: string) => `/${locale}/account${p}`;

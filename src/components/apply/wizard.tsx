@@ -4,7 +4,7 @@ import Link from "@/components/ui/link";
 import { ArrowLeft, ArrowRight, Check, CheckCircle2, Circle, FileUp, Loader2, PartyPopper, Search, Tag } from "lucide-react";
 import type { Dictionary } from "@/lib/i18n/dictionaries/en";
 import { buildChecklist } from "@/lib/domain/checklist";
-import { saveDraftAction, submitApplicationAction, uploadDocumentAction, checkDiscountAction, loadCountryWizardAction } from "@/actions/apply";
+import { saveDraftAction, submitApplicationAction, submitGuestApplicationAction, uploadDocumentAction, checkDiscountAction, loadCountryWizardAction } from "@/actions/apply";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
 import { Alert, Card } from "@/components/ui/misc";
@@ -28,6 +28,8 @@ export type WizardData = {
   user: { email: string; firstName: string; lastName: string; phone: string; city: string } | null;
   initial: { country: string; visaType: string; package: string };
   whatsappNumber: string;
+  /** false: guest flow (no account, no upload) — the customer gets a tracking code */
+  accounts: boolean;
   draft: { id: string; country: string; visaType: string; details: Details; answers: Record<string, string>; documents: Doc[] } | null;
 };
 
@@ -41,6 +43,7 @@ type T = {
 };
 
 const STEP_KEYS = ["destination", "visaType", "details", "questions", "checklist", "documents", "package", "review"] as const;
+type StepKey = (typeof STEP_KEYS)[number];
 
 function fmtMAD(n: number, locale: string) {
   const s = new Intl.NumberFormat(locale === "ar" ? "ar-MA" : locale === "fr" ? "fr-MA" : "en-GB", { maximumFractionDigits: 2 }).format(n);
@@ -49,7 +52,10 @@ function fmtMAD(n: number, locale: string) {
 
 export function ApplyWizard({ locale, data, t }: { locale: string; data: WizardData; t: T }) {
   const d0 = data.draft;
-  const [step, setStep] = useState(d0 ? 4 : data.initial.country && data.countries.some((c) => c.slug === data.initial.country) ? 1 : 0);
+  const steps: readonly StepKey[] = data.accounts ? STEP_KEYS : STEP_KEYS.filter((k) => k !== "documents");
+  const idx = (k: StepKey) => steps.indexOf(k);
+  const [step, setStep] = useState(d0 ? idx("checklist") : data.initial.country && data.countries.some((c) => c.slug === data.initial.country) ? 1 : 0);
+  const key = steps[step];
   const [country, setCountry] = useState(d0?.country || data.initial.country || "");
   const [visaType, setVisaType] = useState(d0?.visaType || data.initial.visaType || "");
   const [details, setDetails] = useState<Details>(
@@ -114,7 +120,7 @@ export function ApplyWizard({ locale, data, t }: { locale: string; data: WizardD
     const errs: Record<string, string[]> = {};
     for (const k of ["firstName", "lastName", "email", "phone"] as const) if (!details[k].trim()) errs[k] = [t.common.required];
     if (details.email && !/^\S+@\S+\.\S+$/.test(details.email)) errs.email = [t.common.invalidForm];
-    if (!user) {
+    if (!user && data.accounts) {
       if (password.length < 10 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) errs.password = [t.apply.errors.weakPassword];
       if (!acceptTerms) errs.acceptTerms = [t.apply.errors.consent];
     }
@@ -144,14 +150,14 @@ export function ApplyWizard({ locale, data, t }: { locale: string; data: WizardD
         setError(res.error || t.common.error);
         setFieldErrors(res.fieldErrors || {});
         const keys = Object.keys(res.fieldErrors || {});
-        if (keys.some((k) => !k.startsWith("answers."))) setStep(2);
-        else if (keys.length) setStep(3);
+        if (keys.some((k) => !k.startsWith("answers."))) setStep(idx("details"));
+        else if (keys.length) setStep(idx("questions"));
         return;
       }
       setDraftId(String(res.data!.applicationId));
       setSavedChecklist(res.data!.checklist as typeof savedChecklist);
       if (!user) setUser({ email: details.email, firstName: details.firstName, lastName: details.lastName, phone: details.phone, city: details.city });
-      go(5);
+      go(idx("documents"));
     });
   }
 
@@ -188,6 +194,24 @@ export function ApplyWizard({ locale, data, t }: { locale: string; data: WizardD
       return;
     }
     start(async () => {
+      if (!data.accounts) {
+        const res = await submitGuestApplicationAction(locale, {
+          country, visaType: visaType || undefined, ...details, answers,
+          packageSlug: pkg || undefined, discountCode: discount?.code,
+          consentTerms: true, consentData: true, consentIndependent: true, consentWhatsapp: consents.whatsapp,
+        });
+        if (!res.ok) {
+          setError(res.error || t.common.error);
+          setFieldErrors(res.fieldErrors || {});
+          const keys = Object.keys(res.fieldErrors || {}).filter((k) => !k.startsWith("consent"));
+          if (keys.some((k) => !k.startsWith("answers."))) go(idx("details"));
+          else if (keys.length) go(idx("questions"));
+        } else {
+          setResult(res.data as { reference: string; applicationId: string });
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+        return;
+      }
       const res = await submitApplicationAction(locale, {
         applicationId: draftId!,
         packageSlug: pkg || undefined,
@@ -206,21 +230,24 @@ export function ApplyWizard({ locale, data, t }: { locale: string; data: WizardD
   }
 
   if (result) {
-    const waMsg = t.apply.whatsappApplyMessage.replace("{reference}", result.reference);
+    const waMsg = (data.accounts ? t.apply.whatsappApplyMessage : t.apply.whatsappDocsMessage).replace("{reference}", result.reference);
     return (
       <Card className="mt-8 animate-fade-up p-8 text-center sm:p-12">
         <PartyPopper className="mx-auto h-12 w-12 text-gold-500" />
         <h2 className="mt-4 font-display text-3xl font-semibold text-navy-800">{t.apply.successTitle}</h2>
         <p className="mt-4 text-slate-600">{t.apply.successText}</p>
         <p className="mt-2 inline-block rounded-xl bg-navy-800 px-6 py-3 font-mono text-2xl font-bold tracking-wider text-gold-400" data-testid="reference">{result.reference}</p>
-        <p className="mx-auto mt-6 max-w-xl text-sm text-slate-600">{t.apply.successNext}</p>
+        <p className="mx-auto mt-6 max-w-xl text-sm text-slate-600">{data.accounts ? t.apply.successNext : t.apply.successNextGuest}</p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Link href={`/${locale}/account/applications/${result.applicationId}`} className="inline-flex h-12 items-center rounded-lg bg-gold-500 px-6 font-semibold text-navy-900 hover:bg-gold-400">
-            {t.apply.goToDashboard}
+          <Link
+            href={data.accounts ? `/${locale}/account/applications/${result.applicationId}` : `/${locale}/track?code=${result.reference}`}
+            className="inline-flex h-12 items-center rounded-lg bg-gold-500 px-6 font-semibold text-navy-900 hover:bg-gold-400"
+          >
+            {data.accounts ? t.apply.goToDashboard : t.apply.trackMyFile}
           </Link>
           {data.whatsappNumber && (
             <a href={`https://wa.me/${data.whatsappNumber}?text=${encodeURIComponent(waMsg)}`} target="_blank" rel="noopener noreferrer" className="inline-flex h-12 items-center gap-2 rounded-lg bg-[#25D366] px-6 font-semibold text-white">
-              <WhatsAppIcon className="h-5 w-5" /> {t.apply.sendWhatsapp}
+              <WhatsAppIcon className="h-5 w-5" /> {data.accounts ? t.apply.sendWhatsapp : t.apply.sendDocsWhatsapp}
             </a>
           )}
         </div>
@@ -229,14 +256,14 @@ export function ApplyWizard({ locale, data, t }: { locale: string; data: WizardD
     );
   }
 
-  const checklistToShow = step >= 5 && savedChecklist.length ? savedChecklist : previewChecklist.map((i) => ({ id: i.id, title: i.title, description: i.description, required: i.required }));
+  const checklistToShow = data.accounts && step >= idx("documents") && savedChecklist.length ? savedChecklist : previewChecklist.map((i) => ({ id: i.id, title: i.title, description: i.description, required: i.required }));
   const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
   return (
     <div className="mt-8">
       {/* Stepper */}
       <ol className="mb-8 flex gap-1 overflow-x-auto pb-2" aria-label="Progress">
-        {STEP_KEYS.map((k, i) => (
+        {steps.map((k, i) => (
           <li key={k} className="flex min-w-[88px] flex-1 flex-col items-center gap-1.5 text-center">
             <span
               className={cn(
@@ -255,7 +282,7 @@ export function ApplyWizard({ locale, data, t }: { locale: string; data: WizardD
       <Card className="p-5 sm:p-8">
         {error && <Alert tone="error" className="mb-6">{error}</Alert>}
 
-        {step === 0 && (
+        {key === "destination" && (
           <div>
             <h2 className="text-xl font-semibold text-navy-800">{t.apply.chooseDestination}</h2>
             <div className="relative mt-4 max-w-sm">
@@ -272,7 +299,7 @@ export function ApplyWizard({ locale, data, t }: { locale: string; data: WizardD
                     onClick={() => {
                       setCountry(x.slug);
                       if (x.slug !== country) setVisaType("");
-                      go(1);
+                      go(idx("visaType"));
                     }}
                     className={cn("flex items-center gap-2.5 rounded-xl border p-3 text-start text-sm font-medium transition hover:border-gold-400 hover:bg-gold-50", country === x.slug ? "border-gold-500 bg-gold-50 ring-1 ring-gold-400" : "border-slate-200")}
                   >
@@ -285,7 +312,7 @@ export function ApplyWizard({ locale, data, t }: { locale: string; data: WizardD
           </div>
         )}
 
-        {step === 1 && c && (
+        {key === "visaType" && c && (
           <div>
             <h2 className="text-xl font-semibold text-navy-800">{t.apply.chooseVisaType} — {c.name}</h2>
             {!c.visaTypes.length && <p className="mt-2 text-sm text-slate-500">{t.apply.noVisaTypes}</p>}
@@ -296,7 +323,7 @@ export function ApplyWizard({ locale, data, t }: { locale: string; data: WizardD
                   type="button"
                   onClick={() => {
                     setVisaType(v.code);
-                    go(2);
+                    go(idx("details"));
                   }}
                   className={cn("flex items-center justify-between rounded-xl border p-4 text-start font-medium transition hover:border-gold-400 hover:bg-gold-50", visaType === v.code ? "border-gold-500 bg-gold-50" : "border-slate-200")}
                 >
@@ -308,7 +335,7 @@ export function ApplyWizard({ locale, data, t }: { locale: string; data: WizardD
           </div>
         )}
 
-        {step === 2 && (
+        {key === "details" && (
           <div className="space-y-8">
             <fieldset>
               <legend className="text-xl font-semibold text-navy-800">{t.apply.personalInfo}</legend>
@@ -334,7 +361,7 @@ export function ApplyWizard({ locale, data, t }: { locale: string; data: WizardD
                 <Field label={t.apply.additionalInfo} className="sm:col-span-3"><Textarea value={details.additionalInfo} onChange={setD("additionalInfo")} maxLength={2000} rows={3} /></Field>
               </div>
             </fieldset>
-            <fieldset className="rounded-xl border border-navy-100 bg-navy-50/50 p-5">
+            {data.accounts && <fieldset className="rounded-xl border border-navy-100 bg-navy-50/50 p-5">
               <legend className="px-1 font-semibold text-navy-800">{t.apply.accountTitle}</legend>
               {user ? (
                 <p className="text-sm text-slate-600">{t.apply.loggedInAs.replace("{email}", user.email)}</p>
@@ -355,11 +382,11 @@ export function ApplyWizard({ locale, data, t }: { locale: string; data: WizardD
                   {fe("acceptTerms") && <p className="text-xs text-red-600">{fe("acceptTerms")}</p>}
                 </div>
               )}
-            </fieldset>
+            </fieldset>}
           </div>
         )}
 
-        {step === 3 && (
+        {key === "questions" && (
           <div>
             <h2 className="text-xl font-semibold text-navy-800">{t.apply.questionsTitle}</h2>
             <p className="mt-1 text-sm text-slate-500">{t.apply.questionsText}</p>
@@ -389,10 +416,10 @@ export function ApplyWizard({ locale, data, t }: { locale: string; data: WizardD
           </div>
         )}
 
-        {(step === 4 || step === 5) && (
+        {(key === "checklist" || key === "documents") && (
           <div>
-            <h2 className="text-xl font-semibold text-navy-800">{step === 4 ? t.apply.checklistTitle : t.apply.documentsTitle}</h2>
-            <p className="mt-1 text-sm text-slate-500">{step === 4 ? t.apply.checklistText : t.apply.documentsText}</p>
+            <h2 className="text-xl font-semibold text-navy-800">{key === "checklist" ? t.apply.checklistTitle : t.apply.documentsTitle}</h2>
+            <p className="mt-1 text-sm text-slate-500">{key === "documents" ? t.apply.documentsText : data.accounts ? t.apply.checklistText : t.apply.checklistGuestText}</p>
             {!checklistToShow.length && <p className="mt-4 text-slate-500">{t.apply.checklistEmpty}</p>}
             <ul className="mt-6 divide-y divide-slate-100 rounded-xl border border-slate-200">
               {checklistToShow.map((i) => {
@@ -407,7 +434,7 @@ export function ApplyWizard({ locale, data, t }: { locale: string; data: WizardD
                       {i.description && <p className="text-sm text-slate-500">{i.description}</p>}
                       {uploaded.map((u) => <p key={u.id} className="mt-1 text-xs text-emerald-700">✓ {t.apply.uploaded}: {u.name}</p>)}
                     </div>
-                    {step === 5 && (
+                    {key === "documents" && (
                       <label className={cn("inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-navy-200 px-3 text-sm font-medium text-navy-800 hover:bg-navy-50", uploading && "pointer-events-none opacity-60")}>
                         {uploading === i.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
                         {t.apply.uploadFor}
@@ -418,11 +445,11 @@ export function ApplyWizard({ locale, data, t }: { locale: string; data: WizardD
                 );
               })}
             </ul>
-            {step === 4 && <p className="mt-4 text-xs text-slate-500">{t.country.officialLinksNote}</p>}
+            {key === "checklist" && <p className="mt-4 text-xs text-slate-500">{t.country.officialLinksNote}</p>}
           </div>
         )}
 
-        {step === 6 && (
+        {key === "package" && (
           <div>
             <h2 className="text-xl font-semibold text-navy-800">{t.apply.packageTitle}</h2>
             <p className="mt-1 text-sm text-slate-500">{t.apply.packageText}</p>
@@ -449,7 +476,7 @@ export function ApplyWizard({ locale, data, t }: { locale: string; data: WizardD
           </div>
         )}
 
-        {step === 7 && (
+        {key === "review" && (
           <div className="space-y-6">
             <h2 className="text-xl font-semibold text-navy-800">{t.apply.reviewTitle}</h2>
             <dl className="grid grid-cols-1 gap-x-6 gap-y-3 rounded-xl bg-slate-50 p-5 text-sm sm:grid-cols-2">
@@ -457,7 +484,7 @@ export function ApplyWizard({ locale, data, t }: { locale: string; data: WizardD
               <div><dt className="text-slate-500">{t.apply.steps.visaType}</dt><dd className="font-medium">{c?.visaTypes.find((v) => v.code === visaType)?.name || t.apply.otherVisa}</dd></div>
               <div><dt className="text-slate-500">{t.common.name}</dt><dd className="font-medium">{details.firstName} {details.lastName}</dd></div>
               <div><dt className="text-slate-500">{t.common.email}</dt><dd className="font-medium" dir="ltr">{details.email}</dd></div>
-              <div><dt className="text-slate-500">{t.apply.steps.documents}</dt><dd className="font-medium">{docs.length}</dd></div>
+              {data.accounts && <div><dt className="text-slate-500">{t.apply.steps.documents}</dt><dd className="font-medium">{docs.length}</dd></div>}
               <div><dt className="text-slate-500">{t.apply.steps.package}</dt><dd className="font-medium">{selectedPkg?.name || "—"}</dd></div>
             </dl>
             {selectedPkg && (
@@ -479,17 +506,18 @@ export function ApplyWizard({ locale, data, t }: { locale: string; data: WizardD
 
         {/* Navigation */}
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-6">
-          {step > 0 && step !== 5 ? (
+          {step > 0 && key !== "documents" ? (
             <Button type="button" variant="ghost" onClick={() => go(step - 1)} disabled={pending}><ArrowLeft className="rtl-flip h-4 w-4" />{t.common.previous}</Button>
-          ) : step === 5 ? (
-            <Button type="button" variant="ghost" onClick={() => go(4)} disabled={pending}><ArrowLeft className="rtl-flip h-4 w-4" />{t.common.previous}</Button>
+          ) : key === "documents" ? (
+            <Button type="button" variant="ghost" onClick={() => go(idx("checklist"))} disabled={pending}><ArrowLeft className="rtl-flip h-4 w-4" />{t.common.previous}</Button>
           ) : <span />}
-          {step === 2 && <Button type="button" variant="navy" onClick={() => validateDetails() && go(3)}>{t.common.next}<ArrowRight className="rtl-flip h-4 w-4" /></Button>}
-          {step === 3 && <Button type="button" variant="navy" onClick={() => validateQuestions() && go(4)}>{t.common.next}<ArrowRight className="rtl-flip h-4 w-4" /></Button>}
-          {step === 4 && <Button type="button" variant="navy" onClick={saveDraft} disabled={pending}>{pending && <Loader2 className="h-4 w-4 animate-spin" />}{t.apply.saveAndContinue}<ArrowRight className="rtl-flip h-4 w-4" /></Button>}
-          {step === 5 && <Button type="button" variant="navy" onClick={() => go(6)} disabled={Boolean(uploading)}>{docs.length ? t.common.next : t.apply.uploadLater}<ArrowRight className="rtl-flip h-4 w-4" /></Button>}
-          {step === 6 && <Button type="button" variant="navy" onClick={() => go(7)}>{t.common.next}<ArrowRight className="rtl-flip h-4 w-4" /></Button>}
-          {step === 7 && <Button type="button" size="lg" onClick={submit} disabled={pending} data-testid="submit-application">{pending && <Loader2 className="h-4 w-4 animate-spin" />}{t.apply.submitApplication}</Button>}
+          {key === "details" && <Button type="button" variant="navy" onClick={() => validateDetails() && go(idx("questions"))}>{t.common.next}<ArrowRight className="rtl-flip h-4 w-4" /></Button>}
+          {key === "questions" && <Button type="button" variant="navy" onClick={() => validateQuestions() && go(idx("checklist"))}>{t.common.next}<ArrowRight className="rtl-flip h-4 w-4" /></Button>}
+          {key === "checklist" && data.accounts && <Button type="button" variant="navy" onClick={saveDraft} disabled={pending}>{pending && <Loader2 className="h-4 w-4 animate-spin" />}{t.apply.saveAndContinue}<ArrowRight className="rtl-flip h-4 w-4" /></Button>}
+          {key === "checklist" && !data.accounts && <Button type="button" variant="navy" onClick={() => go(idx("package"))}>{t.common.next}<ArrowRight className="rtl-flip h-4 w-4" /></Button>}
+          {key === "documents" && <Button type="button" variant="navy" onClick={() => go(idx("package"))} disabled={Boolean(uploading)}>{docs.length ? t.common.next : t.apply.uploadLater}<ArrowRight className="rtl-flip h-4 w-4" /></Button>}
+          {key === "package" && <Button type="button" variant="navy" onClick={() => go(idx("review"))}>{t.common.next}<ArrowRight className="rtl-flip h-4 w-4" /></Button>}
+          {key === "review" && <Button type="button" size="lg" onClick={submit} disabled={pending} data-testid="submit-application">{pending && <Loader2 className="h-4 w-4 animate-spin" />}{t.apply.submitApplication}</Button>}
         </div>
       </Card>
       <p className="mt-6 text-center text-xs text-slate-500">{t.common.independentNotice}</p>

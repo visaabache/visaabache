@@ -19,6 +19,7 @@ import { getSettings } from "@/lib/settings";
 import { audit } from "@/lib/audit";
 import { emailSchema, LEGAL_VERSION, nameSchema, phoneSchema } from "@/lib/validation";
 import { countryWizardExtra } from "@/lib/wizard-data";
+import { customerApplicationPath } from "@/lib/features";
 import { round2, toNumber } from "@/lib/utils";
 import type { ActionState } from "@/lib/action-state";
 
@@ -246,7 +247,7 @@ export async function submitApplicationAction(localeRaw: string, input: z.input<
     phone: app.phone,
     whatsappOptIn: Boolean(d.consentWhatsapp),
     vars: { firstName: app.firstName, reference: app.reference, destination },
-    link: `/${locale}/account/applications/${app.id}`,
+    link: customerApplicationPath(locale, app),
     ctaLabel: t.apply.goToDashboard,
   });
   const settings = await getSettings();
@@ -258,6 +259,129 @@ export async function submitApplicationAction(localeRaw: string, input: z.input<
     );
   }
   return { ok: true, data: { reference: app.reference, applicationId: app.id } };
+}
+
+const guestSchema = draftSchema.omit({ draftId: true, password: true, acceptTerms: true }).extend({
+  packageSlug: z.string().optional(),
+  discountCode: z.string().trim().max(40).optional(),
+  consentTerms: z.literal(true),
+  consentData: z.literal(true),
+  consentIndependent: z.literal(true),
+  consentWhatsapp: z.boolean().optional(),
+});
+export type GuestApplicationInput = z.input<typeof guestSchema>;
+
+/**
+ * Guest application (customer accounts disabled): validates and submits everything in one request — no account,
+ * no password hashing, no upload. The customer gets a tracking code (the application reference) and sends the
+ * documents by WhatsApp. A passwordless customer record is still kept so the admin CRM, invoices and history work.
+ */
+export async function submitGuestApplicationAction(localeRaw: string, input: GuestApplicationInput): Promise<ActionState> {
+  const locale = asLocale(localeRaw);
+  const t = getDictionary(locale);
+  const { ip, userAgent } = await getRequestMeta();
+  if (!(await rateLimit(`guest-apply:${ip}`, 8, 3600))) return { error: t.common.tooManyRequests };
+  const parsed = guestSchema.safeParse(input);
+  if (!parsed.success) {
+    const fe = parsed.error.flatten().fieldErrors as Record<string, string[]>;
+    const consentError = ["consentTerms", "consentData", "consentIndependent"].some((k) => fe[k]);
+    return { error: consentError ? t.apply.errors.consent : t.common.invalidForm, fieldErrors: fe };
+  }
+  const d = parsed.data;
+
+  const [country, globalQs, status, pkg] = await Promise.all([
+    prisma.country.findFirst({
+      where: { slug: d.country, isActive: true },
+      include: { visaTypes: { where: { isActive: true } }, checklistItems: true, questions: { where: { isActive: true } } },
+    }),
+    prisma.question.findMany({ where: { countryId: null, isActive: true } }),
+    getInitialStatus(),
+    d.packageSlug ? prisma.package.findFirst({ where: { slug: d.packageSlug, isActive: true } }) : null,
+  ]);
+  if (!country) return { error: t.common.error };
+  const visaType = d.visaType ? country.visaTypes.find((v) => v.code === d.visaType) ?? null : null;
+  const missing = [...globalQs, ...country.questions]
+    .filter((q) => q.required && (!q.visaTypeCodes.length || (visaType && q.visaTypeCodes.includes(visaType.code))))
+    .filter((q) => !d.answers[q.key]);
+  if (missing.length) return { error: t.common.invalidForm, fieldErrors: Object.fromEntries(missing.map((q) => [`answers.${q.key}`, [t.common.required]])) };
+
+  // Pricing
+  const subtotal = pkg ? toNumber(pkg.price) : 0;
+  let discountAmount = 0;
+  let discountId: string | null = null;
+  if (pkg && d.discountCode) {
+    const dc = await prisma.discountCode.findUnique({ where: { code: d.discountCode.toUpperCase() } });
+    if (dc) {
+      const r = evaluateDiscount({ ...dc, value: toNumber(dc.value), minAmount: dc.minAmount ? toNumber(dc.minAmount) : null }, subtotal, pkg.slug);
+      if (r.ok) {
+        discountAmount = r.amount;
+        discountId = dc.id;
+      }
+    }
+  }
+
+  const checklist = buildChecklist(country.checklistItems, visaType?.code ?? null, d.answers).map((c) => ({
+    id: c.id, title: c.title, description: c.description, required: c.required,
+  }));
+  const reference = await uniqueApplicationReference();
+  const now = new Date();
+  const consentBase = { email: d.email, version: LEGAL_VERSION, granted: true, context: `application:${reference}`, ip, userAgent };
+
+  const app = await prisma.$transaction(async (tx) => {
+    // Passwordless customer record ("!" is not a valid hash, so it can never be used to log in).
+    const existing = await tx.user.findUnique({ where: { email: d.email } });
+    const user = existing
+      ? await tx.user.update({ where: { id: existing.id }, data: { phone: existing.phone || d.phone, city: existing.city || d.city || null, ...(d.consentWhatsapp ? { whatsappOptIn: true } : {}) } })
+      : await tx.user.create({
+          data: { email: d.email, passwordHash: "!", firstName: d.firstName, lastName: d.lastName, phone: d.phone, city: d.city || null, locale, whatsappOptIn: Boolean(d.consentWhatsapp) },
+        });
+    const created = await tx.application.create({
+      data: {
+        reference, userId: user.id, statusId: status.id, isDraft: false, submittedAt: now, consentAt: now,
+        countryId: country.id, visaTypeId: visaType?.id ?? null, locale,
+        firstName: d.firstName, lastName: d.lastName, email: d.email, phone: d.phone,
+        dateOfBirth: d.dateOfBirth, nationality: d.nationality || null, passportNumber: d.passportNumber || null, passportExpiry: d.passportExpiry,
+        city: d.city || null, purpose: d.purpose || null, departureDate: d.departureDate, returnDate: d.returnDate, travelers: d.travelers,
+        additionalInfo: d.additionalInfo || null, answers: d.answers as Prisma.InputJsonValue, checklist: checklist as unknown as Prisma.InputJsonValue,
+        packageId: pkg?.id ?? null, discountCodeId: discountId, subtotal, discountAmount, totalAmount: round2(subtotal - discountAmount),
+      },
+    });
+    await tx.applicationStatusHistory.create({ data: { applicationId: created.id, toStatusId: status.id } });
+    await tx.consentRecord.createMany({
+      data: [
+        { ...consentBase, userId: user.id, type: "TERMS" },
+        { ...consentBase, userId: user.id, type: "DATA_PROCESSING" },
+        ...(d.consentWhatsapp ? [{ ...consentBase, userId: user.id, type: "WHATSAPP" as const }] : []),
+      ],
+    });
+    if (discountId) await tx.discountCode.update({ where: { id: discountId }, data: { usedCount: { increment: 1 } } });
+    return created;
+  });
+
+  if (pkg && subtotal - discountAmount > 0) await ensureApplicationInvoice(app.id);
+  await audit(app.userId, "application.submitted", "Application", app.id, { reference, guest: true });
+
+  const destination = tr(country.name, locale);
+  await notify({
+    key: "application_received",
+    locale,
+    userId: app.userId,
+    email: app.email,
+    phone: app.phone,
+    whatsappOptIn: Boolean(d.consentWhatsapp),
+    vars: { firstName: app.firstName, reference, destination },
+    link: customerApplicationPath(locale, app),
+    ctaLabel: t.track.title,
+  });
+  const settings = await getSettings();
+  if (settings.notifications.notifyAdminOnNewApplication) {
+    await notifyAdmins(
+      "admin_new_application",
+      { reference, destination: tr(country.name, "fr"), customer: `${app.firstName} ${app.lastName}`, package: pkg ? tr(pkg.name, "fr") : "—" },
+      `/fr/admin/applications/${app.id}`,
+    );
+  }
+  return { ok: true, data: { reference, applicationId: app.id } };
 }
 
 /** Wizard helper: destination-specific questions and checklist rules, loaded when a destination is selected. */

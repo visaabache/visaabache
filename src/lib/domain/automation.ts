@@ -8,6 +8,7 @@ import { notify } from "../notify";
 import { storage } from "../storage";
 import { addDays } from "../utils";
 import { invoiceBalance } from "./invoices";
+import { customerAccountsEnabled, customerApplicationPath } from "@/lib/features";
 
 /**
  * Runs all scheduled automations. Idempotent — safe to run every hour (cron) or manually from the admin panel.
@@ -52,8 +53,8 @@ export async function runAutomations(trigger: "CRON" | "MANUAL") {
         phone: app.phone,
         whatsappOptIn: app.user.whatsappOptIn,
         vars: { firstName: app.firstName, reference: app.reference, documents: reqs.map((r) => `• ${r.title}`).join("\n") },
-        link: `/${locale}/account/applications/${appId}`,
-        ctaLabel: tr({ fr: "Téléverser", ar: "رفع", en: "Upload" }, locale),
+        link: customerApplicationPath(locale, { id: appId, reference: app.reference }),
+        ctaLabel: customerAccountsEnabled() ? tr({ fr: "Téléverser", ar: "رفع", en: "Upload" }, locale) : tr({ fr: "Suivre mon dossier", ar: "تتبع ملفي", en: "Track my file" }, locale),
       });
       await prisma.documentRequest.updateMany({ where: { id: { in: reqs.map((r) => r.id) } }, data: { lastRemindedAt: now } });
       summary.documentReminders++;

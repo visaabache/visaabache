@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { asLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n";
 import { pageMetadata } from "@/lib/seo";
+import { customerAccountsEnabled } from "@/lib/features";
 import { getCurrentUser } from "@/lib/auth/session";
 import { registerAction } from "@/actions/auth";
 import { AuthShell } from "@/components/site/auth-shell";
@@ -17,6 +18,8 @@ export default async function RegisterPage({ params, searchParams }: { params: P
   const locale = asLocale((await params).locale);
   const { next } = await searchParams;
   const t = getDictionary(locale);
+  // Customer accounts off: customers apply directly (guest application with a tracking code).
+  if (!customerAccountsEnabled()) redirect(`/${locale}/apply`);
   if (await getCurrentUser()) redirect(`/${locale}/account`);
   return (
     <AuthShell title={t.auth.registerTitle} subtitle={t.auth.registerSubtitle} footer={<>{t.auth.haveAccount} <Link href={`/${locale}/login`} className="font-semibold text-navy-700 hover:underline">{t.nav.login}</Link></>}>

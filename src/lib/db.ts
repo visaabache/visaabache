@@ -88,11 +88,53 @@ function createClient() {
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
+function client() {
+  globalForPrisma.prisma ??= createClient();
+  return globalForPrisma.prisma;
+}
+
+/*
+ * Watchdog (Workers only). When Cloudflare cuts a request off (CPU limit), work it started inside the shared client
+ * can stay pending forever, and later requests waiting on it would hang. Every call is raced against a timer: on
+ * timeout the shared client is dropped, so the next request starts with a fresh one instead of hanging too.
+ */
+const WATCHDOG_MS = 12_000;
+
+function guarded<T>(work: () => Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      globalForPrisma.prisma = undefined;
+      reject(new Error("Database request timed out; connection reset"));
+    }, WATCHDOG_MS);
+    work().then(
+      (v) => { clearTimeout(timer); resolve(v); },
+      (e) => { clearTimeout(timer); reject(e); },
+    );
+  });
+}
+
+function guardFn(fn: (...a: unknown[]) => unknown) {
+  return (...args: unknown[]) => {
+    const r = fn(...args);
+    return r && typeof (r as Promise<unknown>).then === "function" ? guarded(() => r as Promise<unknown>) : r;
+  };
+}
+
 export const prisma = new Proxy({} as PrismaClient, {
   get(_target, prop) {
-    globalForPrisma.prisma ??= createClient();
-    const client = globalForPrisma.prisma;
-    const value = Reflect.get(client, prop, client);
-    return typeof value === "function" ? value.bind(client) : value;
+    const c = client();
+    const value = Reflect.get(c, prop, c);
+    if (!onWorkers()) return typeof value === "function" ? value.bind(c) : value;
+    if (typeof value === "function") return guardFn(value.bind(c));
+    if (value && typeof value === "object" && typeof prop === "string" && !prop.startsWith("$") && !prop.startsWith("_")) {
+      // Model delegate (prisma.user, prisma.application, …)
+      return new Proxy(value as object, {
+        get(target, method) {
+          const m = Reflect.get(target, method, target);
+          return typeof m === "function" ? guardFn(m.bind(target)) : m;
+        },
+      });
+    }
+    return value;
   },
 });
