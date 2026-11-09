@@ -174,3 +174,16 @@
   .no-print { display: none !important; }
   body { background: #fff; }
 }
+
+/* iOS Safari zooms into any form field whose text is smaller than 16px (and the page then overflows sideways).
+   Keep every field at 16px or more on touch devices / small screens, whatever utility classes it uses. */
+@media (max-width: 767px), (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  select,
+  textarea {
+    font-size: max(16px, 1em) !important;
+  }
+}
+
+/* Fields focused on a phone (and #anchors) scroll into view below the floating header, not under it. */
+html { scroll-padding-top: 6.5rem; }
