@@ -3,7 +3,7 @@ const {chromium}=require('playwright');const fs=require('fs');const path=require
 (async()=>{const [html,out,fpsS,list]=process.argv.slice(2);const fps=+fpsS;fs.mkdirSync(out,{recursive:true});
 const b=await chromium.launch();const p=await b.newPage({viewport:{width:1080,height:1920}});
 p.on('pageerror',e=>console.error('PAGE ERR',e.message));
-await p.goto('file://'+path.resolve(html));await p.evaluate(()=>document.fonts.ready);
+await p.goto('file://'+path.resolve(html));await p.evaluate(async()=>{await document.fonts.ready;if(window.ready)await window.ready;});
 const dur=await p.evaluate(()=>window.DURATION);
 const times=list?list.split(',').map(Number):[...Array(Math.round(dur*fps)).keys()].map(i=>i/fps);
 for(let i=0;i<times.length;i++){const d=await p.evaluate(t=>{render(t);return document.getElementById('c').toDataURL('image/jpeg',.94)},times[i]);
