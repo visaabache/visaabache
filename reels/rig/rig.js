@@ -130,7 +130,9 @@ function head(g,hx,hy,HR,d,o){
   if(o.blink||face==='calm'){for(const ex of [-13,13]){g.beginPath();g.moveTo(fx+ex*s-5*s,fy-4*s);g.lineTo(fx+ex*s+5*s,fy-4*s);g.stroke();}}
   else for(const ex of [-13,13]){g.beginPath();g.arc(fx+ex*s,fy-5*s,4.8*s,0,7);g.fill();}
   if(o.glasses){g.lineWidth=2.4*s;for(const ex of [-13,13]){g.beginPath();g.arc(fx+ex*s,fy-5*s,9.5*s,0,7);g.stroke();}g.beginPath();g.moveTo(fx-3.5*s,fy-5*s);g.lineTo(fx+3.5*s,fy-5*s);g.stroke();g.lineWidth=3.6*s;}
-  if(face==='flat'||face==='sad'){g.beginPath();g.moveTo(fx-9*s,fy+14*s);g.lineTo(fx+9*s,fy+(face==='sad'?17:14)*s);g.stroke();}
+  if(face==='angry'){g.beginPath();g.moveTo(fx-21*s,fy-19*s);g.lineTo(fx-7*s,fy-12*s);g.moveTo(fx+21*s,fy-19*s);g.lineTo(fx+7*s,fy-12*s);g.stroke();
+    g.beginPath();g.ellipse(fx,fy+13*s,9*s,(5+4*Math.abs(Math.sin((o.t||0)*13)))*s,0,0,7);g.fill();}
+  else if(face==='flat'||face==='sad'){g.beginPath();g.moveTo(fx-9*s,fy+14*s);g.lineTo(fx+9*s,fy+(face==='sad'?17:14)*s);g.stroke();}
   else if(face==='laugh'){g.beginPath();g.arc(fx,fy+7*s,11*s,0,Math.PI);g.fill();}
   else if(face==='o'){g.beginPath();g.arc(fx,fy+12*s,5*s,0,7);g.stroke();}
   else {g.beginPath();g.arc(fx,fy+8*s,12*s,.18*Math.PI,.82*Math.PI);g.stroke();}
