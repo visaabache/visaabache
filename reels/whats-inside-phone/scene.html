@@ -1,0 +1,260 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000}canvas{display:block}
+@font-face{font-family:Cairo;font-weight:200 1000;src:url(fonts/cairo-arabic.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+FB50-FDFF,U+FE70-FEFF,U+200C-200E;}
+@font-face{font-family:Cairo;font-weight:200 1000;src:url(fonts/cairo-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F;}</style>
+<script type="importmap">{"imports":{"three":"./three.js"}}</script></head>
+<body><canvas id="c" width="1080" height="1920"></canvas>
+<script type="module">
+// «آش كاين لداخل التيليفون؟» — 3D build-it explainer, timed to the user's Darija voiceover (cues = phrase start/end).
+import * as THREE from 'three';
+import {RoomEnvironment} from './RoomEnvironment.js';
+const W=1080,H=1920,out=document.getElementById('c'),ctx=out.getContext('2d');
+const C=[[0.1,2.567],[2.907,3.728],[4.03,4.605],[4.945,5.988],[6.328,7.417],[7.757,8.836],[9.176,10.666],[11.006,11.724],[12.052,13.797],[14.137,18.238],[18.578,20.265],[20.588,21.205],[21.545,22.32],[22.66,23.114],[23.393,28.028],[28.368,29.091],[29.369,35.234],[35.574,35.915],[36.186,39.033],[39.373,41.029],[41.369,47.142],[47.482,49.803],[50.099,50.756],[51.096,52.427],[52.767,53.101],[53.36,54.083],[54.423,55.165],[55.505,56.417]];
+const T=i=>C[i][0];
+const DURATION=57.5;
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x)),lerp=(a,b,t)=>a+(b-a)*t,prog=(t,a,b)=>clamp((t-a)/(b-a));
+const eio=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2,eout=t=>1-Math.pow(1-t,3);
+const eback=t=>{if(t<=0)return 0;const c1=1.7,c3=c1+1;return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2)};
+const RED='#d8322a',GREEN='#1f9d55',CYAN='#20b7c9';
+
+// ---------- renderer / scene ----------
+const glc=document.createElement('canvas');glc.width=W;glc.height=H;
+const R=new THREE.WebGLRenderer({canvas:glc,antialias:true,preserveDrawingBuffer:true});
+R.setSize(W,H,false);R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=1.05;R.outputColorSpace=THREE.SRGBColorSpace;
+const scene=new THREE.Scene();const SAND='#c9a77c';scene.background=new THREE.Color(SAND);scene.fog=new THREE.Fog(SAND,10,26);
+const pm=new THREE.PMREMGenerator(R);scene.environment=pm.fromScene(new RoomEnvironment(),.04).texture;
+const cam=new THREE.PerspectiveCamera(34,W/H,.05,100);
+scene.add(new THREE.HemisphereLight('#fff1dc','#8a6a48',.55));
+const sun=new THREE.DirectionalLight('#fff4e0',2.2);sun.position.set(3,10,4);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.radius=8;sun.shadow.bias=-.0004;
+Object.assign(sun.shadow.camera,{left:-6,right:6,top:6,bottom:-6,near:1,far:30});scene.add(sun);
+const cvTex=(w,h,f)=>{const cv=document.createElement('canvas');cv.width=w;cv.height=h;f(cv.getContext('2d'),w,h);const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t;};
+const sandTex=cvTex(512,512,(g,w,h)=>{g.fillStyle='#c4a073';g.fillRect(0,0,w,h);for(let i=0;i<9000;i++){const v=Math.random();g.fillStyle=v<.5?'rgba(120,90,55,.10)':'rgba(255,240,210,.10)';g.fillRect(Math.random()*w,Math.random()*h,2,2);}});
+sandTex.wrapS=sandTex.wrapT=THREE.RepeatWrapping;sandTex.repeat.set(10,10);
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(80,80),new THREE.MeshStandardMaterial({map:sandTex,roughness:1}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+
+// ---------- helpers ----------
+function rrPath(P,cx,cy,w,h,r){const x=cx-w/2,y=cy-h/2;P.moveTo(x+r,y);P.lineTo(x+w-r,y);P.quadraticCurveTo(x+w,y,x+w,y+r);P.lineTo(x+w,y+h-r);P.quadraticCurveTo(x+w,y+h,x+w-r,y+h);P.lineTo(x+r,y+h);P.quadraticCurveTo(x,y+h,x,y+h-r);P.lineTo(x,y+r);P.quadraticCurveTo(x,y,x+r,y);return P;}
+function slab(shape,depth,mat,bevel=0){const g=new THREE.ExtrudeGeometry(shape,{depth,bevelEnabled:bevel>0,bevelSize:bevel,bevelThickness:bevel,bevelSegments:4,curveSegments:24});g.rotateX(-Math.PI/2);g.translate(0,-depth/2,0);const m=new THREE.Mesh(g,mat);m.castShadow=true;m.receiveShadow=true;return m;}
+const STD=(c,r=.5,m=.1,o={})=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m,...o});
+const box=(w,h,d,mat)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.castShadow=true;m.receiveShadow=true;return m;};
+const cyl=(r,h,mat,seg=40)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,seg),mat);m.castShadow=true;return m;};
+
+// ---------- the phone ----------
+const PW=3.0,PL=6.2,PT=.34;
+const phone=new THREE.Group();scene.add(phone);
+const parts={};
+function part(name,obj,home,side,explode){const g=new THREE.Group();g.add(obj);phone.add(g);parts[name]={g,home:home.clone(),side,explode};g.position.copy(home);return g;}
+// frame (aluminium) with antenna lines
+const alu=STD('#c5c8ce',.26,.95);
+const frameShape=rrPath(new THREE.Shape(),0,0,PW,PL,.5);frameShape.holes.push(rrPath(new THREE.Path(),0,0,PW-.24,PL-.24,.4));
+const frameG=new THREE.Group();frameG.add(slab(frameShape,PT,alu,.025));
+const antMat=STD('#3a3d44',.8,0,{emissive:'#ff3b2f',emissiveIntensity:0});
+const antennas=[[PW/2+.01,-2.0,'x'],[PW/2+.01,2.1,'x'],[-PW/2-.01,-2.0,'x'],[-PW/2-.01,2.1,'x'],[.8,-PL/2-.01,'z'],[-.8,PL/2+.01,'z']];
+antennas.forEach(([x,z,ax])=>{const b=box(ax==='x'?.09:.07,PT+.05,ax==='x'?.07:.09,antMat);b.position.set(x,0,z);frameG.add(b);});
+const mid=box(PW-.26,.04,PL-.26,STD('#666a73',.45,.7));mid.position.y=-.06;frameG.add(mid);
+part('frame',frameG,new THREE.Vector3(0,0,0),0,0);
+// battery
+const batLabel=cvTex(512,712,(g,w,h)=>{g.fillStyle='#2a2c31';g.fillRect(0,0,w,h);g.strokeStyle='rgba(255,255,255,.15)';g.lineWidth=6;g.strokeRect(24,24,w-48,h-48);
+  g.fillStyle='#e8e8ea';g.font='900 64px Inter';g.textAlign='center';g.fillText('Li-ion',w/2,h/2-40);g.font='700 40px Inter';g.fillStyle='rgba(232,232,234,.75)';g.fillText('4500 mAh · 3.87 V',w/2,h/2+30);
+  g.fillStyle='#f2c94c';g.fillRect(w/2-60,h-120,120,14);});
+const batMats=[STD('#2a2c31',.5,.3),STD('#2a2c31',.5,.3),STD('#ffffff',.55,.2,{map:batLabel,emissive:'#3cff8a',emissiveIntensity:0}),STD('#2a2c31',.5,.3),STD('#2a2c31',.5,.3),STD('#2a2c31',.5,.3)];
+const bat=new THREE.Mesh(new THREE.BoxGeometry(2.3,.16,3.2),batMats);bat.castShadow=true;bat.receiveShadow=true;
+part('battery',bat,new THREE.Vector3(0,.04,.95),1,.7);
+// motherboard
+const pcbTex=cvTex(512,456,(g,w,h)=>{g.fillStyle='#17633f';g.fillRect(0,0,w,h);g.strokeStyle='rgba(230,190,90,.55)';g.lineWidth=3;
+  for(let i=0;i<70;i++){let x=Math.random()*w,y=Math.random()*h;g.beginPath();g.moveTo(x,y);for(let k=0;k<3;k++){if(Math.random()<.5)x+=(Math.random()-.5)*160;else y+=(Math.random()-.5)*160;g.lineTo(x,y);}g.stroke();}
+  g.fillStyle='rgba(230,190,90,.8)';for(let i=0;i<120;i++){g.beginPath();g.arc(Math.random()*w,Math.random()*h,3,0,7);g.fill();}});
+const board=new THREE.Group();
+const pcbMats=[STD('#145a38',.6),STD('#145a38',.6),STD('#ffffff',.55,.15,{map:pcbTex}),STD('#145a38',.6),STD('#145a38',.6),STD('#145a38',.6)];
+const pcb=new THREE.Mesh(new THREE.BoxGeometry(2.6,.05,2.28),pcbMats);pcb.castShadow=true;pcb.receiveShadow=true;board.add(pcb);
+const soc=box(.72,.07,.72,STD('#16171b',.35,.4,{emissive:'#ffd36e',emissiveIntensity:0}));soc.position.set(.45,.06,.2);board.add(soc);
+const socLid=box(.5,.012,.5,STD('#a9aeb7',.25,.9));socLid.position.set(.45,.1,.2);board.add(socLid);
+const ram=box(.5,.06,.36,STD('#1c1d22',.4,.3));ram.position.set(-.35,.055,.45);board.add(ram);
+for(let i=0;i<16;i++){const s=.08+Math.random()*.14;const b=box(s,.04,s*.7,STD(Math.random()<.3?'#c9a36c':'#24262c',.5,.4));b.position.set(-1.1+Math.random()*2.2,.045,-.95+Math.random()*1.9);if(Math.abs(b.position.x-.45)<.5&&Math.abs(b.position.z-.2)<.5)continue;board.add(b);}
+part('board',board,new THREE.Vector3(0,.04,-1.78),1,1.15);
+// camera module
+const camMod=new THREE.Group();
+const camBase=box(1.12,.2,1.12,STD('#1b1c21',.45,.4));camBase.position.y=.1;camMod.add(camBase);
+const lensRing=STD('#b8bcc4',.2,.95),lensGlass=new THREE.MeshPhysicalMaterial({color:'#1f2f78',roughness:.04,metalness:.5,clearcoat:1,clearcoatRoughness:.02,emissive:'#0c1850',emissiveIntensity:.6});
+const lenses=[];
+[[-.26,-.26],[-.26,.26],[.27,0]].forEach(([x,z],i)=>{const L=new THREE.Group();const ring=cyl(.21,.16,lensRing);L.add(ring);const gl=cyl(.16,.165,lensGlass);gl.position.y=.03;L.add(gl);
+  const dot=cyl(.05,.17,STD('#3a4cff',.1,.5,{emissive:'#2233aa',emissiveIntensity:.4}));L.add(dot);L.position.set(x,.27,z);camMod.add(L);lenses.push(L);});
+const flash=cyl(.06,.2,STD('#fff6d8',.3,0,{emissive:'#fff0c0',emissiveIntensity:.3}));flash.position.set(.3,.22,.36);camMod.add(flash);
+const oisMotors=[];for(const s of [-1,1]){const mtr=box(.08,.1,.22,STD('#c8792e',.35,.8));mtr.position.set(-.26+s*.27,.25,-.26);mtr.visible=false;camMod.add(mtr);oisMotors.push(mtr);}
+part('camera',camMod,new THREE.Vector3(-.75,.04,-2.25),1,1.6);
+// screen (front, -Y)
+const wallTex=cvTex(512,1060,(g,w,h)=>{const gr=g.createLinearGradient(0,0,w,h);gr.addColorStop(0,'#3b2a78');gr.addColorStop(.55,'#b45a8c');gr.addColorStop(1,'#f3a65e');g.fillStyle=gr;g.fillRect(0,0,w,h);
+  g.fillStyle='rgba(255,255,255,.95)';g.font='800 150px Inter';g.textAlign='center';g.fillText('10:08',w/2,300);g.font='600 40px Inter';g.fillStyle='rgba(255,255,255,.8)';g.fillText('Friday, 13 November',w/2,370);
+  for(let r=0;r<2;r++)for(let k=0;k<4;k++){g.fillStyle='rgba(255,255,255,.22)';g.beginPath();g.roundRect(56+k*110,760+r*120,80,80,20);g.fill();}});
+wallTex.center.set(.5,.5);wallTex.rotation=Math.PI;
+const scrMat=new THREE.MeshPhysicalMaterial({color:'#050608',roughness:.08,metalness:.2,clearcoat:1,emissive:'#ffffff',emissiveMap:wallTex,emissiveIntensity:0});
+const scrSide=STD('#0a0b0e',.3,.3);
+const scr=new THREE.Mesh(new THREE.BoxGeometry(PW-.1,.05,PL-.1),[scrSide,scrSide,scrSide,scrMat,scrSide,scrSide]);scr.castShadow=true;
+part('screen',scr,new THREE.Vector3(0,-.19,0),-1,-.9);
+// touch layer
+const gridTex=cvTex(512,1060,(g,w,h)=>{g.clearRect(0,0,w,h);g.strokeStyle='rgba(120,240,255,1)';g.lineWidth=2.5;for(let x=0;x<=w;x+=32){g.beginPath();g.moveTo(x,0);g.lineTo(x,h);g.stroke();}for(let y=0;y<=h;y+=32){g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke();}});
+const touchMat=new THREE.MeshBasicMaterial({map:gridTex,transparent:true,opacity:.85,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
+const touch=new THREE.Mesh(new THREE.PlaneGeometry(PW-.14,PL-.14),touchMat);touch.rotation.x=Math.PI/2;
+part('touch',touch,new THREE.Vector3(0,-.24,0),-1,-1.6);
+// small parts
+const vib=box(.55,.12,.3,STD('#c9ccd2',.25,.9));part('vibro',vib,new THREE.Vector3(.68,.05,2.78),1,1.0);
+const spk=new THREE.Group();const spkB=box(.9,.1,.3,STD('#141518',.6,.2));spk.add(spkB);for(let i=0;i<10;i++){const h=cyl(.022,.02,STD('#3a3c42',.5,.5),12);h.position.set(-.36+i*.08,.055,0);spk.add(h);}
+part('speaker',spk,new THREE.Vector3(-.7,.05,2.78),1,1.0);
+const mic1=cyl(.07,.08,STD('#9aa0aa',.3,.8));part('mic1',mic1,new THREE.Vector3(.02,.05,2.82),1,1.0);
+const mic2=cyl(.07,.08,STD('#9aa0aa',.3,.8));part('mic2',mic2,new THREE.Vector3(1.12,.12,-2.82),1,1.3);
+// back glass with camera cut-out
+const backShape=rrPath(new THREE.Shape(),0,0,PW,PL,.5);backShape.holes.push(rrPath(new THREE.Path(),-.75,2.25,1.2,1.2,.28));
+const backMat=new THREE.MeshPhysicalMaterial({color:'#3a3f72',roughness:.12,metalness:.15,clearcoat:1,clearcoatRoughness:.05});
+const back=slab(backShape,.05,backMat,.012);
+part('back',back,new THREE.Vector3(0,.19,0),1,2.1);
+// finger for the touch demo
+const finger=new THREE.Mesh(new THREE.CapsuleGeometry(.22,1.4,8,24),STD('#e7b48f',.6,0));finger.castShadow=true;finger.visible=false;scene.add(finger);
+const nail=new THREE.Mesh(new THREE.SphereGeometry(.17,24,12),STD('#f4cdb6',.3,0));nail.scale.set(1,.35,1.25);nail.position.set(0,-.62,.12);finger.add(nail);
+const ripple=new THREE.Mesh(new THREE.TorusGeometry(1,.025,8,64),new THREE.MeshBasicMaterial({color:'#7ff0ff',transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));ripple.visible=false;scene.add(ripple);
+
+// ---------- timeline ----------
+const ARRIVE={battery:T(9),board:T(12),camera:T(15),screen:T(17)+.05,touch:T(20)+.1,vibro:T(21)+.1,speaker:T(21)+1.05,mic1:T(22)+.05,mic2:T(22)+.3,back:T(23)};
+const LEAVE_ORDER=['back','camera','mic2','board','speaker','vibro','mic1','battery','screen','touch'];
+const PY=1.35;
+function flipAt(t){ // rotation.z of the phone
+  let r=0;r+=Math.PI*eio(prog(t,T(17)-.75,T(17)-.05));r-=Math.PI*eio(prog(t,T(21)-.7,T(21)-.05));r+=Math.PI*eio(prog(t,T(24)-.35,T(24)+.5));return r;}
+function poseParts(t){
+  const ex=eio(prog(t,.2,1.25));
+  for(const [name,p] of Object.entries(parts)){
+    let y=p.home.y,vis=true;
+    if(name!=='frame'){
+      const li=LEAVE_ORDER.indexOf(name);const l0=T(1)+li*.1;const leave=eio(prog(t,l0,l0+.75));
+      const hookY=p.explode*ex+ (p.side>=0?1:-1)*leave*14;
+      const a=ARRIVE[name];const arr=prog(t,a,a+.6);
+      if(t<T(1)+1.8){y=p.home.y+hookY;vis=leave<1;}
+      else if(t<a){vis=false;}
+      else{const k=eback(arr);y=p.home.y+(p.side>=0?1:-1)*(1-k)*3.2;}
+    }
+    p.g.visible=vis;p.g.position.set(p.home.x,y,p.home.z);
+  }
+}
+// camera keys: [t, pos, target]
+const K=[
+  [0,[5.6,7.4,7.8],[0,1.9,0],1.05],[2.8,[5.0,7.6,7.2],[0,2.2,0],1.35],[4.9,[4.6,5.6,6.2],[0,1.35,0]],[8.9,[-4.6,5.4,6.0],[0,1.35,0]],
+  [10.0,[4.2,2.4,-.4],[1.5,1.35,-2.0],1.25],[13.6,[4.6,2.6,.2],[1.5,1.35,-1.6],1.25],
+  [14.4,[3.6,7.6,5.6],[0,1.35,.4]],[20.2,[3.0,7.0,4.0],[0,1.35,-.4]],[21.0,[2.6,6.6,2.6],[0,1.35,-1.6]],
+  [23.0,[1.9,4.6,0.0],[.45,1.42,-1.6],2.3],[27.8,[1.7,4.2,-.2],[.45,1.42,-1.6],2.2],
+  [28.6,[.6,4.6,-.2],[-.75,1.45,-2.25]],[31.0,[.1,3.3,-.9],[-1.0,1.6,-2.5],2.1],[34.6,[.2,3.6,-.8],[-1.0,1.6,-2.5],2.1],
+  [35.6,[4.2,8.0,5.6],[0,1.3,0]],[36.6,[1.6,4.6,2.0],[.3,1.25,.3],2.7],[40.8,[1.8,4.8,2.2],[.3,1.25,.3],2.7],
+  [41.8,[3.6,7.2,5.2],[0,1.3,0]],[46.6,[3.8,7.0,5.0],[0,1.3,0]],
+  [47.6,[2.2,5.6,6.0],[0,1.35,2.4]],[50.8,[2.4,5.8,6.2],[0,1.35,2.2]],
+  [51.4,[4.8,6.8,6.8],[0,1.35,0]],[54.2,[-4.4,6.0,6.6],[0,1.5,0]],[57.5,[-5.0,6.6,7.4],[0,1.7,0]]];
+function camAt(t){let i=0;while(i<K.length-2&&t>K[i+1][0])i++;const [t0,p0,q0,f0=1.8]=K[i],[t1,p1,q1,f1=1.8]=K[i+1];const k=eio(prog(t,t0,t1));
+  const q=[0,1,2].map(j=>lerp(q0[j],q1[j],k)),f=lerp(f0,f1,k);const P=[0,1,2].map(j=>q[j]+(lerp(p0[j],p1[j],k)-q[j])*f);
+  cam.position.set(P[0],P[1],P[2]);cam.lookAt(q[0],q[1],q[2]);}
+const v3=new THREE.Vector3();
+function proj(obj,local){v3.set(...local);obj.localToWorld(v3);v3.project(cam);return [(v3.x+1)/2*W,(1-v3.y)/2*H];}
+const pw=(x,y,z)=>proj(phone,[x,y,z]);
+
+// ---------- 2D overlays ----------
+function chip(text,x,y,size,a=1){if(a<=0)return;ctx.save();ctx.globalAlpha=a;ctx.direction='rtl';ctx.font=`900 ${size}px Cairo`;ctx.textAlign='center';ctx.textBaseline='middle';
+  const w=ctx.measureText(text).width+size*1.1,h=size*1.7;ctx.fillStyle='#fffaf0';ctx.strokeStyle='#3a2a1a';ctx.lineWidth=size*.09;ctx.shadowColor='rgba(60,30,10,.35)';ctx.shadowOffsetY=size*.12;ctx.shadowBlur=0;
+  ctx.beginPath();ctx.roundRect(x-w/2,y-h/2,w,h,size*.35);ctx.fill();ctx.shadowColor='transparent';ctx.stroke();ctx.fillStyle='#1a1a1a';ctx.fillText(text,x,y+size*.08);ctx.restore();}
+function label(t,t0,t1,txt,xy,col,dx=0,dy=-90){const a=eback(prog(t,t0,t0+.3))*(t1?1-prog(t,t1,t1+.25):1);if(a<=0)return;const [x,y]=xy;
+  ctx.save();ctx.strokeStyle=col;ctx.lineWidth=3;ctx.setLineDash([6,6]);ctx.globalAlpha=clamp(a);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+dx,y+dy+24);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,7,0,7);ctx.fill();
+  ctx.translate(x+dx,y+dy);ctx.scale(a,a);ctx.direction='rtl';ctx.font='800 36px Cairo';const w=ctx.measureText(txt).width+40;
+  ctx.fillStyle='#fffaf0';ctx.beginPath();ctx.roundRect(-w/2,-28,w,56,12);ctx.fill();ctx.lineWidth=3.5;ctx.stroke();ctx.fillStyle=col;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(txt,0,3);ctx.restore();}
+// captions: [start, lines] — words marked * are red
+const CAPS=[
+  [0,'شنو كاين وسط|*التيليفون اللي فيدك؟'],[T(1),'أجي نبنيوه|*طرف *بطرف'],
+  [T(3),'نبداو *بالإطار'],[T(4),'قطعة ديال|*الألومنيوم'],[T(5),'*خفيفة *وقاصحة'],
+  [T(6),'وهاد *الخطوط|الصغار فالجنب؟'],[T(7),'ماشي *ديكور…'],[T(8),'هوما *الأنتين|اللي كيشدو الريزو'],
+  [T(9),'دابا *البطارية'],[T(9)+1.3,'كتاخد *أكبر *بلاصة|فالتيليفون كامل'],
+  [T(10),'ولكن البطارية بوحدها|ما *كتفكرش…'],[T(11),'خصنا *مخ'],
+  [T(12),'هادي هي *البلاكة'],[T(13),'وفوسطها *البروسيسور'],[T(14)+.8,'فيه *مليارات ديال|الترانزيستورات'],[T(14)+3.0,'وقدّو قد *ظفر صغير'],
+  [T(15),'من بعد *الكاميرا'],[T(16),'فيها *موتورات صغار|كيحركو العدسة'],[T(16)+3.2,'باش التصويرة|ما تجيش *مهزوزة'],
+  [T(17),'*الشاشة'],[T(18),'*ملايين ديال|البيكسيلات'],[T(19),'كل بيكسيل كيشعل|*الضو بوحدو'],
+  [T(20),'طبقة *شفافة فيها|شبكة ديال الخيوط'],[T(20)+3.5,'كتحس *بالكهربا|اللي فصبعك'],
+  [T(21),'*الفيبرور *والسبيكر'],[T(22),'*والميكروات'],[T(23),'ونسدّو *بالزاج|من اللور'],
+  [T(24),'*مبروك…'],[T(25),'صاوبتي *تيليفون!'],[T(26),'شنو نبنيو *من *بعد؟'],[T(27),'كتبها ليا|*فالكومنتير']];
+function captions(t){let i=-1;CAPS.forEach((c,k)=>{if(t>=c[0])i=k;});if(i<0)return;const [t0,txt]=CAPS[i];const lines=txt.split('|');
+  ctx.save();ctx.direction='rtl';ctx.textBaseline='middle';const fs=80;ctx.font=`900 ${fs}px Cairo`;let n=0;
+  lines.forEach((ln,li)=>{const words=ln.split(' ').map(w=>w.startsWith('*')?[w.slice(1),1]:[w,0]);const ws=words.map(w=>ctx.measureText(w[0]).width),sp=20;const tot=ws.reduce((a,b)=>a+b,0)+sp*(ws.length-1);
+    let x=(W+tot)/2;const y=1440+li*104;
+    words.forEach(([w,red],k)=>{const p=eout(prog(t,t0+n*.05,t0+n*.05+.22));n++;ctx.globalAlpha=p;ctx.textAlign='right';const yy=y+(1-p)*18;
+      ctx.lineJoin='round';ctx.strokeStyle='rgba(70,40,15,.55)';ctx.lineWidth=14;ctx.strokeText(w,x,yy);ctx.fillStyle=red?RED:'#ffffff';ctx.fillText(w,x,yy);x-=ws[k]+sp;});});
+  ctx.restore();}
+function magnifier(t,t0,t1,src,cx,cy,r,drawFn){const a=eback(prog(t,t0,t0+.35))*(1-prog(t,t1,t1+.25));if(a<=0)return;
+  ctx.save();ctx.globalAlpha=clamp(a);ctx.strokeStyle='#fffaf0';ctx.lineWidth=4;ctx.setLineDash([8,8]);ctx.beginPath();ctx.moveTo(src[0],src[1]);ctx.lineTo(cx,cy);ctx.stroke();ctx.setLineDash([]);
+  ctx.translate(cx,cy);ctx.scale(a,a);ctx.beginPath();ctx.arc(0,0,r,0,7);ctx.fillStyle='#101018';ctx.fill();ctx.save();ctx.clip();drawFn(t,r);ctx.restore();
+  ctx.lineWidth=10;ctx.strokeStyle='#fffaf0';ctx.beginPath();ctx.arc(0,0,r,0,7);ctx.stroke();ctx.restore();}
+function transistors(t,r){const n=14,s=2*r/n;for(let i=0;i<n;i++)for(let j=0;j<n;j++){const on=Math.sin(i*1.7+j*2.3+t*9)>.2;ctx.fillStyle=on?'#ffd36e':'#3a3420';ctx.fillRect(-r+i*s+3,-r+j*s+3,s-6,s-6);}
+  ctx.strokeStyle='rgba(255,211,110,.35)';ctx.lineWidth=2;for(let i=0;i<=n;i++){ctx.beginPath();ctx.moveTo(-r+i*s,-r);ctx.lineTo(-r+i*s,r);ctx.stroke();}}
+function pixels(t,r){const n=6,s=2*r/n;const lit=Math.floor((t-T(19))*14);for(let i=0;i<n;i++)for(let j=0;j<n;j++){const idx=j*n+i;const on=t<T(19)?.35:(idx<lit?1:.25);
+  ['#ff3b3b','#3bff6a','#3b7bff'].forEach((col,k)=>{ctx.globalAlpha=on;ctx.fillStyle=col;ctx.fillRect(-r+i*s+6+k*(s-12)/3,-r+j*s+8,(s-12)/3-4,s-16);});}ctx.globalAlpha=1;}
+function photoCard(x,y,sharp,a,ok){if(a<=0)return;ctx.save();ctx.globalAlpha=a;ctx.translate(x,y);ctx.scale(a,a);const w=300,h=210;ctx.fillStyle='#fffaf0';ctx.beginPath();ctx.roundRect(-w/2-12,-h/2-12,w+24,h+24,14);ctx.fill();
+  ctx.save();ctx.beginPath();ctx.rect(-w/2,-h/2,w,h);ctx.clip();if(!sharp)ctx.filter='blur(7px)';
+  const gr=ctx.createLinearGradient(0,-h/2,0,h/2);gr.addColorStop(0,'#7cc6f0');gr.addColorStop(1,'#e8f4ff');ctx.fillStyle=gr;ctx.fillRect(-w/2,-h/2,w,h);
+  ctx.fillStyle='#f6d55c';ctx.beginPath();ctx.arc(80,-50,26,0,7);ctx.fill();ctx.fillStyle='#4a6b8a';ctx.beginPath();ctx.moveTo(-w/2,h/2);ctx.lineTo(-60,-10);ctx.lineTo(10,40);ctx.lineTo(70,-20);ctx.lineTo(w/2,h/2);ctx.fill();
+  if(!sharp){ctx.globalAlpha=.5;ctx.translate(12,6);ctx.fillStyle='#4a6b8a';ctx.beginPath();ctx.moveTo(-w/2,h/2);ctx.lineTo(-60,-10);ctx.lineTo(10,40);ctx.lineTo(70,-20);ctx.lineTo(w/2,h/2);ctx.fill();}
+  ctx.restore();ctx.globalAlpha=a;ctx.fillStyle=ok?GREEN:RED;ctx.beginPath();ctx.arc(w/2,-h/2,32,0,7);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=8;ctx.lineCap='round';ctx.beginPath();
+  if(ok){ctx.moveTo(w/2-14,-h/2);ctx.lineTo(w/2-3,-h/2+11);ctx.lineTo(w/2+15,-h/2-12);}else{ctx.moveTo(w/2-11,-h/2-11);ctx.lineTo(w/2+11,-h/2+11);ctx.moveTo(w/2+11,-h/2-11);ctx.lineTo(w/2-11,-h/2+11);}ctx.stroke();ctx.restore();}
+function signal(t,x,y,a){if(a<=0)return;ctx.save();ctx.strokeStyle='#ff3b2f';ctx.lineCap='round';for(let k=0;k<3;k++){const p=((t*1.3)+k/3)%1;ctx.globalAlpha=a*(1-p);ctx.lineWidth=8;ctx.beginPath();ctx.arc(x,y,30+p*150,-Math.PI*.35,Math.PI*.35);ctx.stroke();}ctx.restore();}
+function dashedQuad(pts,col,a,t){if(a<=0)return;ctx.save();ctx.globalAlpha=a;ctx.strokeStyle=col;ctx.lineWidth=6;ctx.setLineDash([18,14]);ctx.lineDashOffset=-t*60;ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.stroke();ctx.restore();}
+function commentIcon(x,y,s,a){if(a<=0)return;ctx.save();ctx.globalAlpha=a;ctx.translate(x,y);ctx.scale(s,s);ctx.fillStyle='#fffaf0';ctx.strokeStyle='#3a2a1a';ctx.lineWidth=6;
+  ctx.beginPath();ctx.roundRect(-90,-60,180,110,30);ctx.moveTo(-30,50);ctx.lineTo(-55,90);ctx.lineTo(10,50);ctx.fill();ctx.stroke();ctx.fillStyle='#3a2a1a';for(const dx of [-40,0,40]){ctx.beginPath();ctx.arc(dx,-5,10,0,7);ctx.fill();}ctx.restore();}
+const dust=[...Array(40)].map(()=>[Math.random()*W,Math.random()*H,.5+Math.random()]);
+
+// ---------- frame ----------
+window.DURATION=DURATION;
+window.ready=Promise.all([document.fonts.load('900 60px Cairo','عربي'),document.fonts.load('800 30px Cairo','abc')]);
+window.render=function(t){
+  poseParts(t);
+  phone.position.set(0,PY+Math.sin(t*1.6)*.04,0);phone.rotation.set(0,0,flipAt(t));
+  // idle spins: hook, frame showcase, finale
+  let ry=.55*Math.sin(t*.9)*(1-eio(prog(t,T(1),T(3))));ry+=2*Math.PI*eio(prog(t,T(3),T(6)-.2));ry+=t>T(24)?(t-T(24))*.6:0;phone.rotation.y=ry;
+  // frame showcase hop on "light & strong"
+  if(t>T(5)&&t<T(6))phone.position.y+=Math.abs(Math.sin((t-T(5))*7))*.25*(1-prog(t,T(5),T(6)));
+  // antenna glow
+  antMat.emissiveIntensity=t>T(6)&&t<T(9)?1.4+.8*Math.sin(t*8):0;
+  // battery glow on "biggest"
+  batMats[2].emissiveIntensity=t>T(9)+1.3&&t<T(10)?.35+.25*Math.sin(t*6):0;
+  // processor glow
+  soc.material.emissiveIntensity=t>T(13)&&t<T(15)?.6+.4*Math.sin(t*10):0;
+  // OIS wobble
+  const ois=t>T(16)&&t<T(17);oisMotors.forEach(m=>m.visible=ois);
+  const shake=ois?(t<T(16)+3.2?Math.sin(t*23)*.12:Math.sin(t*23)*.12*(1-prog(t,T(16)+3.2,T(16)+4.0))):0;lenses[0].rotation.set(shake,0,shake*.7);
+  // screen glow
+  scrMat.emissiveIntensity=(t>T(18)&&t<T(20)?.25:0)+(t>T(24)?eout(prog(t,T(24)+.3,T(24)+1.0)):0);
+  // touch grid fade + finger
+  touchMat.opacity=.85*(t>T(23)?1-prog(t,T(23),T(23)+.4):1);
+  const fd=t-(T(20)+3.4);finger.visible=fd>-.6&&fd<2.2;if(finger.visible){const down=eio(prog(fd,-.6,0))*(1-eio(prog(fd,1.4,2.2)));const fp=new THREE.Vector3(.3,-.24,.4);phone.localToWorld(fp);
+    finger.position.set(fp.x+.0,fp.y+.95+(1-down)*1.6,fp.z+.35);finger.rotation.set(.35,0,0);}
+  ripple.visible=fd>0&&fd<1.6;if(ripple.visible){const p=prog(fd,0,1.4);const rp=new THREE.Vector3(.3,-.26,.4);phone.localToWorld(rp);ripple.position.copy(rp);ripple.rotation.x=Math.PI/2;ripple.scale.setScalar(.15+p*1.3);ripple.material.opacity=1-p;}
+  camAt(t);R.render(scene,cam);ctx.drawImage(glc,0,0);
+  // floating dust
+  ctx.save();ctx.fillStyle='rgba(255,245,225,.35)';dust.forEach(([x,y,s],i)=>{const xx=(x+t*30*s)%W,yy=(y+Math.sin(t+i)*20);ctx.fillRect(xx,yy,3*s,3*s);});ctx.restore();
+  // ---- overlays ----
+  const fr=parts.frame.g;
+  if(t>T(3)-.1&&t<T(6))label(t,T(3)+.2,T(6)-.3,'إطار ألومنيوم',pw(-PW/2,PT/2,1.0),'#3a2a1a',140,-170);
+  if(t>T(6)&&t<T(9)){const a1=pw(PW/2+.02,0,-2.0),a2=pw(PW/2+.02,0,2.1);label(t,T(6)+.3,T(9)-.2,'أنتين',a1,RED,40,-150);const sa=prog(t,T(8),T(8)+.3)*(1-prog(t,T(9)-.3,T(9)));signal(t,a1[0],a1[1],sa);signal(t+.4,a2[0],a2[1],sa);}
+  if(t>T(9)+1.3&&t<T(10)+.2)label(t,T(9)+1.4,T(10),'أكبر بلاصة',pw(0,.13,.95),GREEN,0,-170);
+  if(t>T(11)-.1&&t<T(12)+.2){const q=[pw(-1.3,.08,-2.92),pw(1.3,.08,-2.92),pw(1.3,.08,-.64),pw(-1.3,.08,-.64)];const a=prog(t,T(11),T(11)+.2)*(1-prog(t,T(12),T(12)+.2));dashedQuad(q,'#fffaf0',a,t);
+    const cxy=[(q[0][0]+q[2][0])/2,(q[0][1]+q[2][1])/2];ctx.save();ctx.globalAlpha=a;ctx.direction='rtl';ctx.font='900 92px Cairo';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fffaf0';ctx.strokeStyle='rgba(70,40,15,.55)';ctx.lineWidth=12;ctx.strokeText('المخ؟',cxy[0],cxy[1]);ctx.fillText('المخ؟',cxy[0],cxy[1]);ctx.restore();}
+  if(t>T(12)&&t<T(13))label(t,T(12)+.4,T(13)-.1,'البلاكة الأم',pw(-.8,.12,-1.3),GREEN,-40,-150);
+  if(t>T(13)&&t<T(15)){const s=pw(.45,.15,-1.58);label(t,T(13)+.1,T(14)+.7,'البروسيسور',s,'#b8860b',-120,-140);
+    magnifier(t,T(14)+.8,T(15)-.15,s,760,560,190,transistors);
+    if(t>T(14)+3.0)label(t,T(14)+3.0,T(15)-.15,'≈ 1 سنتيمتر',s,'#3a2a1a',-170,120);}
+  if(t>T(15)&&t<T(17)){const L=pw(-1.01,.4,-2.51);label(t,T(15)+.5,T(16)-.05,'الكاميرا',L,'#3a2a1a',-80,-170);
+    if(t>T(16))label(t,T(16)+.4,T(17)-.2,'موتورات صغار',L,'#c8792e',140,-200);
+    const bA=eback(prog(t,T(16)+3.2,T(16)+3.5))*(1-prog(t,T(17)-.25,T(17)));photoCard(300,980,false,bA,false);
+    const gA=eback(prog(t,T(16)+4.2,T(16)+4.5))*(1-prog(t,T(17)-.25,T(17)));photoCard(780,980,true,gA,true);}
+  if(t>T(17)&&t<T(20)){const sc=pw(.3,-.22,.3);label(t,T(17)+.6,T(18),'الشاشة',sc,'#3a2a1a',0,-200);magnifier(t,T(18)+.1,T(20)-.15,sc,760,600,190,pixels);
+    if(t>T(19))label(t,T(19),T(20)-.15,'OLED',[760,600],RED,0,-250);}
+  if(t>T(20)&&t<T(21)-.7)label(t,T(20)+.6,T(21)-.9,'طبقة اللمس',pw(-1.0,-.25,-1.6),CYAN,-40,-160);
+  if(t>T(21)&&t<T(23)){label(t,T(21)+.5,T(23)-.1,'فيبرور',pw(.68,.12,2.78),'#3a2a1a',110,-170);label(t,T(21)+1.4,T(23)-.1,'سبيكر',pw(-.7,.12,2.78),'#3a2a1a',-110,-170);
+    label(t,T(22)+.2,T(23)-.1,'ميكرو',pw(.02,.1,2.82),RED,0,-300);label(t,T(22)+.45,T(23)-.1,'ميكرو',pw(1.12,.17,-2.82),RED,60,-150);}
+  // header chip
+  const big=1-eio(prog(t,2.0,2.7));chip(big>.01?'آش كاين لداخل التيليفون؟':'آش كاين لداخل؟',W/2,lerp(230,175,1-big),lerp(36,60,big));
+  if(t>T(26)){chip('شنو نبنيو من بعد؟',W/2,420,lerp(30,58,eback(prog(t,T(26),T(26)+.4))),prog(t,T(26),T(26)+.2));commentIcon(W/2,620,eback(prog(t,T(27),T(27)+.4)),prog(t,T(27),T(27)+.2));}
+  captions(t);
+  // vignette
+  const vg=ctx.createRadialGradient(W/2,H/2,H*.35,W/2,H/2,H*.8);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(60,35,15,.35)');ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+  const f=Math.max(0,1-(DURATION-t)/.4);if(f>0){ctx.fillStyle=`rgba(0,0,0,${f})`;ctx.fillRect(0,0,W,H);}
+};
+</script></body></html>
