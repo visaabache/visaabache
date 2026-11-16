@@ -1,0 +1,431 @@
+// Dar Zellij data model. PostgreSQL (Supabase, Neon or any Postgres 14+).
+// Money is stored as integer centimes of MAD (1 MAD = 100). Translated text is Json: { "en": "", "fr": "", "ar": "" }.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  CUSTOMER
+  STAFF
+  ADMIN
+}
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+/// What the shop can truthfully say about how a product was made.
+enum CraftType {
+  UNSPECIFIED
+  ARTISAN_INSPIRED
+  ARTISAN_MADE
+  HANDMADE_VERIFIED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+  RETURNED
+}
+
+enum PaymentMethod {
+  COD
+  BANK_TRANSFER
+  CMI
+  STRIPE
+}
+
+enum PaymentStatus {
+  PENDING
+  AWAITING_TRANSFER
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum DiscountType {
+  PERCENT
+  FIXED
+  FREE_SHIPPING
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id           String         @id @default(cuid())
+  email        String         @unique
+  passwordHash String
+  name         String
+  phone        String?
+  role         Role           @default(CUSTOMER)
+  locale       String         @default("fr")
+  country      String?        @default("MA")
+  city         String?
+  address      String?
+  isActive     Boolean        @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  sessions     Session[]
+  orders       Order[]
+  wishlist     WishlistItem[]
+  reviews      Review[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Category {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  parentId    String?
+  parent      Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Category[] @relation("CategoryTree")
+  name        Json
+  description Json?
+  image       String?
+  sortOrder   Int        @default(0)
+  isActive    Boolean    @default(true)
+  products    Product[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([parentId])
+}
+
+model Product {
+  id                String              @id @default(cuid())
+  slug              String              @unique
+  sku               String              @unique
+  status            ProductStatus       @default(DRAFT)
+  name              Json
+  shortDescription  Json?
+  description       Json?
+  materials         Json?
+  care              Json?
+  craftType         CraftType           @default(UNSPECIFIED)
+  /// Shown to customers only when craftType is ARTISAN_MADE or HANDMADE_VERIFIED: who made it, where, how it was checked.
+  craftNote         Json?
+  price             Int
+  compareAtPrice    Int?
+  stock             Int                 @default(0)
+  lowStockThreshold Int?
+  widthCm           Float?
+  heightCm          Float?
+  depthCm           Float?
+  diameterCm        Float?
+  capacityMl        Int?
+  weightG           Int?
+  colors            String[]            @default([])
+  patterns          String[]            @default([])
+  featured          Boolean             @default(false)
+  giftable          Boolean             @default(false)
+  personalizable    Boolean             @default(false)
+  categoryId        String?
+  category          Category?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  seoTitle          Json?
+  seoDescription    Json?
+  salesCount        Int                 @default(0)
+  ratingAvg         Float               @default(0)
+  ratingCount       Int                 @default(0)
+  publishedAt       DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  images            ProductImage[]
+  variants          ProductVariant[]
+  collections       CollectionProduct[]
+  reviews           Review[]
+  wishlistedBy      WishlistItem[]
+  orderItems        OrderItem[]
+
+  @@index([status, publishedAt])
+  @@index([categoryId])
+  @@index([featured])
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  alt       Json?
+  width     Int?
+  height    Int?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([productId, sortOrder])
+}
+
+model ProductVariant {
+  id        String      @id @default(cuid())
+  productId String
+  product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku       String      @unique
+  name      Json
+  color     String?
+  pattern   String?
+  size      String?
+  /// Overrides the product price when set (centimes).
+  price     Int?
+  stock     Int         @default(0)
+  isActive  Boolean     @default(true)
+  sortOrder Int         @default(0)
+  orderItems OrderItem[]
+
+  @@index([productId])
+}
+
+model Collection {
+  id          String              @id @default(cuid())
+  slug        String              @unique
+  name        Json
+  description Json?
+  badge       Json?
+  image       String?
+  isActive    Boolean             @default(true)
+  featured    Boolean             @default(false)
+  isGift      Boolean             @default(false)
+  sortOrder   Int                 @default(0)
+  startsAt    DateTime?
+  endsAt      DateTime?
+  products    CollectionProduct[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+model CollectionProduct {
+  collectionId String
+  productId    String
+  sortOrder    Int        @default(0)
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([collectionId, productId])
+}
+
+model Review {
+  id               String       @id @default(cuid())
+  productId        String
+  product          Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId           String?
+  user             User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name             String
+  email            String?
+  rating           Int
+  title            String?
+  body             String
+  locale           String       @default("fr")
+  status           ReviewStatus @default(PENDING)
+  verifiedPurchase Boolean      @default(false)
+  createdAt        DateTime     @default(now())
+
+  @@index([productId, status])
+}
+
+model Testimonial {
+  id          String   @id @default(cuid())
+  name        String
+  city        String?
+  quote       Json
+  rating      Int      @default(5)
+  isPublished Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model WishlistItem {
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([userId, productId])
+}
+
+model Order {
+  id               String        @id @default(cuid())
+  number           String        @unique
+  accessToken      String        @unique
+  userId           String?
+  user             User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  status           OrderStatus   @default(PENDING)
+  paymentMethod    PaymentMethod
+  paymentStatus    PaymentStatus @default(PENDING)
+  paymentRef       String?
+  email            String
+  phone            String
+  firstName        String
+  lastName         String
+  country          String        @default("MA")
+  city             String
+  address          String
+  postalCode       String?
+  notes            String?
+  locale           String        @default("fr")
+  /// Currency shown to the customer; all amounts below are MAD centimes.
+  currency         String        @default("MAD")
+  exchangeRate     Float         @default(1)
+  subtotal         Int
+  discountTotal    Int           @default(0)
+  shippingFee      Int           @default(0)
+  total            Int
+  discountCode     String?
+  shippingLabel    String?
+  deliveryMinDays  Int?
+  deliveryMaxDays  Int?
+  carrier          String?
+  trackingNumber   String?
+  trackingUrl      String?
+  paidAt           DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  items            OrderItem[]
+  events           OrderEvent[]
+
+  @@index([status, createdAt])
+  @@index([email])
+  @@index([userId])
+}
+
+model OrderItem {
+  id        String          @id @default(cuid())
+  orderId   String
+  order     Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product?        @relation(fields: [productId], references: [id], onDelete: SetNull)
+  variantId String?
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  sku       String
+  name      Json
+  variantName Json?
+  image     String?
+  unitPrice Int
+  quantity  Int
+  lineTotal Int
+
+  @@index([orderId])
+}
+
+model OrderEvent {
+  id                String      @id @default(cuid())
+  orderId           String
+  order             Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status            OrderStatus?
+  note              String?
+  visibleToCustomer Boolean     @default(true)
+  actor             String?
+  createdAt         DateTime    @default(now())
+
+  @@index([orderId, createdAt])
+}
+
+model DiscountCode {
+  id          String       @id @default(cuid())
+  code        String       @unique
+  type        DiscountType
+  /// PERCENT: whole percent (10 = 10%). FIXED: MAD centimes. FREE_SHIPPING: ignored.
+  value       Int          @default(0)
+  minSubtotal Int          @default(0)
+  maxUses     Int?
+  usedCount   Int          @default(0)
+  startsAt    DateTime?
+  endsAt      DateTime?
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+}
+
+/// Delivery inside Morocco, priced per city.
+model ShippingCity {
+  id              String   @id @default(cuid())
+  name            Json
+  region          String?
+  fee             Int
+  minDays         Int      @default(1)
+  maxDays         Int      @default(3)
+  codAvailable    Boolean  @default(true)
+  isActive        Boolean  @default(true)
+  sortOrder       Int      @default(0)
+}
+
+/// International delivery, priced per group of countries (ISO 3166-1 alpha-2).
+model ShippingZone {
+  id          String   @id @default(cuid())
+  name        Json
+  countries   String[]
+  fee         Int
+  perKgFee    Int      @default(0)
+  freeOver    Int?
+  minDays     Int      @default(5)
+  maxDays     Int      @default(12)
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+}
+
+model Currency {
+  code       String  @id
+  symbol     String
+  /// How many units of this currency 1 MAD buys.
+  rateFromMad Float
+  decimals   Int     @default(2)
+  isActive   Boolean @default(true)
+  sortOrder  Int     @default(0)
+}
+
+model Page {
+  slug      String   @id
+  title     Json
+  body      Json
+  updatedAt DateTime @updatedAt
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  locale    String   @default("fr")
+  createdAt DateTime @default(now())
+}
+
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actor     String
+  action    String
+  target    String?
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
