@@ -1,0 +1,71 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000}canvas{display:block}
+@font-face{font-family:Cairo;font-weight:200 1000;src:url(fonts/cairo-arabic.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+FB50-FDFF,U+FE70-FEFF,U+200C-200E;}
+@font-face{font-family:Cairo;font-weight:200 1000;src:url(fonts/cairo-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F;}</style>
+<script type="importmap">{"imports":{"three":"./three.js"}}</script></head>
+<body><canvas id="c" width="1080" height="1920"></canvas>
+<script type="module">
+// Instagram Reel cover variants (1080x1920; key content kept inside the 3:4 grid crop, y 240–1680).
+import * as THREE from 'three';
+const W=1080,H=1920,ctx=document.getElementById('c').getContext('2d');
+const loadImg=src=>new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=src;});
+const [JET,EARTH]=await Promise.all(['img/plane_px.jpg','img/earth.jpg'].map(loadImg));
+const GOLD='#ffc23d',RED='#ff3b3b';
+// globe render (offscreen)
+const glc=document.createElement('canvas');glc.width=1400;glc.height=1400;
+const R=new THREE.WebGLRenderer({canvas:glc,antialias:true,alpha:true,preserveDrawingBuffer:true});R.setSize(1400,1400,false);R.outputColorSpace=THREE.SRGBColorSpace;R.setClearColor(0,0);
+const sc=new THREE.Scene();const cam=new THREE.PerspectiveCamera(30,1,.1,50);cam.position.set(0,0,4.2);
+sc.add(new THREE.AmbientLight('#fff',.5));const sun=new THREE.DirectionalLight('#fff',2.1);sun.position.set(-3,2,4);sc.add(sun);
+const tex=new THREE.Texture(EARTH);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=8;tex.needsUpdate=true;
+const g=new THREE.Group();sc.add(g);g.add(new THREE.Mesh(new THREE.SphereGeometry(1,128,96),new THREE.MeshStandardMaterial({map:tex,roughness:.9})));
+sc.add(new THREE.Mesh(new THREE.SphereGeometry(1.07,64,48),new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.BackSide,blending:THREE.AdditiveBlending,
+  vertexShader:`varying vec3 vN;void main(){vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+  fragmentShader:`varying vec3 vN;void main(){float i=pow(.72-dot(vN,vec3(0,0,1.)),3.);gl_FragColor=vec4(.35,.6,1.,1.)*i*2.4;}`})));
+function globeAt(lat,lon){g.quaternion.setFromEuler(new THREE.Euler(lat*Math.PI/180,-(lon*Math.PI/180+Math.PI/2),0,'XYZ'));R.render(sc,cam);return glc;}
+// helpers
+function cover(img,x,y,w,h,zoom=1,fx=.5,fy=.5){const s=Math.max(w/img.width,h/img.height)*zoom;const iw=img.width*s,ih=img.height*s;ctx.drawImage(img,x+(w-iw)*fx,y+(h-ih)*fy,iw,ih);}
+function text(t,x,y,size,col,opt={}){ctx.save();ctx.direction='rtl';ctx.font=`${opt.w||900} ${size}px Cairo`;ctx.textAlign=opt.align||'center';ctx.textBaseline='middle';
+  if(opt.rot)ctx.translate(x,y),ctx.rotate(opt.rot),x=0,y=0;ctx.lineJoin='round';ctx.lineWidth=opt.stroke??size*.16;ctx.strokeStyle=opt.sc||'rgba(5,8,15,.92)';ctx.strokeText(t,x,y);
+  if(opt.glow){ctx.shadowColor=col;ctx.shadowBlur=opt.glow;}ctx.fillStyle=col;ctx.fillText(t,x,y);ctx.restore();}
+function pill(t,x,y,size,bg,fg,rot=0){ctx.save();ctx.translate(x,y);ctx.rotate(rot);ctx.direction='rtl';ctx.font=`900 ${size}px Cairo`;const w=ctx.measureText(t).width+size*1.2,h=size*1.75;
+  ctx.shadowColor='rgba(0,0,0,.45)';ctx.shadowBlur=30;ctx.fillStyle=bg;ctx.beginPath();ctx.roundRect(-w/2,-h/2,w,h,h*.3);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle=fg;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(t,0,size*.08);ctx.restore();}
+function gauge(x,y,r,val,max,col,label){ctx.save();ctx.translate(x,y);ctx.fillStyle='rgba(8,12,22,.9)';ctx.beginPath();ctx.arc(0,0,r+30,Math.PI,2*Math.PI);ctx.lineTo(r+30,70);ctx.lineTo(-r-30,70);ctx.closePath();ctx.fill();
+  ctx.lineCap='round';ctx.lineWidth=24;ctx.strokeStyle='rgba(255,255,255,.14)';ctx.beginPath();ctx.arc(0,0,r,Math.PI,2*Math.PI);ctx.stroke();const f=val/max;
+  ctx.strokeStyle=col;ctx.shadowColor=col;ctx.shadowBlur=30;ctx.beginPath();ctx.arc(0,0,r,Math.PI,Math.PI+Math.PI*f);ctx.stroke();ctx.shadowBlur=0;
+  const an=Math.PI+Math.PI*f;ctx.strokeStyle='#fff';ctx.lineWidth=9;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(an)*(r-42),Math.sin(an)*(r-42));ctx.stroke();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(0,0,15,0,7);ctx.fill();
+  ctx.font='900 86px Inter';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=col;ctx.fillText(val.toLocaleString('en-US'),0,-r*.42);
+  ctx.direction='rtl';ctx.font='800 34px Cairo';ctx.fillStyle='#e6edf8';ctx.fillText(label,0,42);ctx.restore();}
+function arrow(x1,y1,x2,y2,col,w=12){ctx.save();ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=w;ctx.lineCap='round';ctx.shadowColor='rgba(0,0,0,.6)';ctx.shadowBlur=10;
+  const mx=(x1+x2)/2+(y2-y1)*.25,my=(y1+y2)/2-(x2-x1)*.25;ctx.beginPath();ctx.moveTo(x1,y1);ctx.quadraticCurveTo(mx,my,x2,y2);ctx.stroke();
+  const a=Math.atan2(y2-my,x2-mx);ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-40*Math.cos(a-.5),y2-40*Math.sin(a-.5));ctx.lineTo(x2-40*Math.cos(a+.5),y2-40*Math.sin(a+.5));ctx.closePath();ctx.fill();ctx.restore();}
+function watermark(){ctx.save();ctx.font='600 34px Inter';ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,.55)';ctx.shadowColor='rgba(0,0,0,.6)';ctx.shadowBlur=6;ctx.fillText('Abache Abdelilah',W/2,1640);ctx.restore();}
+function vignette(a=.55){const v=ctx.createRadialGradient(W/2,H/2,H*.3,W/2,H/2,H*.8);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,`rgba(0,0,0,${a})`);ctx.fillStyle=v;ctx.fillRect(0,0,W,H);}
+function streaks(n,y0,y1,a){ctx.save();ctx.globalAlpha=a;ctx.strokeStyle='#fff';ctx.lineCap='round';for(let i=0;i<n;i++){const r1=(Math.sin(i*91.7)+1)/2,r2=(Math.sin(i*13.3)+1)/2;const y=y0+(y1-y0)*r1,x=((i*233)%1300)-120;ctx.lineWidth=2+r2*5;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+160+r2*360,y);ctx.stroke();}ctx.restore();}
+
+// V1 — jet + speedometer: "الأرض كتدور بـ1390 كم/س… والطيارة لا؟"
+function v1(){cover(JET,0,0,W,H,1.18,.5,.42);streaks(46,300,1500,.35);
+  let gr=ctx.createLinearGradient(0,0,0,700);gr.addColorStop(0,'rgba(5,8,15,.92)');gr.addColorStop(1,'rgba(5,8,15,0)');ctx.fillStyle=gr;ctx.fillRect(0,0,W,700);
+  gr=ctx.createLinearGradient(0,1100,0,H);gr.addColorStop(0,'rgba(5,8,15,0)');gr.addColorStop(1,'rgba(5,8,15,.95)');ctx.fillStyle=gr;ctx.fillRect(0,1100,W,H-1100);
+  text('الأرض كتدور',W/2,390,128,'#ffffff');text('بـ 1390 كم/س',W/2,540,118,RED,{glow:30});
+  gauge(W/2,1180,160,1390,1600,RED,'كم/س');
+  text('والطيارة لا؟',W/2,1440,150,GOLD,{glow:26});vignette(.4);watermark();}
+// V2 — globe + hovering plane: "4 سوايع… وتلقى راسك فأمريكا؟"
+function v2(){const bg=ctx.createRadialGradient(W/2,900,0,W/2,900,1100);bg.addColorStop(0,'#16244a');bg.addColorStop(1,'#04060c');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  for(let i=0;i<160;i++){ctx.fillStyle=`rgba(200,220,255,${.2+(i%5)*.1})`;ctx.fillRect((Math.sin(i*12.9898)*43758.5453%1+1)%1*W,(Math.sin(i*78.233)*12345.678%1+1)%1*H,2.4,2.4);}
+  const gl=globeAt(28,-35);ctx.drawImage(gl,-160,560,1400,1400);
+  // plane photo cut-out feel: rounded window of the jet above the globe
+  ctx.save();ctx.beginPath();ctx.ellipse(W/2,560,330,200,0,0,7);ctx.clip();cover(JET,W/2-330,360,660,400,1.05,.5,.45);ctx.restore();
+  ctx.save();ctx.strokeStyle='#fff';ctx.lineWidth=8;ctx.beginPath();ctx.ellipse(W/2,560,330,200,0,0,7);ctx.stroke();ctx.restore();
+  arrow(860,900,330,1060,GOLD,14);pill('واقفة فالجو؟',W/2+250,820,46,RED,'#fff',.05);pill('أمريكا',300,1140,44,GOLD,'#111',-.05);
+  text('علاش الطيارة',W/2,300,104,'#ffffff');text('ما كتبقاش واقفة؟',W/2,1420,108,GOLD,{glow:24});
+  text('والأرض كتدور تحتها 🌍'.replace(' 🌍',''),W/2,1545,62,'#ffffff');vignette(.35);watermark();}
+// V3 — bold split: question top on jet, "الجواب غادي يصدمك" bottom on globe
+function v3(){ctx.save();ctx.beginPath();ctx.rect(0,0,W,H*.5+40);ctx.clip();cover(JET,0,0,W,H*.5+40,1.25,.5,.5);streaks(30,120,1000,.3);ctx.restore();
+  const bg=ctx.createLinearGradient(0,H*.5,0,H);bg.addColorStop(0,'#0e1830');bg.addColorStop(1,'#04060c');ctx.fillStyle=bg;ctx.fillRect(0,H*.5+40,W,H*.5);
+  const gl=globeAt(32,-8);ctx.save();ctx.beginPath();ctx.rect(0,H*.5+40,W,H*.5);ctx.clip();ctx.drawImage(gl,-110,990,1300,1300);ctx.restore();
+  ctx.fillStyle=GOLD;ctx.beginPath();ctx.moveTo(0,H*.5+10);ctx.lineTo(W,H*.5-40);ctx.lineTo(W,H*.5+30);ctx.lineTo(0,H*.5+80);ctx.closePath();ctx.fill();
+  text('1390 كم/س',W/2,H*.5+18,64,'#111',{stroke:0,rot:-.045});
+  text('الأرض كتدور…',W/2,330,112,'#ffffff');text('علاش الطيارة',W/2,700,118,'#ffffff');text('ما كتبقاش واقفة؟',W/2,850,118,GOLD,{glow:24});
+  pill('الجواب غادي يصدمك',W/2,1460,58,RED,'#fff',-.03);vignette(.35);watermark();}
+window.DURATION=3;window.ready=document.fonts.load('900 60px Cairo','عربي');
+window.render=function(t){ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,W,H);const v=Math.round(t);if(v===1)v1();else if(v===2)v2();else v3();};
+</script></body></html>
