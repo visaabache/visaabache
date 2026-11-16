@@ -1,0 +1,204 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000}canvas{display:block}
+@font-face{font-family:Cairo;font-weight:200 1000;src:url(fonts/cairo-arabic.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+FB50-FDFF,U+FE70-FEFF,U+200C-200E;}
+@font-face{font-family:Cairo;font-weight:200 1000;src:url(fonts/cairo-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F;}</style>
+<script type="importmap">{"imports":{"three":"./three.js"}}</script></head>
+<body><canvas id="c" width="1080" height="1920"></canvas>
+<script type="module">
+// «كيفاش عرفنا بلي الأرض كورة… بلا صواريخ؟» — documentary-style Reel, timed to the user's own recorded voice.
+import * as THREE from 'three';
+const W=1080,H=1920,ctx=document.getElementById('c').getContext('2d');
+const L=[[0.142,6.387],[6.784,10.374],[10.657,19.16],[19.48,23.344],[23.627,28.762],[29.234,34.182],[34.446,38.839],[39.084,42.712],[43.033,48.48],[48.895,55.419],[55.891,60.269],[60.552,67.62],[67.96,72.561]];
+const A=i=>L[i-1][0],B=i=>L[i-1][1],F=(i,f)=>lerp(A(i),B(i),f);
+const DURATION=73.8;
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x)),lerp=(a,b,t)=>a+(b-a)*t,prog=(t,a,b)=>clamp((t-a)/(b-a));
+const eio=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2,eout=t=>1-Math.pow(1-t,3);
+const eback=t=>{if(t<=0)return 0;const c1=1.4,c3=c1+1;return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2)};
+const D2R=Math.PI/180,PI=Math.PI;
+const NAVY='#0a0f1c',GOLD='#e8c37a',SUN='#ffb347',INK='#f3ead6',DIM='rgba(243,234,214,.55)',RED='#ff5a4e',GREEN='#5fd39a',BLUE='#7cc4ff';
+const loadImg=src=>new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=src;});
+const [STROZZI,TANGER,ZAGORA,ECLIPSE,EARTH]=await Promise.all(['img/strozzi.jpg','img/tanger.jpg','img/zagora.jpg','img/eclipse.jpg','img/earth.jpg'].map(loadImg));
+
+// ---------- 3D globe ----------
+const glc=document.createElement('canvas');glc.width=W;glc.height=H;
+const R3=new THREE.WebGLRenderer({canvas:glc,antialias:true,alpha:true,preserveDrawingBuffer:true});R3.setSize(W,H,false);R3.outputColorSpace=THREE.SRGBColorSpace;R3.setClearColor(0,0);
+const scene=new THREE.Scene();const cam=new THREE.PerspectiveCamera(34,W/H,.01,100);
+const amb=new THREE.AmbientLight('#ffffff',.5);scene.add(amb);const sunL=new THREE.DirectionalLight('#fff6e6',2.0);sunL.position.set(-3,2,4);scene.add(sunL);
+const etex=new THREE.Texture(EARTH);etex.colorSpace=THREE.SRGBColorSpace;etex.anisotropy=8;etex.needsUpdate=true;
+const globe=new THREE.Group();scene.add(globe);
+globe.add(new THREE.Mesh(new THREE.SphereGeometry(1,128,96),new THREE.MeshStandardMaterial({map:etex,roughness:.92})));
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(1.06,64,48),new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.BackSide,blending:THREE.AdditiveBlending,
+  vertexShader:`varying vec3 vN;void main(){vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+  fragmentShader:`varying vec3 vN;void main(){float i=pow(.72-dot(vN,vec3(0,0,1.)),3.);gl_FragColor=vec4(.45,.62,1.,1.)*i*2.;}`})));
+const ll2v=(lat,lon,r=1)=>new THREE.Vector3(r*Math.cos(lat)*Math.cos(lon),r*Math.sin(lat),-r*Math.cos(lat)*Math.sin(lon));
+const goldM=new THREE.MeshBasicMaterial({color:GOLD});
+const merid=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([...Array(40)].map((_,i)=>ll2v(lerp(26,40,i/39)*D2R,-5.82*D2R,1.004))),80,.0035,6),goldM);globe.add(merid);
+const equ=new THREE.Mesh(new THREE.TorusGeometry(1.012,.006,8,200),goldM);equ.rotation.x=PI/2;globe.add(equ);
+function orient(lat,lon,spin=0){const q1=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),-(lon+PI/2));const q2=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),lat);
+  globe.quaternion.copy(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),spin).multiply(q2.multiply(q1)));}
+const scr=v=>{const q=v.clone().applyQuaternion(globe.quaternion).project(cam);return [(q.x+1)/2*W,(1-q.y)/2*H,q.z];};
+
+// ---------- 2D helpers ----------
+function cover(img,x,y,w,h,zoom=1,fx=.5,fy=.5){const s=Math.max(w/img.width,h/img.height)*zoom;const iw=img.width*s,ih=img.height*s;ctx.drawImage(img,x+(w-iw)*fx,y+(h-ih)*fy,iw,ih);}
+function bg(){const g=ctx.createRadialGradient(W/2,H*.42,0,W/2,H*.42,H*.85);g.addColorStop(0,'#14203a');g.addColorStop(1,'#05070e');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);}
+function grid(a){ctx.save();ctx.globalAlpha=a*.06;ctx.strokeStyle=INK;ctx.lineWidth=1;for(let x=0;x<W;x+=60){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}for(let y=0;y<H;y+=60){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}ctx.restore();}
+function line(x1,y1,x2,y2,col,w=3,dash=null,a=1){ctx.save();ctx.globalAlpha*=a;ctx.strokeStyle=col;ctx.lineWidth=w;ctx.lineCap='round';if(dash)ctx.setLineDash(dash);ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore();}
+function label(txt,x,y,size,col,opt={}){ctx.save();ctx.globalAlpha*=opt.a??1;ctx.direction=opt.ltr?'ltr':'rtl';ctx.font=`${opt.w||800} ${size}px ${opt.ltr?'Inter':'Cairo'}`;ctx.textAlign=opt.align||'center';ctx.textBaseline='middle';
+  if(opt.bg){const w=ctx.measureText(txt).width+size*.9;ctx.fillStyle=opt.bg;ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();ctx.roundRect(x-w/2,y-size*.78,w,size*1.56,size*.3);ctx.fill();ctx.stroke();}
+  ctx.shadowColor='rgba(0,0,0,.7)';ctx.shadowBlur=10;ctx.fillStyle=col;ctx.fillText(txt,x,y+size*.05);ctx.restore();}
+function sunDisc(x,y,r,a=1){ctx.save();ctx.globalAlpha=a;const g=ctx.createRadialGradient(x,y,0,x,y,r*3);g.addColorStop(0,'rgba(255,200,110,.95)');g.addColorStop(.3,'rgba(255,170,80,.35)');g.addColorStop(1,'rgba(255,170,80,0)');ctx.fillStyle=g;ctx.fillRect(x-r*3,y-r*3,r*6,r*6);
+  ctx.fillStyle='#ffd58a';ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();ctx.restore();}
+function fadeIn(t,t0,d=.4){return eout(prog(t,t0,t0+d));}
+function credit(txt){ctx.save();ctx.font='500 18px Inter';ctx.fillStyle='rgba(255,255,255,.75)';ctx.shadowColor='rgba(0,0,0,.8)';ctx.shadowBlur=4;ctx.textAlign='left';ctx.fillText(txt,26,1650);ctx.restore();}
+function photo(img,t,t0,t1,zoom0,zoom1,fx,fy,dark=.35){const p=prog(t,t0,t1);cover(img,0,0,W,H,lerp(zoom0,zoom1,eio(p)),fx,fy);
+  const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,`rgba(5,8,15,${dark+.25})`);g.addColorStop(.35,`rgba(5,8,15,${dark*.4})`);g.addColorStop(.7,`rgba(5,8,15,${dark*.6})`);g.addColorStop(1,'rgba(5,8,15,.9)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);}
+// editorial title chip (thin gold rule)
+function title(txt,y,size,a){if(a<=0)return;ctx.save();ctx.globalAlpha=a;ctx.direction='rtl';ctx.font=`900 ${size}px Cairo`;ctx.textAlign='center';ctx.textBaseline='middle';const w=ctx.measureText(txt).width;
+  ctx.shadowColor='rgba(0,0,0,.75)';ctx.shadowBlur=16;ctx.fillStyle=INK;ctx.fillText(txt,W/2,y);ctx.shadowBlur=0;ctx.fillStyle=GOLD;ctx.fillRect(W/2-w/2,y+size*.72,w*a,4);ctx.restore();}
+// captions: [start, text] (* = gold)
+const CAPS=[[0,'قبل *2200 عام…'],[F(1,.28),'واحد الراجل عرف|بلي الأرض *كورة'],[F(1,.62),'وحسب الحجم ديالها|غير *بالظل ديال عصا'],
+  [A(2),'سميتو *إراتوستينس'],[F(2,.45),'وكان عايش|فالإسكندرية فمصر'],
+  [A(3),'لاحظ بلي نهار واحد فالعام'],[F(3,.28),'فنص النهار'],[F(3,.44),'الشمس كتكون *نيشان|فوق الراس'],[F(3,.72),'والعصا ما كيكون|عندها *حتى ظل'],
+  [A(4),'وفنفس الوقت…'],[F(4,.34),'فمدينة خرى|العصا *كان عندها ظل'],
+  [A(5),'إلا كانت الأرض *مسطحة'],[F(5,.45),'كون الظل كيكون|*بحال بحال فالجوج'],
+  [A(6),'دابا جربناها حنا *فالمغرب'],[F(6,.5),'نهار *21 يونيو|فنص النهار'],
+  [A(7),'عصا ديال ميترو *فطنجة'],[F(7,.5),'عندها ظل ديال|*22 سنتيم'],
+  [A(8),'ونفس العصا *فزاكورة'],[F(8,.5),'الظل ديالها غير|*12 سنتيم'],
+  [A(9),'الفرق فالزاوية تقريبا|*5.5 درجات'],[F(9,.6),'وبيناتهم|*600 كيلومتر'],
+  [A(10),'وإلا حسبتيها…'],[F(10,.24),'الدورة ديال الأرض كتخرج|تقريبا *40,000 كيلومتر'],[F(10,.72),'وهادا هو|الرقم *الحقيقي!'],
+  [A(11),'وماشي غير هادشي…'],[F(11,.3),'البابور فالبحر كيغبر|*من التحت للفوق'],
+  [A(12),'والظل ديال الأرض|على القمر *ديما مدور'],[F(12,.48),'ملي كتكون *12:00 فكازا'],[F(12,.74),'كتكون *20:00|فطوكيو'],
+  [A(13),'صيفطها لصاحبك اللي باقي|كيقول الأرض *مسطحة'],[F(13,.55),'وكتب ليا شنو|*نشرحو من بعد']];
+function captions(t){let i=-1;CAPS.forEach((c,k)=>{if(t>=c[0])i=k;});if(i<0)return;const [t0,txt]=CAPS[i];const lines=txt.split('|');
+  ctx.save();ctx.direction='rtl';ctx.textBaseline='middle';ctx.font='800 66px Cairo';let n=0;
+  lines.forEach((ln,li)=>{const words=ln.split(' ').map(w=>w.startsWith('*')?[w.slice(1),1]:[w,0]);const ws=words.map(w=>ctx.measureText(w[0]).width),sp=16;const tot=ws.reduce((a,b)=>a+b,0)+sp*(ws.length-1);
+    let x=(W+tot)/2;const y=1450+li*88;words.forEach(([w,hl],k)=>{const p=t0===0?1:eout(prog(t,t0+n*.045,t0+n*.045+.25));n++;ctx.globalAlpha=p;ctx.textAlign='right';const yy=y+(1-p)*12;
+      ctx.lineJoin='round';ctx.strokeStyle='rgba(4,6,12,.85)';ctx.lineWidth=12;ctx.strokeText(w,x,yy);ctx.fillStyle=hl?GOLD:INK;ctx.fillText(w,x,yy);x-=ws[k]+sp;});});ctx.restore();}
+
+// ---------- curved/flat ground diagram (real geometry: parallel vertical sun rays) ----------
+function groundDiagram(t,curv,showB,alpha){ // curv: 0 flat .. 1 curved
+  const k=lerp(1e-6,1/640,curv),y0=1000,s0=0,sB=-250,STK=300;
+  const pt=s=>[540+Math.sin(k*s)/k,y0+(1-Math.cos(k*s))/k],nrm=s=>[Math.sin(k*s),-Math.cos(k*s)];
+  ctx.save();ctx.globalAlpha=alpha;
+  // sun rays
+  for(let x=120;x<=960;x+=70)line(x,160,x,y0-260,'rgba(255,200,120,.35)',2,[10,12]);
+  sunDisc(540,170,34,1);label('أشعة الشمس متوازية',540,250,30,SUN,{w:700});
+  // ground
+  ctx.strokeStyle=DIM;ctx.lineWidth=4;ctx.beginPath();for(let s=-560;s<=560;s+=8){const [x,y]=pt(s);s===-560?ctx.moveTo(x,y):ctx.lineTo(x,y);}ctx.stroke();
+  const stick=(s,name,col)=>{const [bx,by]=pt(s),[nx,ny]=nrm(s);const tx=bx+nx*STK,ty=by+ny*STK;
+    // shadow: vertical ray from tip down to ground
+    let lo=s-400,hi=s+400;for(let it=0;it<40;it++){const m=(lo+hi)/2;const [mx]=pt(m);if(mx<tx)lo=m;else hi=m;}const sh=(lo+hi)/2;
+    ctx.strokeStyle='rgba(0,0,0,.75)';ctx.lineWidth=12;ctx.lineCap='round';ctx.beginPath();for(let u=0;u<=1;u+=.05){const [x,y]=pt(lerp(s,sh,u));u?ctx.lineTo(x,y+2):ctx.moveTo(x,y+2);}ctx.stroke();
+    line(bx,by,tx,ty,col,9);ctx.fillStyle=col;ctx.beginPath();ctx.arc(tx,ty,8,0,7);ctx.fill();line(tx,ty,tx,pt(sh)[1],'rgba(255,200,120,.7)',2,[6,6]);
+    label(name,bx,by+70,36,col,{w:800});return Math.abs(sh-s);};
+  const shA=stick(s0,'أسوان',GOLD);let shB=0;if(showB>0){ctx.globalAlpha=alpha*showB;shB=stick(sB,'الإسكندرية',BLUE);}
+  ctx.restore();return [shA,shB];}
+// Earth cross-section with angle at the centre (angle exaggerated for legibility)
+function crossSection(t,t0){const a=fadeIn(t,t0,.5);if(a<=0)return;const cx=540,cy=1260,r=560,half=11*D2R;ctx.save();ctx.globalAlpha=a;
+  ctx.strokeStyle=DIM;ctx.lineWidth=4;ctx.beginPath();ctx.arc(cx,cy,r,PI+.35,2*PI-.35);ctx.stroke();
+  const p1=[cx+r*Math.sin(-half),cy-r*Math.cos(-half)],p2=[cx+r*Math.sin(half),cy-r*Math.cos(half)];
+  const g=eout(prog(t,t0+.2,t0+1.2));line(cx,cy,lerp(cx,p1[0],g),lerp(cy,p1[1],g),GOLD,3,[8,8]);line(cx,cy,lerp(cx,p2[0],g),lerp(cy,p2[1],g),BLUE,3,[8,8]);
+  [[p1,-half,GOLD,'طنجة'],[p2,half,BLUE,'زاكورة']].forEach(([p,an,col,nm])=>{line(p[0],p[1],p[0]+Math.sin(an)*120,p[1]-Math.cos(an)*120,col,8);label(nm,p[0]+Math.sin(an)*60,p[1]-Math.cos(an)*60-90,34,col);});
+  ctx.strokeStyle=SUN;ctx.lineWidth=5;ctx.beginPath();ctx.arc(cx,cy,90,-PI/2-half,-PI/2+half);ctx.stroke();label('5.4°',cx,cy-140,46,SUN,{ltr:true,w:900});
+  ctx.fillStyle=INK;ctx.beginPath();ctx.arc(cx,cy,8,0,7);ctx.fill();label('مركز الأرض',cx,cy+44,28,DIM,{w:700});
+  const g2=fadeIn(t,t0+1.6);ctx.globalAlpha=a*g2;ctx.strokeStyle=GREEN;ctx.lineWidth=8;ctx.beginPath();ctx.arc(cx,cy,r+22,-PI/2-half,-PI/2+half);ctx.stroke();label('605 كم',cx,cy-r-70,46,GREEN,{w:900});
+  ctx.globalAlpha=a*.7;label('(الزاوية مكبرة فالرسم)',cx,cy+100,24,DIM,{w:600});ctx.restore();}
+// measurement card on a photo: 1 m stick + shadow with dimension line
+function measure(t,t0,cm,col){const a=fadeIn(t,t0,.5);if(a<=0)return;const gx=540,gy=1160,px=4.1;ctx.save();ctx.globalAlpha=a;
+  ctx.fillStyle='rgba(5,8,15,.72)';ctx.beginPath();ctx.roundRect(150,620,780,640,30);ctx.fill();ctx.strokeStyle='rgba(232,195,122,.4)';ctx.lineWidth=2;ctx.stroke();
+  line(220,gy,860,gy,DIM,3);const h=100*px;line(gx,gy,gx,gy-h,col,10);label('1 m',gx-70,gy-h/2,34,col,{ltr:true,w:800});
+  const g=eout(prog(t,t0+.5,t0+1.6));const sl=cm*px*g;ctx.strokeStyle='rgba(0,0,0,.9)';ctx.lineWidth=14;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(gx,gy+2);ctx.lineTo(gx+sl,gy+2);ctx.stroke();
+  line(gx,gy-h,gx+sl,gy,'rgba(255,200,120,.7)',2,[8,8]);sunDisc(gx+sl+cm*px*2.2,gy-h-cm*px*.4*0+-120,22,.9);
+  line(gx,gy+44,gx+sl,gy+44,SUN,3);line(gx,gy+30,gx,gy+58,SUN,3);line(gx+sl,gy+30,gx+sl,gy+58,SUN,3);
+  label(Math.round(cm*g)+' cm',gx+sl/2+10,gy+90,44,SUN,{ltr:true,w:900});ctx.restore();}
+// ship over the horizon
+function shipScene(t,t0,t1){const p=prog(t,t0+.4,t1-.2);const cx=540,cy=2650,r=1700;bg();grid(1);
+  ctx.save();ctx.fillStyle='#10335a';ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.fill();ctx.restore();
+  const eye=[150,cy-r-0];const ox=150,oy=Math.sqrt(r*r-(ox-cx)**2);const obs=[ox,cy-oy];
+  ctx.fillStyle=INK;ctx.beginPath();ctx.arc(obs[0],obs[1]-40,10,0,7);ctx.fill();line(obs[0],obs[1]-30,obs[0],obs[1],INK,4);label('أنت',obs[0],obs[1]-80,32,INK);
+  // ship along the arc
+  const ang=lerp(-.35,.32,eio(p));const sx=cx+r*Math.sin(ang),sy=cy-r*Math.cos(ang);ctx.save();ctx.translate(sx,sy);ctx.rotate(ang);
+  ctx.fillStyle='#d8dde6';ctx.beginPath();ctx.moveTo(-60,0);ctx.lineTo(60,0);ctx.lineTo(48,-26);ctx.lineTo(-48,-26);ctx.closePath();ctx.fill();ctx.fillStyle='#c1272d';ctx.fillRect(-20,-70,8,44);ctx.fillStyle='#f3ead6';ctx.beginPath();ctx.moveTo(-12,-70);ctx.lineTo(40,-34);ctx.lineTo(-12,-34);ctx.closePath();ctx.fill();ctx.restore();
+  // line of sight tangent from the eye
+  const tang=Math.asin(r/Math.hypot(obs[0]-cx,obs[1]-40-cy));line(obs[0],obs[1]-40,obs[0]+900,obs[1]-40+900*Math.tan(.07+(-Math.atan2(cy-(obs[1]-40),cx-obs[0])+PI/2)*0),GOLD,2,[10,10],.0);
+  // inset: what you see
+  const ix=760,iy=520,ir=200;ctx.save();ctx.beginPath();ctx.arc(ix,iy,ir,0,7);ctx.clip();ctx.fillStyle='#9cc6ea';ctx.fillRect(ix-ir,iy-ir,ir*2,ir*2);ctx.fillStyle='#1b4b7a';ctx.fillRect(ix-ir,iy+10,ir*2,ir);
+  const sink=clamp((ang+.02)/.32);const s2=lerp(1.15,.75,p);ctx.translate(ix,iy+10+sink*95*s2);ctx.scale(s2,s2);
+  ctx.fillStyle='#e9edf3';ctx.beginPath();ctx.moveTo(-70,0);ctx.lineTo(70,0);ctx.lineTo(56,-30);ctx.lineTo(-56,-30);ctx.closePath();ctx.fill();ctx.fillStyle='#c1272d';ctx.fillRect(-24,-90,10,60);ctx.fillStyle='#ffffff';ctx.beginPath();ctx.moveTo(-14,-90);ctx.lineTo(46,-40);ctx.lineTo(-14,-40);ctx.closePath();ctx.fill();
+  ctx.restore();ctx.save();ctx.fillStyle='#1b4b7a';ctx.beginPath();ctx.arc(ix,iy,ir,0,PI);ctx.clip();ctx.fillRect(ix-ir,iy+10,ir*2,ir);ctx.restore();
+  ctx.strokeStyle=GOLD;ctx.lineWidth=5;ctx.beginPath();ctx.arc(ix,iy,ir,0,7);ctx.stroke();label('اللي كتشوف',ix,iy+ir+44,32,GOLD);}
+function commentBubble(t,t0,x,y,name,text){const a=eback(prog(t,t0,t0+.35));if(a<=0)return;ctx.save();ctx.translate(x,y);ctx.scale(a,a);ctx.direction='rtl';ctx.font='800 40px Cairo';const w=Math.max(ctx.measureText(text).width+150,420),h=150;
+  ctx.shadowColor='rgba(0,0,0,.45)';ctx.shadowBlur=30;ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(-w/2,-h/2,w,h,36);ctx.fill();ctx.shadowBlur=0;
+  const g=ctx.createLinearGradient(w/2-110,-40,w/2-30,40);g.addColorStop(0,'#f9a43a');g.addColorStop(1,'#d62976');ctx.fillStyle=g;ctx.beginPath();ctx.arc(w/2-70,-12,36,0,7);ctx.fill();
+  ctx.fillStyle='#fff';ctx.font='900 40px Cairo';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(name[0],w/2-70,-8);ctx.textAlign='right';ctx.fillStyle='#111';ctx.font='900 30px Cairo';ctx.fillText(name,w/2-125,-38);
+  ctx.font='800 40px Cairo';ctx.fillText(text,w/2-125,16);ctx.restore();}
+function clockFace(x,y,r,h,m,name,a){if(a<=0)return;ctx.save();ctx.globalAlpha=a;ctx.fillStyle='rgba(5,8,15,.85)';ctx.strokeStyle=GOLD;ctx.lineWidth=4;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();ctx.stroke();
+  for(let i=0;i<12;i++){const an=i/12*2*PI;line(x+Math.sin(an)*(r-14),y-Math.cos(an)*(r-14),x+Math.sin(an)*(r-26),y-Math.cos(an)*(r-26),DIM,3);}
+  const ha=((h%12)+m/60)/12*2*PI,ma=m/60*2*PI;line(x,y,x+Math.sin(ha)*r*.5,y-Math.cos(ha)*r*.5,INK,8);line(x,y,x+Math.sin(ma)*r*.75,y-Math.cos(ma)*r*.75,INK,5);
+  label(String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'),x,y+r+46,44,GOLD,{ltr:true,w:900});label(name,x,y+r+100,34,INK);ctx.restore();}
+function vignette(){const v=ctx.createRadialGradient(W/2,H/2,H*.36,W/2,H/2,H*.82);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(0,0,0,.5)');ctx.fillStyle=v;ctx.fillRect(0,0,W,H);}
+const grains=[...Array(6)].map(()=>{const o=document.createElement('canvas');o.width=540;o.height=960;const g=o.getContext('2d');const id=g.createImageData(540,960);for(let i=0;i<id.data.length;i+=4){const v=Math.random()*255;id.data[i]=id.data[i+1]=id.data[i+2]=v;id.data[i+3]=14;}g.putImageData(id,0,0);return o;});
+
+// ---------- scenes ----------
+function sPainting(t){ // L1–L2: living painting
+  const p=prog(t,0,A(3));const z=lerp(1.95,1.55,eio(p));cover(STROZZI,0,0,W,H,z,lerp(.30,.18,eio(p)),.35);
+  // god-rays from upper left
+  ctx.save();ctx.globalCompositeOperation='screen';for(let i=0;i<6;i++){const a=.05+.03*Math.sin(t*1.3+i);ctx.fillStyle=`rgba(255,205,140,${a})`;ctx.beginPath();ctx.moveTo(-100+i*40,-100);ctx.lineTo(80+i*70,-100);ctx.lineTo(900+i*60,1300);ctx.lineTo(700+i*50,1300);ctx.closePath();ctx.fill();}ctx.restore();
+  ctx.save();for(let i=0;i<40;i++){const x=(i*173+t*14*(1+i%3))%W,y=(i*311+Math.sin(t+i)*40)%1300;ctx.globalAlpha=.25;ctx.fillStyle='#ffe2b0';ctx.beginPath();ctx.arc(x,y,1.5+(i%3),0,7);ctx.fill();}ctx.restore();
+  const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'rgba(5,8,15,.75)');g.addColorStop(.25,'rgba(5,8,15,.1)');g.addColorStop(.62,'rgba(5,8,15,.25)');g.addColorStop(1,'rgba(5,8,15,.95)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  // hook title
+  title('عصا وحدة… حسبات حجم الأرض',260,62,t<A(2)?1:1-prog(t,A(2),A(2)+.4));
+  // documentary lower third
+  const lt=fadeIn(t,A(2)+.1,.5)*(1-prog(t,A(3)-.4,A(3)));if(lt>0){ctx.save();ctx.globalAlpha=lt;ctx.fillStyle=GOLD;ctx.fillRect(W-120-lerp(0,520,lt),1180,lerp(0,520,lt),4);
+    ctx.direction='rtl';ctx.textAlign='right';ctx.font='900 72px Cairo';ctx.fillStyle=INK;ctx.fillText('إراتوستينس',W-120,1140);ctx.font='600 32px Cairo';ctx.fillStyle=GOLD;ctx.fillText('عالم رياضيات وجغرافيا · الإسكندرية · حوالي 276–194 ق.م',W-120,1230);ctx.restore();}
+  credit('Bernardo Strozzi, Eratosthenes Teaching in Alexandria (c. 1635) · Public domain');}
+function sDiagram(t){bg();grid(1);
+  let curv=1,showB=prog(t,A(4)+.2,A(4)+.8);
+  if(t>=A(5)){curv=1-eio(prog(t,A(5)+.1,A(5)+1.0));if(t>F(5,.7))curv=eio(prog(t,F(5,.7),B(5)-.1));}
+  const fade=fadeIn(t,A(3),.6);const [sa,sb]=groundDiagram(t,curv,showB,fade);
+  if(t>=A(3)&&t<A(4))label('نص النهار · 21 يونيو',540,330,34,INK,{bg:'rgba(10,15,28,.8)',a:fadeIn(t,F(3,.3))});
+  if(t>F(3,.72)&&t<A(5))label('بلا ظل ✓',540,1290,40,GOLD,{a:fadeIn(t,F(3,.72))});
+  if(t>F(4,.4)&&t<A(5))label('كاين الظل',260,1250,40,BLUE,{a:fadeIn(t,F(4,.4))});
+  if(t>=A(5)){const flat=curv<.05;if(flat&&t<F(5,.7)){label('لو كانت مسطحة: نفس الظل فالجوج',540,1260,36,RED,{bg:'rgba(10,15,28,.85)'});}
+    if(t>F(5,.75))label('غير الأرض المكورة كتفسر الفرق ✓',540,1260,36,GREEN,{bg:'rgba(10,15,28,.85)',a:fadeIn(t,F(5,.75))});}
+  label('رسم توضيحي',940,1640,22,DIM,{w:600});}
+function sGlobeMorocco(t){bg();const z=eio(prog(t,A(6),A(6)+2.0));orient(lerp(20,32,z)*D2R,lerp(10,-5.8,z)*D2R,0);cam.position.set(0,0,lerp(4.3,2.15,z));cam.lookAt(0,0,0);merid.visible=true;equ.visible=false;
+  sunL.position.set(-3,2,4);amb.intensity=.5;R3.render(scene,cam);ctx.drawImage(glc,0,0);
+  const a=fadeIn(t,A(6)+1.4,.5);if(a>0){const tg=scr(ll2v(35.77*D2R,-5.81*D2R)),zg=scr(ll2v(30.33*D2R,-5.84*D2R));
+    [[tg,'طنجة 35.8°',GOLD],[zg,'زاكورة 30.3°',BLUE]].forEach(([s,n,c])=>{ctx.save();ctx.globalAlpha=a;ctx.fillStyle=c;ctx.beginPath();ctx.arc(s[0],s[1],12,0,7);ctx.fill();ctx.restore();label(n,s[0]+170,s[1],34,c,{bg:'rgba(10,15,28,.8)',a});});
+    label('نفس خط الطول تقريبا: 5.8° غرب',540,420,34,INK,{bg:'rgba(10,15,28,.8)',a:fadeIn(t,F(6,.6))});}
+  label('21 يونيو · نص النهار',540,320,40,GOLD,{a:fadeIn(t,F(6,.5))});}
+function sMeasure(t,img,cr,cm,col,name,i){photo(img,t,A(i),B(i)+.4,1.12,1.22,.5,.5,.35);credit(cr);label(name,540,320,58,INK,{w:900});measure(t,A(i)+.3,cm,col);}
+function sCross(t){bg();grid(1);sunDisc(140,320,30,.9);for(let k=0;k<6;k++)line(170,330+k*16,980,330+k*16,'rgba(255,200,120,.12)',2);crossSection(t,A(9));}
+function sFormula(t){bg();
+  if(t<F(10,.55)){const a=fadeIn(t,A(10)+.2,.5);ctx.save();ctx.globalAlpha=a;
+    label('360° ÷ 5.44° × 605 km',540,700,64,INK,{ltr:true,w:900});
+    const r=fadeIn(t,F(10,.25),.6);ctx.globalAlpha=a*r;label('≈ 40,000 km',540,860,110,GOLD,{ltr:true,w:900});ctx.restore();}
+  else{const z=eio(prog(t,F(10,.55),B(10)));orient(15*D2R,-6*D2R,(t-F(10,.55))*.25);cam.position.set(0,0,lerp(4.6,3.7,z));cam.lookAt(0,0,0);merid.visible=false;equ.visible=true;amb.intensity=.5;R3.render(scene,cam);ctx.drawImage(glc,0,0);
+    label('≈ 40,000 km',540,330,90,GOLD,{ltr:true,w:900});label('القيمة الحقيقية: 40,008 كم ✓',540,450,40,GREEN,{bg:'rgba(10,15,28,.8)',a:fadeIn(t,F(10,.72))});}}
+function sEclipse(t){ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);const p=prog(t,A(12),F(12,.48));
+  // crop on the partial phases (curved shadow edge)
+  const s=lerp(2.6,2.9,p);const iw=ECLIPSE.width*s,ih=ECLIPSE.height*s;ctx.drawImage(ECLIPSE,540-iw*.47,880-ih*.42,iw,ih);
+  const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'rgba(0,0,0,.6)');g.addColorStop(.3,'rgba(0,0,0,0)');g.addColorStop(.7,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.9)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  const a=fadeIn(t,A(12)+.8,.6);ctx.save();ctx.globalAlpha=a;ctx.strokeStyle=GOLD;ctx.lineWidth=5;ctx.setLineDash([14,12]);ctx.beginPath();ctx.arc(780,820,520,PI*.62,PI*1.12);ctx.stroke();ctx.restore();
+  label('ظل الأرض: ديما دايرة',540,320,50,GOLD,{a});credit('Lunar eclipse, March 2007 · U.S. Navy · Public domain');}
+function sClocks(t){bg();orient(22*D2R,62*D2R,0);cam.position.set(0,0,3.9);cam.lookAt(0,0,0);merid.visible=false;equ.visible=false;
+  sunL.position.set(-4,0.5,.9);amb.intensity=.04;R3.render(scene,cam);ctx.drawImage(glc,0,0);amb.intensity=.5;
+  clockFace(270,560,120,12,0,'الدار البيضاء ☀',fadeIn(t,F(12,.48)));clockFace(810,560,120,20,0,'طوكيو ☾',fadeIn(t,F(12,.74)));
+  label('نفس اللحظة · نهار وليل فنفس الوقت',540,330,34,INK,{bg:'rgba(10,15,28,.8)',a:fadeIn(t,F(12,.5))});}
+function sEnd(t){cover(STROZZI,0,0,W,H,1.6,.25,.35);ctx.fillStyle='rgba(5,8,15,.72)';ctx.fillRect(0,0,W,H);
+  commentBubble(t,A(13),W/2,560,'سعيدة','أين أصحاب نظريات الأرض المسطحة 😂'.replace(' 😂',''));label('✓ جاوبناك',W/2+250,690,34,GREEN,{bg:'rgba(10,15,28,.85)',a:fadeIn(t,A(13)+.5)});
+  if(t>F(13,.55)){title('شنو نشرحو من بعد؟',930,70,fadeIn(t,F(13,.55)));}}
+const SC=[['paint',0,A(3)],['diag',A(3),A(6)],['moro',A(6),A(7)],['tng',A(7),A(8)],['zag',A(8),A(9)],['cross',A(9),A(10)],['form',A(10),A(11)],['ship',A(11),A(12)],['ecl',A(12),F(12,.47)],['clk',F(12,.47),A(13)],['end',A(13),DURATION]];
+window.DURATION=DURATION;window.ready=Promise.all([document.fonts.load('900 60px Cairo','عربي'),document.fonts.load('900 60px Inter','0123')]);
+window.render=function(t){ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
+  const sc=(SC.find(s=>t>=s[1]&&t<s[2])||SC[SC.length-1])[0];
+  if(sc==='paint')sPainting(t);else if(sc==='diag')sDiagram(t);else if(sc==='moro')sGlobeMorocco(t);
+  else if(sc==='tng')sMeasure(t,TANGER,'Panorama Medina Tanger · Herbert wie · CC BY-SA 4.0',22,GOLD,'طنجة',7);
+  else if(sc==='zag')sMeasure(t,ZAGORA,'Draa Valley, Zagora · Richard Allaway · CC BY 2.0',12,BLUE,'زاكورة',8);
+  else if(sc==='cross')sCross(t);else if(sc==='form')sFormula(t);else if(sc==='ship')shipScene(t,A(11),B(11));else if(sc==='ecl')sEclipse(t);else if(sc==='clk')sClocks(t);else sEnd(t);
+  captions(t);
+  ctx.save();ctx.font='600 36px Inter';ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineJoin='round';ctx.lineWidth=5;ctx.strokeStyle='rgba(0,0,0,.3)';ctx.strokeText('Abache Abdelilah',W/2,1720);ctx.fillStyle='rgba(255,255,255,.42)';ctx.fillText('Abache Abdelilah',W/2,1720);ctx.restore();
+  vignette();ctx.drawImage(grains[Math.floor(t*24)%6],0,0,W,H);
+  // soft dip-to-black between scenes
+  let f=1-(DURATION-t)/.5;for(const s of SC.slice(1))f=Math.max(f,(1-Math.abs(t-s[1])/.09)*.85);if(f>0){ctx.fillStyle=`rgba(0,0,0,${clamp(f)})`;ctx.fillRect(0,0,W,H);}};
+</script></body></html>
