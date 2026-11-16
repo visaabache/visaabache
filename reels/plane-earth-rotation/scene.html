@@ -1,0 +1,252 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000}canvas{display:block}
+@font-face{font-family:Cairo;font-weight:200 1000;src:url(fonts/cairo-arabic.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+FB50-FDFF,U+FE70-FEFF,U+200C-200E;}
+@font-face{font-family:Cairo;font-weight:200 1000;src:url(fonts/cairo-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F;}</style>
+<script type="importmap">{"imports":{"three":"./three.js"}}</script></head>
+<body><canvas id="c" width="1080" height="1920"></canvas><script src="rig.js"></script>
+<script type="module">
+// «علاش الطيارة ما كتبقاش واقفة والأرض كتدور؟» — mixed media: real photos + 3D globe + 2D animation.
+// Photos: Pexels jet (free licence); NASA Blue Marble (public domain). Optional slots: img/casablanca.jpg, img/train.jpg, img/newyork.jpg
+import * as THREE from 'three';
+const W=1080,H=1920,out=document.getElementById('c'),ctx=out.getContext('2d');
+const C=[[0.1,3.938],[4.238,5.235],[5.535,6.419],[6.719,9.287],[9.587,14.054],[14.354,15.138],[15.438,16.42],[16.72,18.436],[18.736,21.176],[21.476,22.246],[22.546,23.746],[24.246,24.765],[25.215,27.124],[27.424,28.622],[28.922,29.592],[29.862,30.534],[30.834,33.162],[33.462,34.822],[35.077,35.662],[35.962,37.006],[37.306,37.812],[38.112,39.451],[39.751,40.252],[40.552,42.801],[43.101,44.634],[44.934,45.627],[45.927,50.514],[50.814,52.407],[52.691,53.962]];
+const T=i=>C[i][0],DURATION=55.2;
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x)),lerp=(a,b,t)=>a+(b-a)*t,prog=(t,a,b)=>clamp((t-a)/(b-a));
+const eio=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2,eout=t=>1-Math.pow(1-t,3);
+const eback=t=>{if(t<=0)return 0;const c1=1.6,c3=c1+1;return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2)};
+const D2R=Math.PI/180,PI=Math.PI;const GOLD='#ffc23d',RED='#ff4d4d',GREEN='#3ddc84',BLUE='#6fc8ff';
+const loadImg=src=>new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=src;});
+const [JET,EARTH,CASA,TRAIN,NYC,BORAQ]=await Promise.all(['img/plane_px.jpg','img/earth.jpg','img/casablanca.jpg','img/train.jpg','img/newyork.jpg','img/boraq.jpg'].map(loadImg));
+const CREDIT={casa:'Walaadari · CC BY-SA 4.0',train:'David Scheibler / Zugreiseblog.de · CC BY-SA 4.0',boraq:'SpreeTom · CC BY-SA 4.0',nyc:'Percival Kestreltail · CC BY-SA 3.0'};
+const {draw:drawFig,walkPath}=window.RIG;
+
+// ---------- 3D globe ----------
+const glc=document.createElement('canvas');glc.width=W;glc.height=H;
+const R3=new THREE.WebGLRenderer({canvas:glc,antialias:true,preserveDrawingBuffer:true,alpha:true});R3.setSize(W,H,false);R3.outputColorSpace=THREE.SRGBColorSpace;R3.setClearColor(0x000000,0);
+const scene=new THREE.Scene();const cam=new THREE.PerspectiveCamera(38,W/H,.01,100);
+scene.add(new THREE.AmbientLight('#ffffff',.55));const sun=new THREE.DirectionalLight('#ffffff',2.0);sun.position.set(-3,2,4);scene.add(sun);
+const etex=new THREE.Texture(EARTH);etex.colorSpace=THREE.SRGBColorSpace;etex.anisotropy=8;etex.needsUpdate=true;
+const globe=new THREE.Group();scene.add(globe);
+const earth=new THREE.Mesh(new THREE.SphereGeometry(1,128,96),new THREE.MeshStandardMaterial({map:etex,roughness:.9,metalness:0}));globe.add(earth);
+const atmoMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.BackSide,blending:THREE.AdditiveBlending,uniforms:{uA:{value:1}},
+  vertexShader:`varying vec3 vN;void main(){vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+  fragmentShader:`uniform float uA;varying vec3 vN;void main(){float i=pow(.72-dot(vN,vec3(0,0,1.)),3.);gl_FragColor=vec4(.35,.6,1.,1.)*i*uA*2.2;}`});
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(1.07,64,48),atmoMat));
+// air layer: streak particles that co-rotate with the globe
+const NA=900;const airPos=new Float32Array(NA*3);const airSeed=[];for(let i=0;i<NA;i++){const la=(Math.random()*2-1)*75*D2R,lo=Math.random()*2*PI,r=1.04+Math.random()*.05;airSeed.push([la,lo,r]);}
+const airGeo=new THREE.BufferGeometry();airGeo.setAttribute('position',new THREE.BufferAttribute(airPos,3));
+const air=new THREE.Points(airGeo,new THREE.PointsMaterial({color:'#9fdcff',size:.018,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending}));globe.add(air);
+// jet stream ribbons (world-fixed band over the North Atlantic, flowing west->east)
+const NJ=1800;const jetPos=new Float32Array(NJ*3);const jetSeed=[...Array(NJ)].map(()=>[Math.random(),Math.random(),Math.random()]);
+const jetGeo=new THREE.BufferGeometry();jetGeo.setAttribute('position',new THREE.BufferAttribute(jetPos,3));
+const jetPts=new THREE.Points(jetGeo,new THREE.PointsMaterial({color:'#ffffff',size:.013,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending}));globe.add(jetPts);
+const ll2v=(lat,lon,r=1)=>new THREE.Vector3(r*Math.cos(lat)*Math.cos(lon),r*Math.sin(lat),-r*Math.cos(lat)*Math.sin(lon)); // lon east positive, matches sphere UVs
+const CASA_LL=[33.57*D2R,-7.59*D2R],NY_LL=[40.71*D2R,-74.0*D2R];
+// plane model
+const plane=new THREE.Group();{const wm=new THREE.MeshStandardMaterial({color:'#f4f6fa',roughness:.35,metalness:.2}),rm=new THREE.MeshStandardMaterial({color:'#c1272d',roughness:.4});
+ const body=new THREE.Mesh(new THREE.CapsuleGeometry(.03,.18,6,12),wm);body.rotation.x=PI/2;plane.add(body);
+ const wing=new THREE.Mesh(new THREE.BoxGeometry(.25,.01,.06),wm);wing.position.z=.01;plane.add(wing);
+ const tail=new THREE.Mesh(new THREE.BoxGeometry(.09,.008,.03),wm);tail.position.z=-.1;plane.add(tail);
+ const fin=new THREE.Mesh(new THREE.BoxGeometry(.008,.06,.04),rm);fin.position.set(0,.03,-.1);plane.add(fin);}
+plane.visible=false;scene.add(plane);
+function orientGlobe(lat,lon,spin=0){ // rotate globe so (lat,lon) faces camera (+z), then extra spin about world Y
+  const q1=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),-(lon+PI/2)); // bring lon to +z
+  const q2=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),lat);
+  const qs=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),spin);
+  globe.quaternion.copy(qs.multiply(q2.multiply(q1)));}
+function worldOf(lat,lon,r=1){return ll2v(lat,lon,r).applyQuaternion(globe.quaternion);}
+function scr(v){const q=v.clone().project(cam);return [(q.x+1)/2*W,(1-q.y)/2*H,q.z];}
+
+// ---------- 2D helpers ----------
+function cover(img,x,y,w,h,zoom=1,fx=.5,fy=.5){const s=Math.max(w/img.width,h/img.height)*zoom;const iw=img.width*s,ih=img.height*s;ctx.drawImage(img,x+(w-iw)*fx,y+(h-ih)*fy,iw,ih);}
+function chip(text,x,y,size,a=1,bg='#fffaf0',fg='#111'){if(a<=0)return;ctx.save();ctx.globalAlpha=a;ctx.direction='rtl';ctx.font=`900 ${size}px Cairo`;ctx.textAlign='center';ctx.textBaseline='middle';
+  const w=ctx.measureText(text).width+size*1.1,h=size*1.7;ctx.fillStyle=bg;ctx.strokeStyle='#1d2433';ctx.lineWidth=size*.09;ctx.beginPath();ctx.roundRect(x-w/2,y-h/2,w,h,size*.35);ctx.fill();ctx.stroke();
+  ctx.fillStyle=fg;ctx.fillText(text,x,y+size*.08);ctx.restore();}
+function commentBubble(t,t0,x,y,name,text,sc=1){const a=eback(prog(t,t0,t0+.35));if(a<=0)return;ctx.save();ctx.translate(x,y);ctx.scale(a*sc,a*sc);ctx.direction='rtl';
+  ctx.font='800 40px Cairo';const tw=ctx.measureText(text).width;const w=Math.max(tw+150,420),h=150;
+  ctx.shadowColor='rgba(0,0,0,.45)';ctx.shadowBlur=30;ctx.fillStyle='#ffffff';ctx.beginPath();ctx.roundRect(-w/2,-h/2,w,h,36);ctx.fill();ctx.shadowBlur=0;
+  ctx.fillStyle='#ffffff';ctx.beginPath();ctx.moveTo(w/2-90,h/2-2);ctx.lineTo(w/2-60,h/2+34);ctx.lineTo(w/2-40,h/2-2);ctx.fill();
+  const g=ctx.createLinearGradient(w/2-110,-40,w/2-30,40);g.addColorStop(0,'#f9a43a');g.addColorStop(1,'#d62976');ctx.fillStyle=g;ctx.beginPath();ctx.arc(w/2-70,-12,36,0,7);ctx.fill();
+  ctx.fillStyle='#fff';ctx.font='900 40px Cairo';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(name[0],w/2-70,-8);
+  ctx.textAlign='right';ctx.fillStyle='#111';ctx.font='900 30px Cairo';ctx.fillText(name,w/2-125,-38);ctx.font='800 40px Cairo';ctx.fillText(text,w/2-125,16);
+  ctx.fillStyle='#8a8a8a';ctx.font='700 24px Cairo';ctx.fillText('رد · قبل ساعة',w/2-125,56);ctx.restore();}
+function gauge(t,t0,t1,x,y,r,val,max,label,col){const a=eback(prog(t,t0,t0+.35))*(1-prog(t,t1,t1+.25));if(a<=0)return;ctx.save();ctx.translate(x,y);ctx.scale(a,a);
+  ctx.fillStyle='rgba(8,12,22,.86)';ctx.beginPath();ctx.arc(0,0,r+28,PI,2*PI);ctx.lineTo(r+28,60);ctx.lineTo(-r-28,60);ctx.closePath();ctx.fill();
+  ctx.lineCap='round';ctx.lineWidth=22;ctx.strokeStyle='rgba(255,255,255,.12)';ctx.beginPath();ctx.arc(0,0,r,PI,2*PI);ctx.stroke();
+  const f=clamp(val/max);ctx.strokeStyle=col;ctx.shadowColor=col;ctx.shadowBlur=24;ctx.beginPath();ctx.arc(0,0,r,PI,PI+PI*f);ctx.stroke();ctx.shadowBlur=0;
+  for(let k=0;k<=8;k++){const an=PI+PI*k/8;ctx.strokeStyle='rgba(255,255,255,.5)';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(Math.cos(an)*(r-34),Math.sin(an)*(r-34));ctx.lineTo(Math.cos(an)*(r-50),Math.sin(an)*(r-50));ctx.stroke();}
+  const an=PI+PI*f;ctx.strokeStyle='#fff';ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(an)*(r-40),Math.sin(an)*(r-40));ctx.stroke();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(0,0,14,0,7);ctx.fill();
+  ctx.font='900 78px Inter';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=col;ctx.fillText(Math.round(val).toLocaleString('en-US'),0,-r*.42);
+  ctx.direction='rtl';ctx.font='800 34px Cairo';ctx.fillStyle='#e6edf8';ctx.fillText(label,0,36);ctx.restore();}
+function photoCard(img,t,t0,t1,x,y,w,h,title,rot=0,credit=''){const a=eback(prog(t,t0,t0+.4))*(1-prog(t,t1,t1+.25));if(a<=0)return;ctx.save();ctx.translate(x,y);ctx.rotate(rot);ctx.scale(a,a);
+  ctx.shadowColor='rgba(0,0,0,.5)';ctx.shadowBlur=40;ctx.fillStyle='#fff';ctx.fillRect(-w/2-14,-h/2-14,w+28,h+80);ctx.shadowBlur=0;
+  ctx.save();ctx.beginPath();ctx.rect(-w/2,-h/2,w,h);ctx.clip();if(img)cover(img,-w/2,-h/2,w,h,1+.05*(t-t0));else{const g=ctx.createLinearGradient(0,-h/2,0,h/2);g.addColorStop(0,'#f0b37a');g.addColorStop(1,'#7a4b6a');ctx.fillStyle=g;ctx.fillRect(-w/2,-h/2,w,h);}
+  ctx.restore();ctx.direction='rtl';ctx.font='900 40px Cairo';ctx.textAlign='center';ctx.fillStyle='#111';ctx.fillText(title,0,h/2+44);if(credit){ctx.direction='ltr';ctx.font='500 15px Inter';ctx.fillStyle='rgba(255,255,255,.9)';ctx.textAlign='left';ctx.shadowColor='rgba(0,0,0,.8)';ctx.shadowBlur=4;ctx.fillText(credit,-w/2+8,h/2-10);}ctx.restore();}
+function bigText(t,t0,t1,txt,y,col,size=140){const a=eback(prog(t,t0,t0+.3))*(1-prog(t,t1,t1+.2));if(a<=0)return;ctx.save();ctx.translate(W/2,y);ctx.scale(a,a);ctx.direction='rtl';ctx.font=`900 ${size}px Cairo`;
+  ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineJoin='round';ctx.lineWidth=18;ctx.strokeStyle='rgba(5,10,20,.85)';ctx.strokeText(txt,0,0);ctx.fillStyle=col;ctx.shadowColor=col;ctx.shadowBlur=30;ctx.fillText(txt,0,0);ctx.restore();}
+function tag(t,t0,t1,txt,xy,col,size=40){const a=eback(prog(t,t0,t0+.3))*(t1?1-prog(t,t1,t1+.25):1);if(a<=0)return;ctx.save();ctx.translate(xy[0],xy[1]);ctx.scale(a,a);ctx.direction='rtl';
+  ctx.font=`900 ${size}px Cairo`;const w=ctx.measureText(txt).width+44;ctx.fillStyle='rgba(10,16,30,.85)';ctx.strokeStyle=col;ctx.lineWidth=4;ctx.beginPath();ctx.roundRect(-w/2,-size*.8,w,size*1.6,16);ctx.fill();ctx.stroke();
+  ctx.fillStyle=col;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(txt,0,3);ctx.restore();}
+function streaks(t,a,speed,col='rgba(255,255,255,.55)',n=60,y0=0,y1=H){if(a<=0)return;ctx.save();ctx.globalAlpha=a;ctx.strokeStyle=col;ctx.lineCap='round';
+  for(let i=0;i<n;i++){const r1=(Math.sin(i*91.7)+1)/2,r2=(Math.sin(i*13.3)+1)/2;const y=lerp(y0,y1,r1);const len=120+r2*380;const x=W+200-((t*speed*(0.6+r2)+i*137)%(W+700));ctx.lineWidth=2+r2*4;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+len,y);ctx.stroke();}ctx.restore();}
+const CAPS=[[0,'علاش الطيارة ما كتبقاش|واقفة *فالجو…'],[T(1),'والأرض *تدور تحتها؟'],[T(2),'سؤال *مزيان…'],[T(3),'الأرض كتدور|بزربة *كبيرة بزاف'],[T(4),'هنا *فكازا، الأرض|اللي تحت رجليك'],[T(4)+2.0,'كتتحرك *بـ1,390|كيلومتر فالساعة!'],
+  [T(5),'والطيارة؟'],[T(6),'كتطير غير *بـ900'],[T(7),'يعني إلا وقفات|غير فالجو'],[T(8),'غادي تلقى راسها فوق|*أمريكا فـ4 سوايع…'],[T(9),'بلا ما *تحرك!'],[T(10),'ولكن هادشي|ما كيوقعش…'],[T(11),'*علاش؟'],
+  [T(12),'حيت ماشي غير|الأرض اللي كتدور…'],[T(13),'حتى *الهوا|كيدور معاها'],[T(14),'والطيارة ملي كتطلع'],[T(16),'كتكون ديجا كتدور|*بنفس الزربة ديال الأرض'],[T(17),'بحال إلا نقزتي|وسط *التران'],[T(18),'وهو غادي…'],[T(19),'كتطيح فنفس|*البلاصة'],[T(20),'ماشي اللور!'],
+  [T(21),'وكاينة حاجة زوينة:'],[T(22),'لفوق…'],[T(23),'كاينة ريح قوية|سميتها *الجيت *ستريم'],[T(24),'كتمشي من *الغرب|*للشرق'],[T(25),'على هادشي…'],[T(26),'من *نيويورك لكازا|كتوصل قبل'],[T(26)+2.3,'بتقريبا *ساعة|من اللي غادية لنيويورك'],
+  [T(27),'صيفطها لصاحبك|اللي ما عارفش هادشي'],[T(28),'وكتب ليا شنو|*نشرحو من بعد']];
+function captions(t){let i=-1;CAPS.forEach((c,k)=>{if(t>=c[0])i=k;});if(i<0)return;const [t0,txt]=CAPS[i];const lines=txt.split('|');
+  ctx.save();ctx.direction='rtl';ctx.textBaseline='middle';ctx.font='900 74px Cairo';let n=0;
+  lines.forEach((ln,li)=>{const words=ln.split(' ').map(w=>w.startsWith('*')?[w.slice(1),1]:[w,0]);const ws=words.map(w=>ctx.measureText(w[0]).width),sp=18;const tot=ws.reduce((a,b)=>a+b,0)+sp*(ws.length-1);
+    let x=(W+tot)/2;const y=1440+li*96;words.forEach(([w,hl],k)=>{const p=t0===0?1:eout(prog(t,t0+n*.05,t0+n*.05+.22));n++;ctx.globalAlpha=p;ctx.textAlign='right';const yy=y+(1-p)*16;
+      ctx.lineJoin='round';ctx.strokeStyle='rgba(5,10,20,.88)';ctx.lineWidth=15;ctx.strokeText(w,x,yy);ctx.fillStyle=hl?GOLD:'#ffffff';ctx.fillText(w,x,yy);x-=ws[k]+sp;});});ctx.restore();}
+function commentIcon(x,y,s,a){if(a<=0)return;ctx.save();ctx.globalAlpha=a;ctx.translate(x,y);ctx.scale(s,s);ctx.fillStyle='#fffaf0';ctx.strokeStyle='#1d2433';ctx.lineWidth=6;
+  ctx.beginPath();ctx.roundRect(-90,-60,180,110,30);ctx.moveTo(-30,50);ctx.lineTo(-55,90);ctx.lineTo(10,50);ctx.fill();ctx.stroke();ctx.fillStyle='#1d2433';for(const dx of [-40,0,40]){ctx.beginPath();ctx.arc(dx,-5,10,0,7);ctx.fill();}ctx.restore();}
+function bgSpace(t){const g=ctx.createRadialGradient(W/2,H*.42,0,W/2,H*.42,H*.8);g.addColorStop(0,'#14203a');g.addColorStop(1,'#05070d');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  ctx.save();for(let i=0;i<120;i++){const x=(Math.sin(i*12.9898)*43758.5453%1+1)%1*W,y=(Math.sin(i*78.233)*12345.678%1+1)%1*H;ctx.globalAlpha=.25+.4*((i*7)%10)/10;ctx.fillStyle='#cfe0ff';ctx.fillRect(x,y,2.2,2.2);}ctx.restore();}
+function jetBg(t,zoom=1,blur=0,dark=0){ctx.save();if(blur)ctx.filter=`blur(${blur}px)`;cover(JET,-40,-40,W+80,H+80,zoom,.52,.45);ctx.restore();if(dark){ctx.fillStyle=`rgba(5,8,15,${dark})`;ctx.fillRect(0,0,W,H);}}
+
+// ---------- scenes ----------
+function sHook(t){
+  const shake=t>.6?Math.sin(t*47)*2:0;ctx.save();ctx.translate(shake,0);
+  jetBg(t,1.12+.06*t,0,0);
+  // the world rushes past: cloud streaks + motion blur band behind the jet
+  streaks(t,clamp((t-.5)/.6)*.85,2600,'rgba(255,255,255,.55)',70,200,1700);
+  ctx.restore();
+  ctx.fillStyle='rgba(0,0,0,.18)';ctx.fillRect(0,0,W,H);
+  commentBubble(t,.25,W/2,470,'سعد','علاش الطيارة متوقفش فالجو والأرض دور؟!!',.92);
+  gauge(t,1.3,T(2)-.2,W/2,1170,170,1390*eout(prog(t,1.5,3.6)),1600,'الأرض كتدور · كم/س',RED);
+}
+function sGlobe(t){
+  bgSpace(t);
+  const fast=t<T(4);const spin=fast?(t-T(2))*3.2:0;
+  const settle=eio(prog(t,T(4)-.4,T(4)+1.2));
+  orientGlobe(CASA_LL[0]*settle,CASA_LL[1],fast?spin:(1-settle)*0);
+  const d=lerp(4.4,3.0,settle);cam.position.set(0,0,d);cam.lookAt(0,0,0);
+  return true;
+}
+function sHover(t){ // plane fixed in space, globe turns 60° (4 hours) beneath it
+  bgSpace(t);const p=eio(prog(t,T(8)-.2,T(9)+.6));const turn=60*D2R*p;
+  orientGlobe(30*D2R,CASA_LL[1]-20*D2R*p,0);globe.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),0));
+  // rotate the Earth eastward under a fixed plane: equivalently turn globe by +turn about its own axis
+  const q1=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),-(CASA_LL[1]+PI/2)+turn);const q2=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),30*D2R);
+  globe.quaternion.copy(q2.multiply(q1));
+  cam.position.set(0,0,3.4);cam.lookAt(0,0,0);
+  // plane: fixed above where Casablanca was at the start
+  const q1s=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),-(CASA_LL[1]+PI/2));const qStart=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),30*D2R).multiply(q1s);
+  const pos=ll2v(CASA_LL[0],CASA_LL[1],1.09).applyQuaternion(qStart);plane.position.copy(pos);plane.lookAt(pos.clone().add(new THREE.Vector3(-1,0,0)));plane.up.copy(pos.clone().normalize());plane.lookAt(pos.clone().add(new THREE.Vector3(-1,0,0)));plane.scale.setScalar(.55);plane.visible=true;
+  return true;
+}
+function sAir(t){
+  bgSpace(t);const spin=(t-T(12))*.06-.18;orientGlobe(25*D2R,CASA_LL[1],spin);cam.position.set(0,0,3.6);cam.lookAt(0,0,0);
+  air.material.opacity=clamp((t-T(12)-.2)/.6)*.9;
+  // take-off from Casablanca, moving with the ground
+  if(t>T(14)){const up=eout(prog(t,T(14)+.3,T(16)+.4));const pos=worldOf(CASA_LL[0],CASA_LL[1],1.0+.09*up);plane.position.copy(pos);plane.up.copy(pos.clone().normalize());
+    const ahead=worldOf(CASA_LL[0],CASA_LL[1]+.1,1.0+.09*up);plane.lookAt(ahead);plane.scale.setScalar(.75*eback(prog(t,T(14),T(14)+.4)));plane.visible=true;}
+  return true;
+}
+function sJet(t){
+  bgSpace(t);const g=eio(prog(t,T(21)-.2,T(21)+1.0));orientGlobe(lerp(25,42,g)*D2R,lerp(-7.6,-38,g)*D2R,0);cam.position.set(0,0,lerp(3.6,2.7,g));cam.lookAt(0,0,0);
+  air.material.opacity=.9*(1-prog(t,T(21),T(21)+.5));
+  const ja=clamp((t-T(22))/.6);jetPts.material.opacity=ja;
+  for(let i=0;i<NJ;i++){const [a,b,c]=jetSeed[i];const f=(a+(t-T(22))*(.22+.1*c))%1;const lon=lerp(-95,25,f)*D2R;const lat=(46+8*Math.sin(f*PI*3.2+1)+(b-.5)*3.2)*D2R;
+    const v=ll2v(lat,lon,1.03+.012*c);jetPos[i*3]=v.x;jetPos[i*3+1]=v.y;jetPos[i*3+2]=v.z;}jetGeo.attributes.position.needsUpdate=true;
+  return true;
+}
+function sTrain(t){
+  // train interior: real photo if available, else stylised cabin; landscape rushing past the windows
+  ctx.fillStyle='#0d1320';ctx.fillRect(0,0,W,H);
+  if(TRAIN){ctx.save();cover(TRAIN,0,0,W,H,1.05+.02*(t-T(17)),.36,.5);ctx.restore();ctx.fillStyle='rgba(5,8,15,.28)';ctx.fillRect(0,0,W,H);
+    ctx.save();ctx.direction='ltr';ctx.font='500 18px Inter';ctx.fillStyle='rgba(255,255,255,.85)';ctx.shadowColor='rgba(0,0,0,.8)';ctx.shadowBlur=4;ctx.fillText(CREDIT.train,24,1640);ctx.restore();}
+  else{const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#2a3346');g.addColorStop(1,'#141a26');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    // windows with rushing landscape
+    for(let k=0;k<3;k++){const x=60+k*340,y=520,w=300,h=360;ctx.save();ctx.beginPath();ctx.roundRect(x,y,w,h,40);ctx.clip();
+      const sky=ctx.createLinearGradient(0,y,0,y+h);sky.addColorStop(0,'#8fc3ef');sky.addColorStop(1,'#f3d9a8');ctx.fillStyle=sky;ctx.fillRect(x,y,w,h);
+      for(let i=0;i<14;i++){const px=x+w+80-((t*1400+i*170)%(w+300));ctx.fillStyle=i%3?'#5c8a4a':'#3f6b3a';ctx.beginPath();ctx.arc(px,y+h-40-(i%4)*12,40+(i%3)*18,0,7);ctx.fill();}
+      for(let i=0;i<6;i++){const px=x+w+60-((t*2600+i*260)%(w+200));ctx.fillStyle='#3b3b3b';ctx.fillRect(px,y+h-120,10,120);}
+      ctx.restore();ctx.strokeStyle='#c8ccd6';ctx.lineWidth=12;ctx.beginPath();ctx.roundRect(x,y,w,h,40);ctx.stroke();}
+    ctx.fillStyle='#3a4256';ctx.fillRect(0,1420,W,500);ctx.fillStyle='#4a5470';ctx.fillRect(0,1400,W,24);
+    for(let k=0;k<4;k++){ctx.fillStyle='#b23a48';ctx.beginPath();ctx.roundRect(40+k*270,1080,200,330,26);ctx.fill();}}
+  // train speed arrow
+  const ta=prog(t,T(17)+.1,T(17)+.5);tag(t,T(17)+.2,T(21)-.2,'التران غادي ←',[W/2,330],BLUE,42);
+  ctx.save();ctx.globalAlpha=ta;ctx.strokeStyle=BLUE;ctx.lineWidth=10;ctx.lineCap='round';const ax=W/2,ay=420;ctx.beginPath();ctx.moveTo(ax+260,ay);ctx.lineTo(ax-260,ay);ctx.moveTo(ax-230,ay-30);ctx.lineTo(ax-260,ay);ctx.lineTo(ax-230,ay+30);ctx.stroke();ctx.restore();
+  // the jumper: stands, jumps, lands on the same spot (marked)
+  const jx=545,ground=1290;if(BORAQ)photoCard(BORAQ,t,T(17)+.1,T(19)-.1,W/2,600,500,342,'البراق: 312 كم/س',.03,CREDIT.boraq);const jp=prog(t,T(18)-.2,T(19)+.3);const hop=Math.sin(PI*jp)*260;const crouch=jp<.08?jp/.08:jp>.92?(1-jp)/.08:0;
+  ctx.save();ctx.strokeStyle=GOLD;ctx.lineWidth=6;ctx.setLineDash([14,10]);ctx.beginPath();ctx.ellipse(jx,ground+6,90,20,0,0,7);ctx.stroke();ctx.restore();
+  drawFig(ctx,{x:jx,y:ground-hop,s:.95,dir:-1,t,col:'#8b6fd6',seed:9,face:hop>40?'o':'smile',noShadow:hop>10,lean:-.05*crouch,hands:hop>20?{front:[jx-70,ground-hop-400],back:[jx+48,ground-hop-400]}:null});
+  if(t>T(19)+.3)tag(t,T(19)+.35,T(21)-.2,'نفس البلاصة ✓',[jx+270,ground-40],GREEN,40);
+  if(t>T(20))bigText(t,T(20),T(21)-.2,'ماشي اللور!',640,GOLD,96);
+}
+function sRace(t){
+  bgSpace(t);
+  const top=440,mid=650,bot=1190;
+  // two lanes
+  const lane=(y,fromImg,toImg,fromName,toName,dir,frac,label,col,hours)=>{
+    ctx.fillStyle='rgba(255,255,255,.06)';ctx.beginPath();ctx.roundRect(70,y-110,940,220,30);ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.25)';ctx.setLineDash([16,14]);ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(200,y+20);ctx.lineTo(880,y+20);ctx.stroke();ctx.setLineDash([]);
+    ctx.direction='rtl';ctx.font='900 34px Cairo';ctx.textAlign='center';ctx.fillStyle='#fff';ctx.fillText(dir>0?toName:fromName,940,y+90);ctx.fillText(dir>0?fromName:toName,140,y+90);
+    ctx.fillStyle=GOLD;ctx.beginPath();ctx.arc(140,y+20,14,0,7);ctx.arc(940,y+20,14,0,7);ctx.fill();
+    const x=dir>0?lerp(140,940,frac):lerp(940,140,frac);ctx.save();ctx.translate(x,y+20);ctx.scale(dir,1);
+    ctx.fillStyle='#f4f6fa';ctx.beginPath();ctx.ellipse(0,0,60,13,0,0,7);ctx.fill();ctx.beginPath();ctx.moveTo(-6,0);ctx.lineTo(-30,-48);ctx.lineTo(-14,-48);ctx.lineTo(22,0);ctx.lineTo(-14,48);ctx.lineTo(-30,48);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#c1272d';ctx.beginPath();ctx.moveTo(-50,0);ctx.lineTo(-64,-30);ctx.lineTo(-54,-30);ctx.lineTo(-38,0);ctx.fill();ctx.restore();
+    ctx.direction='rtl';ctx.font='900 40px Cairo';ctx.textAlign='center';ctx.fillStyle=col;ctx.fillText(label,W/2,y-62);
+    ctx.direction='ltr';ctx.font='900 44px Inter';ctx.fillStyle='#fff';ctx.fillText(hours,W/2,y+90);};
+  const p=prog(t,T(26)+.2,T(26)+3.8);
+  lane(top,null,null,'نيويورك','كازا',1,eio(clamp(p*1.14)),'مع الريح ← أسرع',GREEN,'≈ 7h');
+  lane(bot,null,null,'كازا','نيويورك',-1,eio(p),'ضد الريح',RED,'≈ 8h');
+  // jet stream arrows in the middle
+  ctx.save();for(let i=0;i<8;i++){const x=((t*500+i*160)%1100)-40;ctx.globalAlpha=.6;ctx.strokeStyle='#ffffff';ctx.lineWidth=8;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x,mid);ctx.lineTo(x+90,mid);ctx.lineTo(x+60,mid-24);ctx.moveTo(x+90,mid);ctx.lineTo(x+60,mid+24);ctx.stroke();}ctx.restore();
+  tag(t,T(25)+.1,null,'الجيت ستريم: من الغرب للشرق',[W/2,mid-68],'#ffffff',34);
+  if(t>T(26)+3.0)bigText(t,T(26)+3.0,T(27)-.1,'قبل بساعة',1010,GREEN,100);
+  if(NYC)photoCard(NYC,t,T(26),T(27)-.2,280,800,330,190,'نيويورك',-.04,CREDIT.nyc);
+  if(CASA)photoCard(CASA,t,T(26)+.3,T(27)-.2,800,800,330,190,'كازا',.04,CREDIT.casa);
+}
+function sEnd(t){
+  jetBg(t,1.25,8,.45);
+  commentBubble(t,T(27),W/2,560,'سعد','علاش الطيارة متوقفش فالجو والأرض دور؟!!',.9);
+  tag(t,T(27)+.6,null,'✓ جاوبناك',[W/2+250,680],GREEN,36);
+  if(t>T(28)){chip('شنو نشرحو من بعد؟',W/2,900,lerp(30,58,eback(prog(t,T(28),T(28)+.4))),prog(t,T(28),T(28)+.2));commentIcon(W/2,1100,eback(prog(t,T(28)+.4,T(28)+.8)),prog(t,T(28)+.4,T(28)+.6));}
+}
+const SC=[['hook',0,T(2)],['globe',T(2),T(5)],['plane',T(5),T(7)],['hover',T(7),T(10)],['why',T(10),T(12)],['air',T(12),T(17)],['train',T(17),T(21)],['jet',T(21),T(25)],['race',T(25),T(27)],['end',T(27),DURATION]];
+window.DURATION=DURATION;window.ready=Promise.all([document.fonts.load('900 60px Cairo','عربي'),document.fonts.load('900 60px Inter','0123')]);
+window.render=function(t){
+  ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.filter='none';
+  const sc=(SC.find(s=>t>=s[1]&&t<s[2])||SC[SC.length-1])[0];
+  plane.visible=false;air.material.opacity=0;jetPts.material.opacity=0;let use3d=false;
+  if(sc==='hook')sHook(t);
+  else if(sc==='globe'){use3d=sGlobe(t);}
+  else if(sc==='plane'){jetBg(t,1.0+.05*(t-T(5)),0,.15);streaks(t,.0,0);}
+  else if(sc==='hover'||sc==='why'){use3d=sHover(Math.min(t,T(10)));}
+  else if(sc==='air')use3d=sAir(t);
+  else if(sc==='train')sTrain(t);
+  else if(sc==='jet')use3d=sJet(t);
+  else if(sc==='race')sRace(t);
+  else sEnd(t);
+  if(use3d){R3.render(scene,cam);ctx.drawImage(glc,0,0);}
+  // scene overlays
+  if(sc==='globe'){if(t<T(4))streaks(t,.35,1800,'rgba(160,210,255,.5)',40,300,1300);
+    if(t>T(4)){const s=scr(worldOf(CASA_LL[0],CASA_LL[1],1.0));ctx.save();ctx.fillStyle=GOLD;ctx.strokeStyle='#05070d';ctx.lineWidth=5;ctx.beginPath();ctx.arc(s[0],s[1],14*eback(prog(t,T(4)+.6,T(4)+.9)),0,7);ctx.fill();ctx.stroke();ctx.restore();
+      tag(t,T(4)+.7,null,'كازا',[s[0],s[1]-70],GOLD,40);photoCard(CASA,t,T(4)+.9,T(5)-.1,260,520,300,400,'الدار البيضاء',-.05,CREDIT.casa);
+      gauge(t,T(4)+1.4,T(5)-.1,W/2,1180,170,1390*eout(prog(t,T(4)+1.6,T(4)+3.6)),1600,'سرعة الأرض فكازا · كم/س',RED);}
+    if(t<T(4))tag(t,T(3)+.2,T(4)-.1,'الأرض كتدور',[W/2,420],BLUE,42);}
+  if(sc==='plane'){gauge(t,T(5)+.1,T(7)-.1,W/2,1180,170,900*eout(prog(t,T(6),T(6)+1.0)),1600,'سرعة الطيارة · كم/س',GOLD);
+    tag(t,T(5)+.3,T(7)-.1,'الأرض: 1,390   ·   الطيارة: 900',[W/2,420],'#ffffff',38);}
+  if(sc==='hover'||sc==='why'){const h=4*eio(prog(t,T(8)-.2,T(9)+.6));tag(t,T(7)+.2,null,h.toFixed(1)+' ساعة',[W/2,420],'#ffffff',44);
+    if(t>T(8)+.8){const s=scr(worldOf(38*D2R,-77*D2R,1.0));tag(t,T(8)+.9,null,'أمريكا',[s[0],s[1]],'#ff9f43',40);}
+    tag(t,T(7)+.4,T(10),'الطيارة واقفة',[W/2,560],GOLD,36);}
+  if(sc==='why'){ctx.fillStyle=`rgba(0,0,0,${.45*prog(t,T(10),T(10)+.3)})`;ctx.fillRect(0,0,W,H);
+    const a=eback(prog(t,T(10)+.2,T(10)+.5));if(a>0){ctx.save();ctx.translate(W/2,820);ctx.rotate(-.12);ctx.scale(a,a);ctx.strokeStyle=RED;ctx.lineWidth=12;ctx.beginPath();ctx.roundRect(-300,-90,600,180,20);ctx.stroke();
+      ctx.direction='rtl';ctx.font='900 92px Cairo';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=RED;ctx.fillText('ما كيوقعش',0,8);ctx.restore();}
+    bigText(t,T(11),DURATION,'علاش؟',1110,GOLD,170);}
+  if(sc==='air'){tag(t,T(13)+.2,T(14)+.2,'الهوا كيدور مع الأرض',[W/2,420],BLUE,40);if(t>T(15)){tag(t,T(15)+.2,null,'+1,390 كم/س معاها',[W/2,420],GREEN,42);}}
+  if(sc==='jet'){if(t>T(22))tag(t,T(22)+.4,null,'الجيت ستريم',[W/2,420],'#ffffff',44);if(t>T(24))tag(t,T(24)+.1,null,'الغرب ← الشرق',[W/2,520],GOLD,40);
+    if(t>T(23)+.6)tag(t,T(23)+.7,null,'أكثر من 200 كم/س',[W/2,620],GREEN,36);}
+  // header chip
+  const big=sc==='hook'?1:0;chip(big?'الأرض كتدور… والطيارة لا؟':'علاش؟',W/2,big?230:175,big?54:36);
+  captions(t);
+  ctx.save();ctx.font='600 40px Inter';ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineJoin='round';ctx.lineWidth=5;ctx.strokeStyle='rgba(0,0,0,.28)';ctx.strokeText('Abache Abdelilah',W/2,1700);ctx.fillStyle='rgba(255,255,255,.42)';ctx.fillText('Abache Abdelilah',W/2,1700);ctx.restore();
+  const vg=ctx.createRadialGradient(W/2,H/2,H*.38,W/2,H/2,H*.82);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.4)');ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+  let f=1-(DURATION-t)/.4;for(const s of SC.slice(1))f=Math.max(f,1-Math.abs(t-s[1])/.06);if(sc==='why'&&Math.abs(t-T(10))<.1)f=0;
+  if(f>0){ctx.fillStyle=`rgba(0,0,0,${clamp(f)})`;ctx.fillRect(0,0,W,H);}
+};
+// co-rotating air particles positions (in globe-local space, set once)
+for(let i=0;i<NA;i++){const [la,lo,r]=airSeed[i];const v=ll2v(la,lo,r);airPos[i*3]=v.x;airPos[i*3+1]=v.y;airPos[i*3+2]=v.z;}airGeo.attributes.position.needsUpdate=true;
+</script></body></html>
