@@ -9,6 +9,7 @@ import { writeFileSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createRequire } from "node:module";
+import { createHmac } from "node:crypto";
 
 // Local devDependency first; falls back to a global install (resolved through NODE_PATH).
 const { chromium } = await import("playwright").catch(() => createRequire(import.meta.url)("playwright"));
@@ -22,6 +23,25 @@ let failures = 0;
 // Optional pause before each step / admin page (E2E_SLOW_MS), to stay within Cloudflare's free-plan CPU allowance.
 const SLOW = Number(process.env.E2E_SLOW_MS || 0);
 const pause = () => (SLOW ? new Promise((r) => setTimeout(r, SLOW)) : Promise.resolve());
+
+// RFC 6238 code generator (same algorithm as the authenticator apps) for the two-step verification test.
+function totp(secretB32, offset = 0) {
+  const A = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  let bits = 0, value = 0;
+  const bytes = [];
+  for (const c of secretB32.replace(/[^A-Z2-7]/g, "")) {
+    value = (value << 5) | A.indexOf(c);
+    bits += 5;
+    if (bits >= 8) { bytes.push((value >>> (bits - 8)) & 255); bits -= 8; }
+  }
+  const step = Math.floor(Date.now() / 30000) + offset;
+  const msg = Buffer.alloc(8);
+  msg.writeUInt32BE(Math.floor(step / 2 ** 32), 0);
+  msg.writeUInt32BE(step >>> 0, 4);
+  const h = createHmac("sha1", Buffer.from(bytes)).update(msg).digest();
+  const o = h[h.length - 1] & 15;
+  return String((((h[o] & 127) << 24) | (h[o + 1] << 16) | (h[o + 2] << 8) | h[o + 3]) % 1e6).padStart(6, "0");
+}
 
 async function step(name, fn) {
   await pause();
@@ -123,6 +143,7 @@ if (!ADMIN_PASSWORD) {
   admin.on("dialog", (d) => d.accept());
   await step("login as owner", async () => {
     await admin.goto(BASE + "/fr/admin/login");
+    await admin.getByRole("button", { name: "Essentiels uniquement" }).click().catch(() => {}); // cookie banner
     await admin.fill("#email", ADMIN_EMAIL);
     await admin.fill("#password", ADMIN_PASSWORD);
     await admin.click("button[type=submit]");
@@ -165,6 +186,39 @@ if (!ADMIN_PASSWORD) {
     await admin.goto(BASE + "/fr/admin/automation");
     await admin.click('button:has-text("Lancer les automatisations")');
     await admin.waitForSelector("text=documentReminders");
+  });
+  // Local only: on a live site a failure half-way could leave 2FA enabled on the real owner account.
+  if (/localhost|127\.0\.0\.1/.test(BASE)) await step("two-step verification (2FA): enable, sign-in needs a valid code, disable", async () => {
+    await admin.goto(BASE + "/fr/admin/security");
+    const secret = (await admin.locator("code").first().innerText()).replace(/\s/g, "");
+    await admin.fill("#code", totp(secret));
+    await admin.click('button:has-text("Activer la validation en deux étapes")');
+    await admin.waitForSelector("text=Désactiver la validation en deux étapes");
+    const ctx = await browser.newContext();
+    const p = await ctx.newPage();
+    const login = async (code) => {
+      await p.goto(BASE + "/fr/admin/login");
+      await p.getByRole("button", { name: "Essentiels uniquement" }).click().catch(() => {});
+      await p.fill("#email", ADMIN_EMAIL);
+      await p.fill("#password", ADMIN_PASSWORD);
+      if (code) await p.fill("#totp", code);
+      await p.click("button[type=submit]");
+    };
+    await login("");
+    await p.waitForSelector("text=Saisissez le code à 6 chiffres");
+    await login("000000");
+    await p.waitForSelector("text=Code invalide ou expiré");
+    // The code used to enable 2FA cannot be replayed; the next time step's code is accepted (±30 s drift window).
+    await login(totp(secret, 1));
+    await p.waitForURL("**/admin");
+    await ctx.close();
+    await admin.goto(BASE + "/fr/admin/security");
+    await admin.click("summary");
+    await admin.fill("#password", ADMIN_PASSWORD);
+    await new Promise((r) => setTimeout(r, 31000)); // a fresh, unused code
+    await admin.fill("#dcode", totp(secret, 1));
+    await admin.click('button:has-text("Désactiver la 2FA")');
+    await admin.waitForSelector("text=Activer la validation en deux étapes");
   });
 }
 

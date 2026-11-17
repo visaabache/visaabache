@@ -37,10 +37,14 @@ export default async function TrackPage({ params, searchParams }: { params: Prom
   let app: Awaited<ReturnType<typeof load>> = null;
   if (code) {
     const { ip } = await getRequestMeta();
-    if (!(await rateLimit(`track:${ip}`, 30, 900))) error = t.common.tooManyRequests;
+    // Per-IP limit, plus a site-wide cap on failed lookups: guessing codes from many IPs stops quickly too.
+    if (!(await rateLimit(`track:${ip}`, 30, 900)) || !(await rateLimit("track-miss:all", 600, 3600, true))) error = t.common.tooManyRequests;
     else {
       app = await load(code);
-      if (!app) error = t.track.notFoundCode;
+      if (!app) {
+        error = t.track.notFoundCode;
+        await rateLimit("track-miss:all", 1, 3600);
+      }
     }
   }
   const settings = app ? await getSettings() : null;

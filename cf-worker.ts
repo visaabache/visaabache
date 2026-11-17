@@ -13,10 +13,10 @@ type KV = {
   getWithMetadata(key: string, type: "arrayBuffer"): Promise<{ value: ArrayBuffer | null; metadata: { ct?: string } | null }>;
   put(key: string, value: string, opts?: { expirationTtl?: number }): Promise<void>;
 };
-type Env = { CRON_SECRET?: string; APP_URL?: string; STATIC_ASSETS?: KV; CF_VERSION_METADATA?: { id?: string }; [k: string]: unknown };
+type Env = { CRON_SECRET?: string; APP_URL?: string; STATIC_ASSETS?: KV; CF_VERSION_METADATA?: { id?: string }; CANONICAL_HOST?: string; [k: string]: unknown };
 type Ctx = { waitUntil(p: Promise<unknown>): void };
 
-const STATIC_PREFIXES = ["/_next/static/", "/flags/", "/brand/", "/images/"];
+const STATIC_PREFIXES = ["/_next/static/", "/flags/", "/brand/", "/images/", "/.well-known/"];
 
 async function serveAsset(env: Env, pathname: string): Promise<Response | null> {
   if (!env.STATIC_ASSETS) return null;
@@ -45,6 +45,72 @@ function withAssets(env: Env): Env {
   };
 }
 
+/* ───────────────────────────── Edge protection ─────────────────────────────
+ * Cheap checks that run before Next.js (so attacks cost almost no CPU):
+ *  - the client IP comes only from Cloudflare (CF-Connecting-IP): a visitor-supplied X-Forwarded-For can no longer
+ *    be used to dodge the login / tracking rate limits,
+ *  - only GET, HEAD and POST are accepted, request bodies are capped,
+ *  - probes for files this site never serves (WordPress, PHP, .env, .git, backups…) get a bare 404,
+ *  - once the custom domain is live (CANONICAL_HOST), every other host (workers.dev, www.) is 301-redirected to it,
+ *  - every response carries the security headers, also static files and errors.
+ */
+const MAX_BODY_BYTES = 13 * 1024 * 1024;
+const PROBE = /(^|\/)(\.(?!well-known\/)[^/]*|wp-[a-z]+|wordpress|xmlrpc|phpmyadmin|pma|cgi-bin|vendor\/phpunit|actuator|server-status|_profiler|telescope|HNAP1|boaform|owa|autodiscover|ecp)(\/|$)|\.(php\d?|aspx?|jsp|cgi|env|ini|sql|bak|old|orig|swp|log|yml|yaml|config|conf|git|svn|DS_Store|tar|gz|zip|7z|rar)$/i;
+const ALLOWED_ZIP = /^\/api\/(applications\/[^/]+\/zip|admin\/export|account\/export)/;
+const EDGE_HEADERS: Record<string, string> = {
+  "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Cross-Origin-Opener-Policy": "same-origin",
+  "X-Permitted-Cross-Domain-Policies": "none",
+  "Origin-Agent-Cluster": "?1",
+};
+
+function bare(status: number, extra?: Record<string, string>) {
+  return new Response(status === 404 ? "Not found" : status === 405 ? "Method not allowed" : "Request too large", {
+    status,
+    headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store", ...extra },
+  });
+}
+
+/** Returns a response to send instead of handling the request, or null to continue. */
+function edgeGuard(request: Request, url: URL, env: Env): Response | null {
+  const m = request.method;
+  if (m !== "GET" && m !== "HEAD" && m !== "POST") return bare(405, { allow: "GET, HEAD, POST" });
+  if (m === "POST" && Number(request.headers.get("content-length") || 0) > MAX_BODY_BYTES) return bare(413);
+  if (PROBE.test(url.pathname) && !ALLOWED_ZIP.test(url.pathname)) return bare(404);
+  const canonical = (env.CANONICAL_HOST || "").toLowerCase();
+  if (canonical && url.hostname !== canonical && url.hostname !== "localhost" && (m === "GET" || m === "HEAD")) {
+    return new Response(null, { status: 301, headers: { location: `https://${canonical}${url.pathname}${url.search}`, "cache-control": "public, max-age=86400" } });
+  }
+  return null;
+}
+
+/** Rebuilds the request so the app only sees the client IP Cloudflare measured. */
+function trustedRequest(request: Request): Request {
+  const ip = request.headers.get("cf-connecting-ip");
+  const headers = new Headers(request.headers);
+  headers.delete("x-forwarded-for");
+  headers.delete("x-real-ip");
+  if (ip) {
+    headers.set("x-forwarded-for", ip);
+    headers.set("x-real-ip", ip);
+  }
+  return new Request(request, { headers });
+}
+
+function secured(res: Response, url: URL, env: Env): Response {
+  const out = new Response(res.body, res);
+  for (const [k, v] of Object.entries(EDGE_HEADERS)) if (!out.headers.has(k)) out.headers.set(k, v);
+  const canonical = (env.CANONICAL_HOST || "").toLowerCase();
+  // Search engines index only the main domain (and never the admin area).
+  if ((canonical && url.hostname !== canonical) || ADMIN_PATH.test(url.pathname) || url.pathname.startsWith("/api/")) {
+    out.headers.set("X-Robots-Tag", "noindex, nofollow");
+  }
+  return out;
+}
+
 /* ───────────────────────────── Page cache ─────────────────────────────
  * Every page is rendered on demand by Next.js, which costs CPU time on each visit. Public marketing pages are
  * identical for every anonymous visitor, so their HTML is stored in KV and served without running Next.js.
@@ -60,7 +126,8 @@ const CACHEABLE_PAGE = /^\/(fr|ar|en)(\/(visas|services|blog)(\/[a-z0-9-]+)?|\/l
 const ADMIN_PATH = /^\/(fr|ar|en)\/admin(\/|$)/;
 const KEPT_HEADERS = [
   "content-type", "content-language", "content-security-policy", "x-frame-options", "x-content-type-options",
-  "referrer-policy", "permissions-policy", "cross-origin-opener-policy", "strict-transport-security", "vary", "link",
+  "referrer-policy", "permissions-policy", "cross-origin-opener-policy", "cross-origin-resource-policy",
+  "x-permitted-cross-domain-policies", "strict-transport-security", "vary", "link",
 ];
 
 function isCacheableRequest(request: Request, url: URL) {
@@ -104,8 +171,26 @@ async function cachedPage(request: Request, env: Env, ctx: Ctx, url: URL): Promi
 }
 
 export default {
-  async fetch(request: Request, env: Env, ctx: Ctx) {
-    const url = new URL(request.url);
+  async fetch(rawRequest: Request, env: Env, ctx: Ctx) {
+    const url = new URL(rawRequest.url);
+    const blocked = edgeGuard(rawRequest, url, env);
+    if (blocked) return secured(blocked, url, env);
+    const request = trustedRequest(rawRequest);
+    return secured(await handle(request, env, ctx, url), url, env);
+  },
+
+  async scheduled(_event: unknown, env: Env, ctx: Ctx) {
+    const base = (env.APP_URL || "https://localhost").replace(/\/$/, "");
+    const req = new Request(`${base}/api/cron/run`, { headers: { authorization: `Bearer ${env.CRON_SECRET}` } });
+    ctx.waitUntil(
+      nextWorker.fetch(req, withAssets(env), ctx).then(async (res: Response) => {
+        if (!res.ok) console.error("[cron] automation run failed", res.status, await res.text());
+      }),
+    );
+  },
+};
+
+async function handle(request: Request, env: Env, ctx: Ctx, url: URL): Promise<Response> {
     const { pathname } = url;
     if ((request.method === "GET" || request.method === "HEAD") && STATIC_PREFIXES.some((p) => pathname.startsWith(p))) {
       const asset = await serveAsset(env, pathname);
@@ -120,15 +205,4 @@ export default {
       ctx.waitUntil(env.STATIC_ASSETS.put(CONTENT_VERSION_KEY, String(Date.now())).catch(() => {}));
     }
     return res;
-  },
-
-  async scheduled(_event: unknown, env: Env, ctx: Ctx) {
-    const base = (env.APP_URL || "https://localhost").replace(/\/$/, "");
-    const req = new Request(`${base}/api/cron/run`, { headers: { authorization: `Bearer ${env.CRON_SECRET}` } });
-    ctx.waitUntil(
-      nextWorker.fetch(req, withAssets(env), ctx).then(async (res: Response) => {
-        if (!res.ok) console.error("[cron] automation run failed", res.status, await res.text());
-      }),
-    );
-  },
-};
+}

@@ -28,7 +28,7 @@ export async function submitInquiry(localeRaw: string, _prev: ActionState, fd: F
   const locale = asLocale(localeRaw);
   const t = getDictionary(locale);
   const { ip, userAgent } = await getRequestMeta();
-  if (!(await rateLimit(`inquiry:${ip}`, 8, 3600))) return { error: t.common.tooManyRequests };
+  if (!(await rateLimit(`inquiry:${ip}`, 8, 3600)) || !(await rateLimit("inquiry:all", 150, 3600))) return { error: t.common.tooManyRequests };
   const parsed = inquirySchema.safeParse(formToObject(fd));
   if (!parsed.success) return { error: t.common.invalidForm, fieldErrors: parsed.error.flatten().fieldErrors };
   const d = parsed.data;
@@ -55,14 +55,17 @@ export async function trackApplication(localeRaw: string, _prev: ActionState, fd
   const locale = asLocale(localeRaw);
   const t = getDictionary(locale);
   const { ip } = await getRequestMeta();
-  if (!(await rateLimit(`track:${ip}`, 15, 900))) return { error: t.common.tooManyRequests };
+  if (!(await rateLimit(`track:${ip}`, 15, 900)) || !(await rateLimit("track-miss:all", 600, 3600, true))) return { error: t.common.tooManyRequests };
   const reference = String(fd.get("reference") || "").trim().toUpperCase();
   const email = String(fd.get("email") || "").trim().toLowerCase();
   const app = await prisma.application.findFirst({
     where: { reference, email: { equals: email, mode: "insensitive" }, isDraft: false },
     include: { status: true, country: true },
   });
-  if (!app) return { error: t.track.notFound };
+  if (!app) {
+    await rateLimit("track-miss:all", 1, 3600); // site-wide count of failed lookups (see track page)
+    return { error: t.track.notFound };
+  }
   return {
     ok: true,
     data: {

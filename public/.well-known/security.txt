@@ -1,0 +1,5 @@
+# Security contact for VISA ABACHE (RFC 9116). Please report vulnerabilities privately; do not test on customer data.
+Contact: https://visaabache.site/fr/contact
+Expires: 2027-11-17T00:00:00.000Z
+Preferred-Languages: fr, ar, en
+Canonical: https://visaabache.site/.well-known/security.txt

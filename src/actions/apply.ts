@@ -280,7 +280,7 @@ export async function submitGuestApplicationAction(localeRaw: string, input: Gue
   const locale = asLocale(localeRaw);
   const t = getDictionary(locale);
   const { ip, userAgent } = await getRequestMeta();
-  if (!(await rateLimit(`guest-apply:${ip}`, 8, 3600))) return { error: t.common.tooManyRequests };
+  if (!(await rateLimit(`guest-apply:${ip}`, 8, 3600)) || !(await rateLimit("guest-apply:all", 300, 3600))) return { error: t.common.tooManyRequests };
   const parsed = guestSchema.safeParse(input);
   if (!parsed.success) {
     const fe = parsed.error.flatten().fieldErrors as Record<string, string[]>;

@@ -4,14 +4,13 @@ import Link from "@/components/ui/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3, BookOpen, Briefcase, FileText, Flag, FolderOpen, Globe, HelpCircle, Inbox, LayoutDashboard, List, Lock, Mail, Megaphone, Menu,
-  MessagesSquare, Package, Receipt, Scale, Settings, Shield, Star, Tag, Users, Wallet, Zap,
-} from "lucide-react";
+  MessagesSquare, Package, Receipt, Scale, Settings, Shield, Star, Tag, Users, Wallet, Zap, KeyRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ICONS = {
   dashboard: LayoutDashboard, folder: FolderOpen, users: Users, inbox: Inbox, message: MessagesSquare, wallet: Wallet, receipt: Receipt, chart: BarChart3,
   globe: Globe, briefcase: Briefcase, package: Package, flag: Flag, book: BookOpen, help: HelpCircle, scale: Scale, star: Star, megaphone: Megaphone,
-  tag: Tag, mail: Mail, settings: Settings, shield: Shield, lock: Lock, zap: Zap, list: List, file: FileText,
+  tag: Tag, mail: Mail, settings: Settings, shield: Shield, lock: Lock, key: KeyRound, zap: Zap, list: List, file: FileText,
 } as const;
 
 export type NavGroup = { title: string; items: { href: string; label: string; icon: string; badge?: number; exact?: boolean }[] };

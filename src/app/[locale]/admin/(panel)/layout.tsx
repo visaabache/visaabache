@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "@/components/ui/link";
-import { ExternalLink, LogOut, UserRound } from "lucide-react";
+import { ExternalLink, LogOut, ShieldAlert, UserRound } from "lucide-react";
 import { asLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n";
 import { requireStaff } from "@/lib/auth/session";
@@ -54,6 +54,7 @@ export default async function AdminLayout({ children, params }: { children: Reac
       { href: a("/templates"), label: n.templates, icon: "mail", perm: "settings.manage" },
     ] },
     { title: n.groupSystem, items: [
+      { href: a("/security"), label: t.security.nav, icon: "key" },
       { href: a("/settings"), label: n.settings, icon: "settings", perm: "settings.manage" },
       { href: a("/users"), label: n.users, icon: "shield", perm: "users.manage" },
       { href: a("/compliance"), label: n.compliance, icon: "lock", perm: "compliance.manage" },
@@ -83,6 +84,13 @@ export default async function AdminLayout({ children, params }: { children: Reac
             <form action={logoutAction.bind(null, locale)}><button className="rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label={t.nav.logout}><LogOut className="h-4 w-4" /></button></form>
           </div>
         </header>
+        {!user.totpEnabledAt && (
+          <div className="no-print flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900 sm:px-6">
+            <ShieldAlert className="h-4 w-4 shrink-0" />
+            <span className="flex-1">{t.security.bannerOff}</span>
+            <Link href={a("/security")} className="font-semibold underline underline-offset-2">{t.security.bannerCta}</Link>
+          </div>
+        )}
         <main className="p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>

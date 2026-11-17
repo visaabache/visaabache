@@ -48,7 +48,7 @@ export default async function AdminLoginPage({ params }: { params: Promise<{ loc
               area="admin"
               next={`/${locale}/admin`}
               forgotHref={`/${locale}/forgot-password`}
-              labels={{ email: t.auth.email, password: t.auth.password, forgot: t.auth.forgot, submit: t.auth.loginButton }}
+              labels={{ email: t.auth.email, password: t.auth.password, forgot: t.auth.forgot, submit: t.auth.loginButton, totp: t.security.totpLabel }}
             />
           </div>
         </div>

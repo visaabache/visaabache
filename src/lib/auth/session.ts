@@ -60,7 +60,7 @@ export async function destroyAllSessions(userId: string) {
 
 export type CurrentUser = Pick<
   User,
-  "id" | "email" | "firstName" | "lastName" | "phone" | "role" | "locale" | "city" | "address" | "whatsappOptIn" | "marketingOptIn" | "createdAt"
+  "id" | "email" | "firstName" | "lastName" | "phone" | "role" | "locale" | "city" | "address" | "whatsappOptIn" | "marketingOptIn" | "createdAt" | "totpEnabledAt"
 >;
 
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
@@ -73,7 +73,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
       user: {
         select: {
           id: true, email: true, firstName: true, lastName: true, phone: true, role: true, locale: true,
-          city: true, address: true, whatsappOptIn: true, marketingOptIn: true, createdAt: true, isActive: true,
+          city: true, address: true, whatsappOptIn: true, marketingOptIn: true, createdAt: true, isActive: true, totpEnabledAt: true,
         },
       },
     },

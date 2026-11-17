@@ -69,7 +69,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         data={{
           "@context": "https://schema.org",
           "@type": "ProfessionalService",
+          "@id": appUrl("/#organization"),
           name: "VISA ABACHE",
+          logo: appUrl("/brand/visa-abache-icon-512.png"),
+          image: appUrl("/brand/visa-abache-social-1200x630.jpg"),
           slogan: t.meta.tagline,
           url: appUrl(`/${locale}`),
           email: settings.business.email,
@@ -79,6 +82,17 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           priceRange: "MAD",
           availableLanguage: ["fr", "ar", "en"],
           sameAs: Object.values(settings.seo.social).filter(Boolean),
+        }}
+      />
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "@id": appUrl("/#website"),
+          name: "VISA ABACHE",
+          url: appUrl(`/${locale}`),
+          inLanguage: locale === "ar" ? "ar-MA" : locale === "fr" ? "fr-MA" : "en",
+          publisher: { "@id": appUrl("/#organization") },
         }}
       />
       {faqs.length > 0 && (

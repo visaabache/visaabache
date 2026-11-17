@@ -85,7 +85,15 @@ npm run cf:deploy                 # build → upload static files to KV → wran
 DATABASE_URL=<neon url> node scripts/neon-migrate.mjs   # when new migrations exist
 ```
 
-Custom domain later: Cloudflare dashboard → Workers & Pages → `app` → Settings → Domains & Routes → *Add custom domain*. Then update `APP_URL` in `wrangler.jsonc` and redeploy.
+Custom domain (**visaabache.site**): the domain is a zone on the Flyabroadevisa Cloudflare account and is attached to the Worker as a *Custom Domain* (apex + `www`). `APP_URL` and `CANONICAL_HOST` in `wrangler.jsonc` point to it; `cf-worker.ts` then 301-redirects every other host (`*.workers.dev`, `www.`) to it, so search engines only see one site.
+
+Two-step verification reset (staff member lost their phone):
+
+```bash
+DATABASE_URL=<neon url> npm run admin:reset-2fa -- staff@example.ma
+```
+
+This turns 2FA off for that account and signs it out everywhere; the person signs in with their password and enables 2FA again in Administration → Sécurité.
 
 ## 4. Scheduled automation (cron)
 

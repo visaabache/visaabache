@@ -36,6 +36,10 @@ model User {
   marketingOptIn  Boolean   @default(false)
   emailVerifiedAt DateTime?
   lastLoginAt     DateTime?
+  // Two-step verification (authenticator app). totpSecret is encrypted (AES-256-GCM); enabled once confirmed.
+  totpSecret      String?
+  totpEnabledAt   DateTime?
+  totpLastStep    Int?
   anonymizedAt    DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

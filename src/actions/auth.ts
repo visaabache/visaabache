@@ -8,6 +8,7 @@ import { createSession, destroyAllSessions, destroySession, getCurrentUser, hash
 import { hashPassword, isStrongPassword, verifyPasswordOrDummy } from "@/lib/auth/password";
 import { isStaffRole } from "@/lib/auth/permissions";
 import { rateLimit } from "@/lib/rate-limit";
+import { openSecret, verifyTotp } from "@/lib/auth/totp";
 import { getRequestMeta } from "@/lib/request";
 import { notify } from "@/lib/notify";
 import { audit } from "@/lib/audit";
@@ -34,6 +35,25 @@ export async function loginAction(localeRaw: string, _prev: ActionState, fd: For
   if (data.area === "admin" && !isStaffRole(user.role)) {
     await audit(user.id, "auth.admin_login_denied", "User", user.id);
     return { error: t.auth.invalidCredentials, data: { email } };
+  }
+  // Two-step verification: staff accounts that enabled it must also give a valid, unused authenticator code.
+  if (isStaffRole(user.role) && user.totpEnabledAt && user.totpSecret) {
+    const s = t.security;
+    const code = String(data.totp || "").replace(/\D/g, "");
+    if (!code) return { error: data.area === "admin" ? s.totpRequired : s.useAdminLogin, data: { email } };
+    if (!(await rateLimit(`totp:${user.id}`, 6, 900))) return { error: t.common.tooManyRequests, data: { email } };
+    let step: number | null = null;
+    try {
+      step = verifyTotp(openSecret(user.totpSecret), code, user.totpLastStep);
+    } catch (e) {
+      console.error("[2fa] cannot read secret", e);
+    }
+    // Conditional update: a code (time step) can only ever be used once, even by two simultaneous requests.
+    const used = step === null ? 0 : (await prisma.user.updateMany({ where: { id: user.id, OR: [{ totpLastStep: null }, { totpLastStep: { lt: step } }] }, data: { totpLastStep: step } })).count;
+    if (!used) {
+      await audit(user.id, "auth.login_failed_2fa", "User", user.id, { email });
+      return { error: s.totpInvalid, data: { email } };
+    }
   }
   await createSession(user);
   await audit(user.id, "auth.login", "User", user.id);

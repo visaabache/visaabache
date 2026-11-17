@@ -5,7 +5,7 @@
 | Area | Control | Where |
 |---|---|---|
 | Transport | HTTPS + HSTS (preload) and `upgrade-insecure-requests` when `APP_URL` is https | `next.config.ts` |
-| Headers | CSP (no third-party scripts except GA after consent), `X-Frame-Options: DENY`, `nosniff`, Referrer-Policy, Permissions-Policy, COOP | `next.config.ts` |
+| Headers | CSP (no third-party scripts except GA after consent, no frames), `X-Frame-Options: DENY`, `nosniff`, Referrer-Policy, Permissions-Policy, COOP, CORP, `X-Permitted-Cross-Domain-Policies` | `next.config.ts`, `cf-worker.ts` |
 | Passwords | bcrypt (cost 12), minimum 10 chars with letters and digits, constant-time path for unknown emails | `lib/auth/password.ts` |
 | Sessions | 256-bit random token in an `HttpOnly`, `SameSite=Lax`, `Secure` cookie; only an HMAC-SHA256 of the token is stored; 14 days for customers, 12 h for staff; revoked on password change or deactivation | `lib/auth/session.ts` |
 | Authorisation | RBAC permissions checked server-side in every admin page and Server Action; customers can only reach their own records (queries are always scoped by `userId`) | `lib/auth/permissions.ts` |
@@ -16,7 +16,13 @@
 | Brute force | PostgreSQL-backed rate limits on login, registration, password reset, uploads, inquiries, tracking, discount checks | `lib/rate-limit.ts` |
 | Open redirects | `next` parameter restricted to local paths | `safeNext()` |
 | Payments | Never shown as successful without a verified CMI callback (hash, order id, amount, return code) or an audited manual confirmation | `api/payments/cmi/callback`, `lib/domain/payments.ts` |
-| Spam | Honeypot field + rate limit on public forms | `actions/public.ts` |
+| Spam | Honeypot field + per-IP rate limits + site-wide caps on public forms (inquiries, guest applications) | `actions/public.ts`, `actions/apply.ts` |
+| Two-step verification | Staff accounts can enable TOTP (authenticator app, RFC 6238); secret stored AES-256-GCM-encrypted; ±30 s window; each code usable once (replay-proof); sign-in, enabling and disabling are rate-limited and audited; banner until enabled | `lib/auth/totp.ts`, `actions/security.ts`, Administration → Sécurité |
+| Session review | Staff see their signed-in devices (IP, browser) and recent sign-ins / failed attempts, and can sign out every other device | Administration → Sécurité |
+| Client IP | Taken from Cloudflare (`CF-Connecting-IP`); visitor-supplied `X-Forwarded-For` is discarded at the edge, so rate limits cannot be dodged with a fake header | `cf-worker.ts`, `lib/request.ts` |
+| Tracking codes | Random 6-character codes (887 million combinations), per-IP limit and a site-wide cap on failed lookups (600/h) | `track/page.tsx`, `actions/public.ts` |
+| Edge filtering | Only GET/HEAD/POST; bodies over 13 MB refused; probes for WordPress/PHP/.env/.git/backup files answered with a bare 404 before the app runs (also saves CPU); security headers on every response, static files included; `X-Robots-Tag: noindex` on admin, API and non-canonical hosts | `cf-worker.ts` |
+| Vulnerability reports | `/.well-known/security.txt` (RFC 9116) | `public/.well-known/security.txt` |
 | Traceability | Audit log for logins, document access by staff, exports, status changes, payments, refunds, settings, roles | `lib/audit.ts` |
 
 ## Law 09-08 (Morocco) / GDPR checklist

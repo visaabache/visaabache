@@ -8,7 +8,7 @@ import { SubmitButton } from "@/components/ui/submit-button";
 
 type Action = (p: ActionState, f: FormData) => Promise<ActionState>;
 
-export function LoginForm({ action, next, labels, forgotHref, area }: { action: Action; next?: string; forgotHref: string; area?: "admin"; labels: { email: string; password: string; forgot: string; submit: string } }) {
+export function LoginForm({ action, next, labels, forgotHref, area }: { action: Action; next?: string; forgotHref: string; area?: "admin"; labels: { email: string; password: string; forgot: string; submit: string; totp?: string; totpHint?: string } }) {
   const [state, formAction] = useActionState(action, {} as ActionState);
   return (
     <form action={formAction} className="space-y-4">
@@ -21,6 +21,11 @@ export function LoginForm({ action, next, labels, forgotHref, area }: { action: 
       <Field label={labels.password} htmlFor="password" required>
         <Input id="password" name="password" type="password" required autoComplete="current-password" />
       </Field>
+      {labels.totp && (
+        <Field label={labels.totp} htmlFor="totp" hint={labels.totpHint}>
+          <Input id="totp" name="totp" inputMode="numeric" pattern="[0-9 ]{6,7}" maxLength={7} autoComplete="one-time-code" dir="ltr" className="font-mono tracking-[0.3em]" />
+        </Field>
+      )}
       <div className="text-end text-sm">
         <Link href={forgotHref} className="text-navy-700 hover:underline">{labels.forgot}</Link>
       </div>
