@@ -11,6 +11,8 @@ const config: Config = {
           50: "#eef2f8", 100: "#d6dfee", 200: "#adbfdc", 300: "#7d97c2", 400: "#4f6ea3",
           500: "#2f4f85", 600: "#1f3b69", 700: "#172f56", 800: "#102747", 900: "#0b1b33", 950: "#07111f",
         },
+        sand: { 50: "#fdfaf4", 100: "#fbf6ec", 200: "#f3e8d3", 300: "#e6d3b0" },
+        clay: { 500: "#c0602e", 600: "#a64f22" },
         gold: {
           50: "#fbf7ef", 100: "#f4ead4", 200: "#e9d4a9", 300: "#dcbb7d", 400: "#d1ad69",
           500: "#c9a45c", 600: "#b08944", 700: "#8c6b35", 800: "#6b522b", 900: "#4d3b20",
@@ -20,6 +22,7 @@ const config: Config = {
         sans: ["'Inter Variable'", "Inter", "system-ui", "sans-serif"],
         display: ["'Playfair Display'", "Georgia", "serif"],
         arabic: ["Cairo", "'Inter Variable'", "system-ui", "sans-serif"],
+        hand: ["Caveat", "'Segoe Print'", "cursive"],
       },
       boxShadow: {
         soft: "0 1px 2px rgba(16,39,71,.04), 0 8px 24px -8px rgba(16,39,71,.12)",

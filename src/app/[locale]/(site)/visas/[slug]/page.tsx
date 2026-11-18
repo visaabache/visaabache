@@ -17,7 +17,6 @@ import { Alert, Badge, Card, Flag, Prose } from "@/components/ui/misc";
 import { WhatsAppIcon } from "@/components/ui/icons";
 import { FaqList } from "@/components/site/cards";
 import { SetWhatsAppMessage } from "@/components/layout/whatsapp";
-import { Aurora } from "@/components/motion/aurora";
 
 async function load(slug: string) {
   return prisma.country.findFirst({
@@ -113,7 +112,7 @@ export default async function CountryPage({ params }: { params: Promise<{ locale
         ]}
       />
 
-      <section className="noise relative isolate overflow-hidden bg-navy-950 text-white">
+      <section className="relative isolate overflow-hidden bg-navy-900 text-white">
         {photoFor(c.slug) ? (
           <>
             <DestinationPhoto slug={c.slug} alt={name} priority sizes="100vw" className="absolute inset-0 -z-10 h-full w-full animate-ken-burns" />
@@ -121,10 +120,7 @@ export default async function CountryPage({ params }: { params: Promise<{ locale
             <div className="absolute inset-0 -z-10 bg-gradient-to-t from-navy-950/70 to-transparent" aria-hidden />
           </>
         ) : (
-          <>
-            <Aurora />
-            <div className="bg-grid mask-radial absolute inset-0 opacity-40" aria-hidden />
-          </>
+          <div className="absolute inset-0 -z-10 bg-navy-800" aria-hidden />
         )}
         <div className="container relative py-12 sm:py-16">
           <nav className="mb-6 text-sm text-navy-200" aria-label="Breadcrumb">

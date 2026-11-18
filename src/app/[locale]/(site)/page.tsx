@@ -1,5 +1,5 @@
 import Link from "@/components/ui/link";
-import { ArrowRight, BadgeCheck, FileCheck, HeartHandshake, Lock, MapPinned, ScrollText, ShieldCheck, Sparkles, UserRoundCheck, Wallet, Plane } from "lucide-react";
+import { ArrowRight, BadgeCheck, FileCheck, HeartHandshake, Lock, MapPinned, ScrollText, UserRoundCheck, Wallet, Plane } from "lucide-react";
 import { asLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n";
 import { tr } from "@/lib/i18n/localized";
@@ -14,10 +14,8 @@ import { DestinationPhoto } from "@/components/site/destination-photo";
 import { WhatsAppIcon } from "@/components/ui/icons";
 import { FaqList, ServiceCard, TestimonialCard } from "@/components/site/cards";
 import { DestinationSearch } from "@/components/site/destination-search";
-import { Aurora } from "@/components/motion/aurora";
 import { FlagMarquee } from "@/components/motion/marquee";
-import { HeroVisual } from "@/components/motion/hero-visual";
-import { AnimatedHeadline } from "@/components/motion/animated-headline";
+import { HeroArrow, HomeHero } from "@/components/site/home-hero";
 import { CountUp } from "@/components/motion/count-up";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
@@ -100,77 +98,45 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       )}
 
       {/* ───────────── Hero ───────────── */}
-      <section className="noise relative overflow-hidden bg-navy-950 text-white">
-        <Aurora />
-        <div className="bg-grid mask-radial absolute inset-0 opacity-50" aria-hidden />
-        <div className="container relative grid items-center gap-10 pb-10 pt-12 sm:pt-20 lg:grid-cols-[1.05fr_.95fr] lg:pb-16">
-          <div>
-            <p className="inline-flex animate-fade-up items-center gap-2 rounded-full border border-gold-400/30 bg-gold-400/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-gold-300 backdrop-blur">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gold-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-gold-400" />
-              </span>
-              {t.home.heroBadge}
-            </p>
-            <AnimatedHeadline
-              text={t.home.heroTitle}
-              highlight={[t.home.heroHighlight]}
-              delay={0.1}
-              className="mt-6 font-display text-[2.6rem] font-semibold leading-[1.05] tracking-tight sm:text-6xl xl:text-7xl"
-            />
-            <p className="mt-6 max-w-xl animate-fade-up text-base leading-relaxed text-navy-100 [animation-delay:.5s] sm:text-lg">{t.home.heroSubtitle}</p>
-            <div className="mt-8 flex animate-fade-up flex-wrap gap-3 [animation-delay:.65s]">
-              <ButtonLink href={l("/apply")} size="lg" className="btn-shine shadow-[0_10px_40px_-10px_rgba(201,164,92,.8)]">
-                {t.common.applyForAssistance} <ArrowRight className="rtl-flip h-4 w-4" />
-              </ButtonLink>
-              <ButtonLink href={l("/services")} size="lg" variant="light">
-                {t.common.exploreServices}
-              </ButtonLink>
-            </div>
-            <div className="relative z-10 mt-8 animate-fade-up [animation-delay:.8s]">
-              <DestinationSearch
-                items={countries.map((c) => ({ slug: c.slug, name: tr(c.name, locale), iso: c.isoCode }))}
-                locale={locale}
-                placeholder={t.home.searchPlaceholder}
-                button={t.home.searchButton}
-              />
-            </div>
-            <ul className="mt-6 flex animate-fade-up flex-wrap gap-2 text-xs text-navy-100 [animation-delay:.95s] sm:text-sm">
-              {[t.home.trust1, t.home.trust2, t.home.trust3].map((x) => (
-                <li key={x} className="glass flex items-center gap-1.5 rounded-full px-3 py-1.5">
-                  <ShieldCheck className="h-3.5 w-3.5 text-gold-400" /> {x}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="animate-fade-up [animation-delay:.3s]">
-            <HeroVisual
-              flags={popular.map((c) => c.isoCode)}
-              more={Math.max(0, countries.length - 4)}
-              labels={{
-                status: t.home.heroCardStatus,
-                statusValue: t.home.heroCardStatusValue,
-                docs: t.home.heroCardDocs,
-                next: t.home.heroCardNext,
-                secure: t.home.heroCardSecure,
-                example: t.home.heroCardExample,
-              }}
-            />
-          </div>
-        </div>
-        {/* Destinations marquee */}
-        <div className="relative space-y-1 pb-24 pt-2">
-          <p className="container mb-2 text-center text-[11px] font-semibold uppercase tracking-[0.15em] text-navy-300 sm:text-xs sm:tracking-[0.25em]">{t.home.marqueeTitle}</p>
-          <FlagMarquee items={chips.slice(0, half)} />
-          <FlagMarquee items={chips.slice(half)} reverse />
-        </div>
-      </section>
+      <HomeHero
+        t={{
+          welcome: t.home.heroWelcome,
+          title: t.home.heroTitle,
+          highlight: t.home.heroHighlight,
+          subtitle: t.home.heroSubtitle,
+          beach: t.home.heroCapBeach,
+          family: t.home.heroCapFamily,
+          green: t.home.heroCapGreen,
+          city: t.home.heroCapCity,
+          stamp: t.home.heroStamp,
+          photosAlt: t.home.heroPhotosAlt,
+        }}
+        actions={
+          <>
+            <ButtonLink href={l("/apply")} size="lg" variant="navy">
+              {t.common.applyForAssistance} <HeroArrow />
+            </ButtonLink>
+            <ButtonLink href={l("/services")} size="lg" variant="outline">
+              {t.common.exploreServices}
+            </ButtonLink>
+          </>
+        }
+        search={
+          <DestinationSearch
+            items={countries.map((c) => ({ slug: c.slug, name: tr(c.name, locale), iso: c.isoCode }))}
+            locale={locale}
+            placeholder={t.home.searchPlaceholder}
+            button={t.home.searchButton}
+          />
+        }
+        trust={[t.home.trust1, t.home.trust2, t.home.trust3]}
+      />
 
       {/* ───────────── Stats (overlapping the hero) ───────────── */}
       <section className="container relative z-10 -mt-14">
         <div className="reveal-stagger grid grid-cols-2 gap-3 lg:grid-cols-4">
           {stats.map((s) => (
-            <div key={s.label} className="spotlight rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-premium">
+            <div key={s.label} className="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-premium">
               <p className="font-display text-3xl font-semibold text-navy-800 sm:text-4xl">
                 {s.prefix}
                 <CountUp value={s.value} suffix={s.suffix} />
@@ -179,6 +145,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </div>
           ))}
         </div>
+      </section>
+
+      {/* ───────────── Destinations strip ───────────── */}
+      <section className="space-y-1 pt-14">
+        <p className="container mb-2 text-center text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-500 sm:text-xs sm:tracking-[0.25em]">{t.home.marqueeTitle}</p>
+        <FlagMarquee items={chips.slice(0, half)} light />
+        <FlagMarquee items={chips.slice(half)} reverse light />
       </section>
 
       {/* ───────────── Popular destinations ───────────── */}
@@ -216,17 +189,15 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       </section>
 
       {/* ───────────── Services (bento) ───────────── */}
-      <section className="relative overflow-hidden bg-slate-50 py-20 sm:py-24">
-        <Aurora variant="light" className="opacity-60" />
+      <section className="relative overflow-hidden bg-sand-50 py-20 sm:py-24">
         <div className="container relative">
           <SectionHeading eyebrow={t.nav.services} title={t.home.servicesTitle} subtitle={t.home.servicesSubtitle} center className="reveal" />
           <div className="reveal-stagger mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {featuredServices.map((s, i) =>
               i === 0 ? (
-                <Link key={s.id} href={l(`/services/${s.slug}`)} className="border-glow spotlight group relative flex flex-col justify-between overflow-hidden rounded-3xl bg-navy-900 p-7 text-white shadow-premium sm:col-span-2 lg:row-span-2 lg:col-span-1">
-                  <Aurora className="opacity-70" />
+                <Link key={s.id} href={l(`/services/${s.slug}`)} className="group relative flex flex-col justify-between overflow-hidden rounded-3xl bg-navy-800 p-7 text-white shadow-premium sm:col-span-2 lg:row-span-2 lg:col-span-1">
                   <div className="relative">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-gold-500/15 px-3 py-1 text-xs font-semibold text-gold-300"><Sparkles className="h-3.5 w-3.5" />{t.services.categories[s.category]}</span>
+                    <span className="inline-flex items-center rounded-full bg-gold-500/15 px-3 py-1 text-xs font-semibold text-gold-300">{t.services.categories[s.category]}</span>
                     <h3 className="mt-5 font-display text-3xl font-semibold leading-tight">{tr(s.name, locale)}</h3>
                     <p className="mt-3 text-navy-100">{tr(s.shortDescription, locale)}</p>
                   </div>
@@ -250,11 +221,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       <section className="container py-20 sm:py-24">
         <SectionHeading eyebrow="1 · 2 · 3 · 4" title={t.home.howTitle} subtitle={t.home.howSubtitle} center className="reveal" />
         <ol className="reveal-stagger relative mt-14 grid gap-6 md:grid-cols-4">
-          <div aria-hidden className="absolute inset-x-[12%] top-8 hidden h-0.5 overflow-hidden rounded-full bg-gold-100 md:block">
-            <div className="h-full w-1/3 animate-[marquee-reverse_3.5s_linear_infinite] bg-gradient-to-r from-transparent via-gold-500 to-transparent" />
-          </div>
+          <svg aria-hidden viewBox="0 0 1000 20" preserveAspectRatio="none" className="absolute inset-x-[12%] top-6 hidden h-5 w-[76%] text-gold-300 md:block">
+            <path d="M2 12c120-9 230 5 340-2s210-8 320 0 210 7 336-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeDasharray="8 10" strokeLinecap="round" />
+          </svg>
           {steps.map((s, i) => (
-            <li key={s.title} className="spotlight group relative rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-premium">
+            <li key={s.title} className="group relative rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-premium">
               <div className="relative mx-auto flex h-16 w-16 items-center justify-center">
                 <span className="absolute inset-0 rounded-2xl bg-navy-800 transition duration-500 group-hover:rotate-12 group-hover:bg-gold-500" />
                 <s.icon className="relative h-7 w-7 text-gold-400 transition group-hover:text-navy-900" />
@@ -268,23 +239,21 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       </section>
 
       {/* ───────────── Why choose ───────────── */}
-      <section className="noise relative overflow-hidden bg-navy-950 py-20 text-white sm:py-24">
-        <Aurora />
-        <div className="bg-grid mask-radial absolute inset-0 opacity-40" aria-hidden />
+      <section className="paper relative overflow-hidden py-20 sm:py-24">
         <div className="container relative">
-          <SectionHeading eyebrow="VISA ABACHE" title={t.home.whyTitle} light center className="reveal" />
+          <SectionHeading eyebrow="VISA ABACHE" title={t.home.whyTitle} center className="reveal" />
           <div className="reveal-stagger mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {whys.map((w) => (
-              <div key={w.title} className="border-glow glass spotlight group rounded-3xl p-6 transition duration-300 hover:-translate-y-1">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gold-500/15 text-gold-400 transition duration-500 group-hover:scale-110 group-hover:bg-gold-500 group-hover:text-navy-900">
+              <div key={w.title} className="group rounded-3xl border border-sand-300/70 bg-white p-6 shadow-soft transition duration-300 hover:-translate-y-1">
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-navy-800 text-gold-400 transition duration-500 group-hover:bg-gold-500 group-hover:text-navy-900">
                   <w.icon className="h-6 w-6" />
                 </span>
-                <h3 className="mt-5 text-lg font-semibold">{w.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-navy-100">{w.text}</p>
+                <h3 className="mt-5 text-lg font-semibold text-navy-800">{w.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600">{w.text}</p>
               </div>
             ))}
           </div>
-          <p className="mx-auto mt-12 max-w-3xl text-center text-xs leading-relaxed text-navy-300">{t.common.independentNotice}</p>
+          <p className="mx-auto mt-12 max-w-3xl text-center text-xs leading-relaxed text-slate-500">{t.common.independentNotice}</p>
         </div>
       </section>
 
@@ -318,24 +287,23 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       {/* ───────────── CTA + WhatsApp ───────────── */}
       <section className="container py-20 sm:py-24">
         <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
-          <div className="reveal noise relative overflow-hidden rounded-[2rem] bg-[linear-gradient(120deg,#b08944,#c9a45c,#e9d4a9,#c9a45c)] bg-[length:250%_100%] p-8 text-navy-900 shadow-premium animate-gradient-x sm:p-12">
-            <Plane className="absolute -end-6 -top-6 h-40 w-40 rotate-12 animate-float-slow text-white/30" aria-hidden />
+          <div className="reveal relative overflow-hidden rounded-[2rem] bg-gold-200 p-8 text-navy-900 shadow-soft sm:p-12">
+            <Plane className="absolute -end-6 -top-6 h-40 w-40 rotate-12 text-white/40" aria-hidden />
             <h2 className="relative max-w-md font-display text-3xl font-semibold leading-tight sm:text-4xl">{t.home.ctaTitle}</h2>
             <p className="relative mt-3 max-w-md text-navy-800">{t.home.ctaText}</p>
-            <ButtonLink href={l("/apply")} variant="navy" size="lg" className="btn-shine relative mt-7">
+            <ButtonLink href={l("/apply")} variant="navy" size="lg" className="relative mt-7">
               {t.common.applyForAssistance} <ArrowRight className="rtl-flip h-4 w-4" />
             </ButtonLink>
           </div>
-          <div className="reveal spotlight relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-8 shadow-soft sm:p-10">
+          <div className="reveal relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-8 shadow-soft sm:p-10">
             <span className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-[#25D366]/10 text-[#25D366]">
-              <span className="absolute inset-0 animate-ping2 rounded-2xl bg-[#25D366]/20" />
               <WhatsAppIcon className="relative h-7 w-7" />
             </span>
             <h2 className="mt-5 font-display text-3xl font-semibold text-navy-800">{t.home.whatsappTitle}</h2>
             <p className="mt-3 text-slate-600">{t.home.whatsappText}</p>
             <div className="mt-6 flex flex-wrap gap-3">
               {wa && (
-                <a href={wa} target="_blank" rel="noopener noreferrer" className="btn-shine inline-flex h-12 items-center gap-2 rounded-xl bg-[#25D366] px-6 font-semibold text-white hover:bg-[#1ebe5b]">
+                <a href={wa} target="_blank" rel="noopener noreferrer" className="inline-flex h-12 items-center gap-2 rounded-xl bg-[#25D366] px-6 font-semibold text-white hover:bg-[#1ebe5b]">
                   <WhatsAppIcon className="h-5 w-5" /> {t.common.chatOnWhatsApp}
                 </a>
               )}

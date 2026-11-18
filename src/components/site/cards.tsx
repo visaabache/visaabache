@@ -1,3 +1,4 @@
+import { HandUnderline } from "@/components/site/home-hero";
 import Link from "@/components/ui/link";
 import { ArrowRight, Check, Star } from "lucide-react";
 import type { Country, Package, Service, Testimonial } from "@prisma/client";
@@ -8,8 +9,6 @@ import { toNumber, cn } from "@/lib/utils";
 import { Card, Flag, Badge } from "@/components/ui/misc";
 import { DynamicIcon } from "@/components/ui/icons";
 import { ButtonLink } from "@/components/ui/button";
-import { Aurora } from "@/components/motion/aurora";
-import { AnimatedHeadline } from "@/components/motion/animated-headline";
 
 export function CountryCard({ c, locale, dict }: { c: Country; locale: Locale; dict: Dictionary }) {
   return (
@@ -132,15 +131,16 @@ export function FaqList({ items, locale }: { items: { id: string; question: unkn
 
 export function PageHero({ title, subtitle, children }: { title: string; subtitle?: string; children?: React.ReactNode }) {
   return (
-    <section className="noise relative overflow-hidden bg-navy-950 text-white">
-      <Aurora />
-      <div className="bg-grid mask-radial absolute inset-0 opacity-40" aria-hidden />
-      <div className="container relative py-14 sm:py-20">
-        <div className="gold-line mb-5 animate-fade-in" />
-        <AnimatedHeadline text={title} className="max-w-3xl font-display text-4xl font-semibold leading-tight tracking-tight sm:text-5xl" />
-        {subtitle && <p className="mt-4 max-w-2xl animate-fade-up text-lg text-navy-100 [animation-delay:.25s]">{subtitle}</p>}
+    <section className="paper relative overflow-hidden text-navy-900">
+      <div className="container relative pb-16 pt-12 sm:pb-20 sm:pt-16">
+        <h1 className="max-w-3xl animate-fade-up font-display text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">{title}</h1>
+        <HandUnderline className="mt-3 block h-3 w-40 text-gold-500 sm:w-52" />
+        {subtitle && <p className="mt-6 max-w-2xl animate-fade-up text-lg text-slate-700 [animation-delay:.15s]">{subtitle}</p>}
         {children}
       </div>
+      <svg viewBox="0 0 1440 40" preserveAspectRatio="none" aria-hidden className="absolute inset-x-0 bottom-0 h-6 w-full text-white sm:h-8">
+        <path d="M0 26c160-10 300 8 470 2s260-22 460-18 330 22 510 14v16H0z" fill="currentColor" />
+      </svg>
     </section>
   );
 }

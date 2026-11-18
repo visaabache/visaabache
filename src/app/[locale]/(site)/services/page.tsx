@@ -22,7 +22,7 @@ export default async function ServicesPage({ params }: { params: Promise<{ local
       <PageHero title={t.services.title} subtitle={t.services.subtitle}>
         <nav className="mt-8 flex flex-wrap gap-2">
           {CATS.map((c) => (
-            <a key={c} href={`#${c.toLowerCase()}`} className="rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-sm font-medium hover:bg-white/20">
+            <a key={c} href={`#${c.toLowerCase()}`} className="rounded-full border border-sand-300 bg-white px-4 py-1.5 text-sm font-medium text-navy-800 shadow-sm hover:border-gold-400">
               {t.services.categories[c]}
             </a>
           ))}

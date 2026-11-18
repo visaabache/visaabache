@@ -57,7 +57,7 @@ export default async function ServicePage({ params }: { params: Promise<{ locale
         }}
       />
       <PageHero title={name} subtitle={tr(s.shortDescription, locale)}>
-        <p className="mt-4 inline-flex rounded-full bg-white/10 px-3 py-1 text-sm text-gold-300">{t.services.categories[s.category]}</p>
+        <p className="mt-4 inline-flex rounded-full bg-gold-100 px-3 py-1 text-sm font-medium text-gold-800">{t.services.categories[s.category]}</p>
       </PageHero>
       <div className="container grid grid-cols-1 gap-10 py-14 lg:grid-cols-[minmax(0,1fr)_420px]">
         <div className="space-y-8">
