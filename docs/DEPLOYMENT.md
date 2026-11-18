@@ -75,6 +75,8 @@ Live site: **https://visaabache.site** (the old https://app.visa-abache.workers.
 | Secrets | `DATABASE_URL`, `SESSION_SECRET`, `DOCUMENT_ENCRYPTION_KEY`, `CRON_SECRET` (set with `wrangler secret`) |
 | Email | `EMAIL_DRIVER=console` (emails only appear in the worker logs). SMTP is not possible on Workers: use Resend (`EMAIL_DRIVER=resend` + `RESEND_API_KEY` secret) |
 
+**Free-plan CPU savings (error 1102):** public pages are served from a KV page cache (a few ms of CPU instead of 150–1000 ms per render); tracking parameters (`fbclid`, `utm_*`…) are ignored for the cache; icons, manifest, robots.txt and sitemap.xml are kept in the edge cache; public links are plain page loads (no uncached `?_rsc=` renders); admin saves refresh cached pages gradually (stale-while-revalidate, one re-render per 20 s). After every deploy the cache is empty for the new version: `npm run cf:warm` (part of `cf:deploy`) re-fills it slowly so visitors never trigger a burst of renders.
+
 **Plan requirement:** the Workers **Free** plan allows 10 ms of CPU per request; server-rendered pages need 10–25 ms, so a share of requests fail with error 1102. Use **Workers Paid** ($5/month). No code change is needed after upgrading.
 
 Deploy updates:
