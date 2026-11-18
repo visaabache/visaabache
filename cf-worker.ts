@@ -184,7 +184,7 @@ async function cachedPage(request: Request, env: Env, ctx: Ctx, url: URL): Promi
   const key = `pc2:${deploy}:${url.pathname.replace(/\/$/, "") || "/"}`;
   const [cv, hit] = await Promise.all([
     kv.get(CONTENT_VERSION_KEY, { type: "text", cacheTtl: 60 }).then((v) => v || "0"),
-    kv.get(key, { type: "text", cacheTtl: 60 }),
+    kv.get(key, { type: "text" }), // no cacheTtl: it would also cache "not found" and repeat renders for a minute
   ]);
   if (hit) {
     const nl = hit.indexOf("\n");
