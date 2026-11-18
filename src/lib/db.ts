@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaNeon, PrismaNeonHTTP } from "@prisma/adapter-neon";
+import { neonConfig } from "@neondatabase/serverless";
 
 /**
  * Database access.
@@ -82,6 +83,12 @@ function createClient() {
   const log: ("warn" | "error")[] = process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"];
   const url = process.env.DATABASE_URL!;
   if (onWorkers()) return new PrismaClient({ adapter: hybridNeonAdapter(url) as unknown as PrismaNeon, log });
+  // Pre-rendering the Cloudflare page cache from Node (scripts/cf-prerender.mjs): same HTTP driver as on Workers,
+  // sent to the endpoint host itself (only that host may be reachable from build machines).
+  if (process.env.NEON_HTTP === "1") {
+    neonConfig.fetchEndpoint = (host) => `https://${host}/sql`;
+    return new PrismaClient({ adapter: hybridNeonAdapter(url) as unknown as PrismaNeon, log });
+  }
   if (wantsNeonAdapter()) return new PrismaClient({ adapter: new PrismaNeon({ connectionString: url }), log });
   return new PrismaClient({ log });
 }
