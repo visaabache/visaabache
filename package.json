@@ -21,7 +21,7 @@
     "postinstall": "prisma generate && node scripts/copy-flags.mjs",
     "vercel-build": "prisma migrate deploy && npm run build",
     "cf:build": "bash scripts/cf-build.sh",
-    "cf:deploy": "npm run cf:build && STATIC_KV_ID=fb967ffb2e284be0b85b9080d8987d5f node scripts/cf-upload-assets.mjs && npx wrangler deploy && npm run cf:warm",
+    "cf:deploy": "bash scripts/cf-release.sh",
     "cf:warm": "node scripts/cf-warm.mjs https://visaabache.site 4000",
     "cf:preview": "npm run cf:build && npx wrangler dev"
   },

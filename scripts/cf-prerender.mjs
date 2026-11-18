@@ -50,15 +50,24 @@ try {
     if (i > 60) throw new Error("next start did not come up:\n" + log.slice(-2000));
     await new Promise((r) => setTimeout(r, 1000));
   }
-  const cvRes = await fetch(`${api}/values/pagecache:content-version`, { headers: auth });
+  const cvRes = await fetch(`${api}/values/pagecache:content-version`, { headers: auth, signal: AbortSignal.timeout(30_000) });
   const cv = cvRes.ok ? (await cvRes.text()) || "0" : "0";
-  const xml = await (await fetch(`${local}/sitemap.xml`)).text();
+  const xml = await (await fetch(`${local}/sitemap.xml`, { signal: AbortSignal.timeout(90_000) })).text();
   const paths = [...new Set([...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1]).pathname.replace(/\/$/, "")))].filter((p) => CACHEABLE_PAGE.test(p));
   const entries = [];
-  for (const p of paths) {
-    const res = await fetch(local + p, { redirect: "manual" });
+  for (const [n, p] of paths.entries()) {
+    let res, body;
+    for (let attempt = 1; ; attempt++) {
+      try {
+        res = await fetch(local + p, { redirect: "manual", signal: AbortSignal.timeout(90_000) });
+        body = await res.text();
+        break;
+      } catch (e) {
+        if (attempt >= 3) throw new Error(`render failed for ${p}: ${e.message}`);
+        console.log(`retry ${p} (${e.message})`);
+      }
+    }
     const type = res.headers.get("content-type") || "";
-    const body = await res.text();
     if (res.status !== 200 || !type.startsWith("text/html") || res.headers.has("set-cookie")) {
       console.log(`skip ${res.status} ${p}`);
       continue;
@@ -67,11 +76,11 @@ try {
     for (const name of KEPT_HEADERS) if (res.headers.get(name)) h[name] = res.headers.get(name);
     h["cache-control"] = "private, no-cache";
     entries.push({ key: `pc2:${version}:${p || "/"}`, value: `${JSON.stringify({ h, cv, t: Date.now() })}\n${body}`, expiration_ttl: KEEP_SECONDS });
-    process.stdout.write(".");
+    console.log(`${n + 1}/${paths.length} ${p}`);
   }
-  console.log(`\nrendered ${entries.length}/${paths.length} pages locally`);
+  console.log(`rendered ${entries.length}/${paths.length} pages locally`);
   for (let i = 0; i < entries.length; i += 40) {
-    const r = await fetch(`${api}/bulk`, { method: "PUT", headers: { ...auth, "content-type": "application/json" }, body: JSON.stringify(entries.slice(i, i + 40)) });
+    const r = await fetch(`${api}/bulk`, { method: "PUT", headers: { ...auth, "content-type": "application/json" }, body: JSON.stringify(entries.slice(i, i + 40)), signal: AbortSignal.timeout(120_000) });
     const j = await r.json();
     if (!j.success) throw new Error("KV bulk write failed: " + JSON.stringify(j.errors));
   }
