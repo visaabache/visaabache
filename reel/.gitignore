@@ -1,0 +1,2 @@
+# Rendered videos are large; they were delivered directly and are kept out of git
+*.mp4

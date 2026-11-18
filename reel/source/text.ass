@@ -1,0 +1,51 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 1080
+PlayResY: 1920
+WrapStyle: 2
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Main,Inter Display SemiBold,72,&H00FFFFFF,&H00FFFFFF,&H70000000,&H00000000,0,0,0,0,100,100,0,0,1,4,0,5,80,80,0,1
+Style: Hook,Inter Display Bold,84,&H00FFFFFF,&H00FFFFFF,&H70000000,&H00000000,0,0,0,0,100,100,0,0,1,5,0,5,70,70,0,1
+Style: Title,Inter Display ExtraBold,92,&H00FFFFFF,&H00FFFFFF,&H60000000,&H00000000,0,0,0,0,100,100,6,0,1,5,0,5,60,60,0,1
+Style: Small,Inter Display Medium,36,&H00E6E6E6,&H00FFFFFF,&H70000000,&H00000000,0,0,0,0,100,100,8,0,1,3,0,5,60,60,0,1
+Style: Stamp,JetBrains Mono,38,&H00FFFFFF,&H00FFFFFF,&H70000000,&H00000000,1,0,0,0,100,100,2,0,1,3,0,7,70,70,0,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 1,0:00:00.10,0:00:02.92,Small,,0,0,0,,{\an5\pos(540,330)\blur2\fad(200,120)}A DAY AS AN AIRPORT AGENT · MOROCCO
+Dialogue: 0,0:00:00.10,0:00:02.92,Small,,0,0,0,,{\an5\pos(540,330)\bord16\blur18\1a&HFF&\3a&H60&\fad(200,120)}A DAY AS AN AIRPORT AGENT · MOROCCO
+Dialogue: 1,0:00:00.25,0:00:02.92,Hook,,0,0,0,,{\an5\blur3\move(540,1148,540,1130,0,450)\fad(0,120)}{\alpha&HFF&\t(0,180,\alpha&H00&)}They {\alpha&HFF&\t(280,460,\alpha&H00&)}see\N{\alpha&HFF&\t(560,740,\alpha&H00&)}the {\alpha&HFF&\t(840,1020,\alpha&H00&)}uniform...
+Dialogue: 0,0:00:00.25,0:00:02.92,Hook,,0,0,0,,{\an5\bord22\blur24\3c&H000000&\move(540,1148,540,1130,0,450)\fad(0,120)}{\1a&HFF&\3a&HFF&\t(0,180,\3a&H50&)}They {\1a&HFF&\3a&HFF&\t(280,460,\3a&H50&)}see\N{\1a&HFF&\3a&HFF&\t(560,740,\3a&H50&)}the {\1a&HFF&\3a&HFF&\t(840,1020,\3a&H50&)}uniform...
+Dialogue: 2,0:00:03.05,0:00:07.45,Stamp,,0,0,0,,{\an7\pos(72,236)\fad(150,150)\c&H3030FF&\bord0}●
+Dialogue: 2,0:00:03.05,0:00:07.45,Stamp,,0,0,0,,{\an7\pos(116,228)\fad(150,150)}05:00 AM
+Dialogue: 1,0:00:03.20,0:00:07.35,Main,,0,0,0,,{\an5\blur3\move(540,778,540,760,0,450)\fad(0,250)}{\alpha&HFF&\t(0,180,\alpha&H00&)}...but {\alpha&HFF&\t(200,380,\alpha&H00&)}they {\alpha&HFF&\t(400,580,\alpha&H00&)}never {\alpha&HFF&\t(600,780,\alpha&H00&)}see\N{\alpha&HFF&\t(800,980,\alpha&H00&)}the {\alpha&HFF&\t(1000,1180,\alpha&H00&)}5 {\alpha&HFF&\t(1200,1380,\alpha&H00&)}AM {\alpha&HFF&\t(1400,1580,\alpha&H00&)}alarm.
+Dialogue: 0,0:00:03.20,0:00:07.35,Main,,0,0,0,,{\an5\bord22\blur24\3c&H000000&\move(540,778,540,760,0,450)\fad(0,250)}{\1a&HFF&\3a&HFF&\t(0,180,\3a&H50&)}...but {\1a&HFF&\3a&HFF&\t(200,380,\3a&H50&)}they {\1a&HFF&\3a&HFF&\t(400,580,\3a&H50&)}never {\1a&HFF&\3a&HFF&\t(600,780,\3a&H50&)}see\N{\1a&HFF&\3a&HFF&\t(800,980,\3a&H50&)}the {\1a&HFF&\3a&HFF&\t(1000,1180,\3a&H50&)}5 {\1a&HFF&\3a&HFF&\t(1200,1380,\3a&H50&)}AM {\1a&HFF&\3a&HFF&\t(1400,1580,\3a&H50&)}alarm.
+Dialogue: 2,0:00:07.55,0:00:10.45,Stamp,,0,0,0,,{\an7\pos(72,236)\fad(150,150)\c&H3030FF&\bord0}●
+Dialogue: 2,0:00:07.55,0:00:10.45,Stamp,,0,0,0,,{\an7\pos(116,228)\fad(150,150)}05:20 AM
+Dialogue: 1,0:00:07.65,0:00:10.40,Main,,0,0,0,,{\an5\blur3\move(540,778,540,760,0,450)\fad(0,250)}{\alpha&HFF&\t(0,180,\alpha&H00&)}Same {\alpha&HFF&\t(200,380,\alpha&H00&)}shirt. {\alpha&HFF&\t(400,580,\alpha&H00&)}Same {\alpha&HFF&\t(600,780,\alpha&H00&)}tie.\N{\alpha&HFF&\t(800,980,\alpha&H00&)}Same {\alpha&HFF&\t(1000,1180,\alpha&H00&)}fight.
+Dialogue: 0,0:00:07.65,0:00:10.40,Main,,0,0,0,,{\an5\bord22\blur24\3c&H000000&\move(540,778,540,760,0,450)\fad(0,250)}{\1a&HFF&\3a&HFF&\t(0,180,\3a&H50&)}Same {\1a&HFF&\3a&HFF&\t(200,380,\3a&H50&)}shirt. {\1a&HFF&\3a&HFF&\t(400,580,\3a&H50&)}Same {\1a&HFF&\3a&HFF&\t(600,780,\3a&H50&)}tie.\N{\1a&HFF&\3a&HFF&\t(800,980,\3a&H50&)}Same {\1a&HFF&\3a&HFF&\t(1000,1180,\3a&H50&)}fight.
+Dialogue: 2,0:00:10.55,0:00:16.45,Stamp,,0,0,0,,{\an7\pos(72,236)\fad(150,150)\c&H3030FF&\bord0}●
+Dialogue: 2,0:00:10.55,0:00:16.45,Stamp,,0,0,0,,{\an7\pos(116,228)\fad(150,150)}05:45 AM
+Dialogue: 1,0:00:10.65,0:00:13.40,Hook,,0,0,0,,{\an5\blur3\move(540,778,540,760,0,450)\fad(0,250)}{\alpha&HFF&\t(0,180,\alpha&H00&)}Tired? {\alpha&HFF&\t(300,480,\alpha&H00&)}Yes.
+Dialogue: 0,0:00:10.65,0:00:13.40,Hook,,0,0,0,,{\an5\bord22\blur24\3c&H000000&\move(540,778,540,760,0,450)\fad(0,250)}{\1a&HFF&\3a&HFF&\t(0,180,\3a&H50&)}Tired? {\1a&HFF&\3a&HFF&\t(300,480,\3a&H50&)}Yes.
+Dialogue: 1,0:00:13.60,0:00:16.40,Hook,,0,0,0,,{\an5\blur3\move(540,778,540,760,0,450)\fad(0,250)}{\alpha&HFF&\t(0,180,\alpha&H00&)}Giving {\alpha&HFF&\t(300,480,\alpha&H00&)}up? {\alpha&HFF&\t(600,780,\alpha&H00&)}Never.
+Dialogue: 0,0:00:13.60,0:00:16.40,Hook,,0,0,0,,{\an5\bord22\blur24\3c&H000000&\move(540,778,540,760,0,450)\fad(0,250)}{\1a&HFF&\3a&HFF&\t(0,180,\3a&H50&)}Giving {\1a&HFF&\3a&HFF&\t(300,480,\3a&H50&)}up? {\1a&HFF&\3a&HFF&\t(600,780,\3a&H50&)}Never.
+Dialogue: 2,0:00:16.55,0:00:23.70,Stamp,,0,0,0,,{\an7\pos(72,236)\fad(150,150)\c&H3030FF&\bord0}●
+Dialogue: 2,0:00:16.55,0:00:23.70,Stamp,,0,0,0,,{\an7\pos(116,228)\fad(150,150)}06:10 AM
+Dialogue: 1,0:00:16.75,0:00:20.40,Main,,0,0,0,,{\an5\blur3\move(540,778,540,760,0,450)\fad(0,250)}{\alpha&HFF&\t(0,180,\alpha&H00&)}The {\alpha&HFF&\t(220,400,\alpha&H00&)}city {\alpha&HFF&\t(440,620,\alpha&H00&)}is {\alpha&HFF&\t(660,840,\alpha&H00&)}still {\alpha&HFF&\t(880,1060,\alpha&H00&)}asleep...
+Dialogue: 0,0:00:16.75,0:00:20.40,Main,,0,0,0,,{\an5\bord22\blur24\3c&H000000&\move(540,778,540,760,0,450)\fad(0,250)}{\1a&HFF&\3a&HFF&\t(0,180,\3a&H50&)}The {\1a&HFF&\3a&HFF&\t(220,400,\3a&H50&)}city {\1a&HFF&\3a&HFF&\t(440,620,\3a&H50&)}is {\1a&HFF&\3a&HFF&\t(660,840,\3a&H50&)}still {\1a&HFF&\3a&HFF&\t(880,1060,\3a&H50&)}asleep...
+Dialogue: 1,0:00:20.60,0:00:23.70,Main,,0,0,0,,{\an5\blur3\move(540,778,540,760,0,450)\fad(0,250)}{\alpha&HFF&\t(0,180,\alpha&H00&)}...and {\alpha&HFF&\t(200,380,\alpha&H00&)}I'm {\alpha&HFF&\t(400,580,\alpha&H00&)}already\N{\alpha&HFF&\t(600,780,\alpha&H00&)}on {\alpha&HFF&\t(800,980,\alpha&H00&)}my {\alpha&HFF&\t(1000,1180,\alpha&H00&)}way.
+Dialogue: 0,0:00:20.60,0:00:23.70,Main,,0,0,0,,{\an5\bord22\blur24\3c&H000000&\move(540,778,540,760,0,450)\fad(0,250)}{\1a&HFF&\3a&HFF&\t(0,180,\3a&H50&)}...and {\1a&HFF&\3a&HFF&\t(200,380,\3a&H50&)}I'm {\1a&HFF&\3a&HFF&\t(400,580,\3a&H50&)}already\N{\1a&HFF&\3a&HFF&\t(600,780,\3a&H50&)}on {\1a&HFF&\3a&HFF&\t(800,980,\3a&H50&)}my {\1a&HFF&\3a&HFF&\t(1000,1180,\3a&H50&)}way.
+Dialogue: 1,0:00:24.02,0:00:28.30,Title,,0,0,0,,{\an5\pos(540,1110)\blur2\fad(0,250)\fscx135\fscy135\t(0,220,\fscx100\fscy100)}AGADIR\NAL MASSIRA
+Dialogue: 0,0:00:24.02,0:00:28.30,Title,,0,0,0,,{\an5\pos(540,1110)\bord26\blur28\1a&HFF&\3a&H40&\fad(0,250)\fscx135\fscy135\t(0,220,\fscx100\fscy100)}AGADIR\NAL MASSIRA
+Dialogue: 1,0:00:24.35,0:00:28.30,Small,,0,0,0,,{\an5\pos(540,1275)\blur2\fad(300,250)}AIRPORT  ·  MOROCCO
+Dialogue: 0,0:00:24.35,0:00:28.30,Small,,0,0,0,,{\an5\pos(540,1275)\bord16\blur18\1a&HFF&\3a&H60&\fad(300,250)}AIRPORT  ·  MOROCCO
+Dialogue: 1,0:00:28.55,0:00:32.90,Main,,0,0,0,,{\an5\blur3\move(540,1138,540,1120,0,450)\fad(0,250)}{\alpha&HFF&\t(0,180,\alpha&H00&)}Every {\alpha&HFF&\t(200,380,\alpha&H00&)}flight {\alpha&HFF&\t(400,580,\alpha&H00&)}you {\alpha&HFF&\t(600,780,\alpha&H00&)}take\N{\alpha&HFF&\t(800,980,\alpha&H00&)}starts {\alpha&HFF&\t(1000,1180,\alpha&H00&)}with {\alpha&HFF&\t(1200,1380,\alpha&H00&)}people\N{\alpha&HFF&\t(1400,1580,\alpha&H00&)}you {\alpha&HFF&\t(1599,1779,\alpha&H00&)}never {\alpha&HFF&\t(1799,1979,\alpha&H00&)}notice.
+Dialogue: 0,0:00:28.55,0:00:32.90,Main,,0,0,0,,{\an5\bord22\blur24\3c&H000000&\move(540,1138,540,1120,0,450)\fad(0,250)}{\1a&HFF&\3a&HFF&\t(0,180,\3a&H50&)}Every {\1a&HFF&\3a&HFF&\t(200,380,\3a&H50&)}flight {\1a&HFF&\3a&HFF&\t(400,580,\3a&H50&)}you {\1a&HFF&\3a&HFF&\t(600,780,\3a&H50&)}take\N{\1a&HFF&\3a&HFF&\t(800,980,\3a&H50&)}starts {\1a&HFF&\3a&HFF&\t(1000,1180,\3a&H50&)}with {\1a&HFF&\3a&HFF&\t(1200,1380,\3a&H50&)}people\N{\1a&HFF&\3a&HFF&\t(1400,1580,\3a&H50&)}you {\1a&HFF&\3a&HFF&\t(1599,1779,\3a&H50&)}never {\1a&HFF&\3a&HFF&\t(1799,1979,\3a&H50&)}notice.
+Dialogue: 1,0:00:33.30,0:00:38.40,Main,,0,0,0,,{\an5\blur3\move(540,878,540,860,0,450)\fad(0,600)}{\alpha&HFF&\t(0,180,\alpha&H00&)}Do {\alpha&HFF&\t(220,400,\alpha&H00&)}it {\alpha&HFF&\t(440,620,\alpha&H00&)}for {\alpha&HFF&\t(660,840,\alpha&H00&)}the {\alpha&HFF&\t(880,1060,\alpha&H00&)}ones\N{\alpha&HFF&\t(1100,1280,\alpha&H00&)}waiting {\alpha&HFF&\t(1320,1500,\alpha&H00&)}for {\alpha&HFF&\t(1540,1720,\alpha&H00&)}you {\alpha&HFF&\t(1760,1940,\alpha&H00&)}at {\alpha&HFF&\t(1980,2160,\alpha&H00&)}home.
+Dialogue: 0,0:00:33.30,0:00:38.40,Main,,0,0,0,,{\an5\bord22\blur24\3c&H000000&\move(540,878,540,860,0,450)\fad(0,600)}{\1a&HFF&\3a&HFF&\t(0,180,\3a&H50&)}Do {\1a&HFF&\3a&HFF&\t(220,400,\3a&H50&)}it {\1a&HFF&\3a&HFF&\t(440,620,\3a&H50&)}for {\1a&HFF&\3a&HFF&\t(660,840,\3a&H50&)}the {\1a&HFF&\3a&HFF&\t(880,1060,\3a&H50&)}ones\N{\1a&HFF&\3a&HFF&\t(1100,1280,\3a&H50&)}waiting {\1a&HFF&\3a&HFF&\t(1320,1500,\3a&H50&)}for {\1a&HFF&\3a&HFF&\t(1540,1720,\3a&H50&)}you {\1a&HFF&\3a&HFF&\t(1760,1940,\3a&H50&)}at {\1a&HFF&\3a&HFF&\t(1980,2160,\3a&H50&)}home.
+Dialogue: 1,0:00:35.40,0:00:38.40,Small,,0,0,0,,{\an5\pos(540,1040)\blur2\fad(500,600)}save this for the hard days
+Dialogue: 0,0:00:35.40,0:00:38.40,Small,,0,0,0,,{\an5\pos(540,1040)\bord16\blur18\1a&HFF&\3a&H60&\fad(500,600)}save this for the hard days
