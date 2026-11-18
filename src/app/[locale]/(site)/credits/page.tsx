@@ -5,6 +5,7 @@ import { pageMetadata } from "@/lib/seo";
 import { prisma } from "@/lib/db";
 import { destinationPhotos } from "@/lib/destination-photos";
 import { heroPhotos, heroPhotoSrc, type HeroPhotoName } from "@/lib/hero-photos";
+import { servicePhotos, servicePhotoSrc } from "@/lib/service-photos";
 import { PageHero } from "@/components/site/cards";
 import { DestinationPhoto } from "@/components/site/destination-photo";
 
@@ -53,6 +54,21 @@ export default async function CreditsPage({ params }: { params: Promise<{ locale
                 <p className="text-slate-600">{t.credits.license}: Pixabay Content License</p>
                 <p className="text-slate-600">
                   {t.credits.source}: <a className="text-navy-700 underline" href={heroPhotos[name].page} target="_blank" rel="noopener noreferrer">Pixabay</a>
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {Object.entries(servicePhotos).map(([slug, p]) => (
+            <li key={slug} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={servicePhotoSrc(slug, 480)!} alt="" loading="lazy" className="aspect-[16/10] w-full object-cover" />
+              <div className="space-y-1 p-4 text-sm">
+                <p className="text-slate-600">{t.credits.photo} {t.credits.by} {p.author}</p>
+                <p className="text-slate-600">{t.credits.license}: Pixabay Content License</p>
+                <p className="text-slate-600">
+                  {t.credits.source}: <a className="text-navy-700 underline" href={p.page} target="_blank" rel="noopener noreferrer">Pixabay</a>
                 </p>
               </div>
             </li>

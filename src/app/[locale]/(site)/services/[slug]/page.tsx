@@ -13,7 +13,7 @@ import { submitInquiry } from "@/actions/public";
 import { Card, Prose, Alert } from "@/components/ui/misc";
 import { DynamicIcon, WhatsAppIcon } from "@/components/ui/icons";
 import { ButtonLink } from "@/components/ui/button";
-import { PageHero, ServicePrice, FaqList } from "@/components/site/cards";
+import { PageHero, ServicePhotoImg, ServicePrice, FaqList } from "@/components/site/cards";
 import { InquiryForm } from "@/components/forms/inquiry-form";
 import { SetWhatsAppMessage } from "@/components/layout/whatsapp";
 
@@ -61,7 +61,9 @@ export default async function ServicePage({ params }: { params: Promise<{ locale
       </PageHero>
       <div className="container grid grid-cols-1 gap-10 py-14 lg:grid-cols-[minmax(0,1fr)_420px]">
         <div className="space-y-8">
-          <Card className="p-6 sm:p-8">
+          <Card className="overflow-hidden">
+            <ServicePhotoImg slug={s.slug} priority sizes="(min-width: 1024px) 760px, 100vw" className="aspect-[16/8] w-full object-cover" />
+            <div className="p-6 sm:p-8">
             <div className="flex items-center gap-4">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-navy-800 text-gold-400">
                 <DynamicIcon name={s.icon} className="h-7 w-7" />
@@ -84,6 +86,7 @@ export default async function ServicePage({ params }: { params: Promise<{ locale
                 </ul>
               </>
             )}
+            </div>
           </Card>
           <Alert tone="info" title={<span className="flex items-center gap-1"><Info className="h-4 w-4" /></span>}>
             {tr(s.disclaimer, locale) || t.services.disclaimerDefault}

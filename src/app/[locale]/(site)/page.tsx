@@ -12,7 +12,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { Flag, SectionHeading, Card } from "@/components/ui/misc";
 import { DestinationPhoto } from "@/components/site/destination-photo";
 import { WhatsAppIcon } from "@/components/ui/icons";
-import { FaqList, ServiceCard, TestimonialCard } from "@/components/site/cards";
+import { FaqList, ServiceCard, ServicePhotoImg, ServicePrice, TestimonialCard } from "@/components/site/cards";
 import { DestinationSearch } from "@/components/site/destination-search";
 import { FlagMarquee } from "@/components/motion/marquee";
 import { HeroArrow, HomeHero } from "@/components/site/home-hero";
@@ -43,10 +43,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const half = Math.ceil(chips.length / 2);
 
   const steps = [
-    { icon: MapPinned, title: t.home.step1Title, text: t.home.step1Text },
-    { icon: ScrollText, title: t.home.step2Title, text: t.home.step2Text },
-    { icon: FileCheck, title: t.home.step3Title, text: t.home.step3Text },
-    { icon: UserRoundCheck, title: t.home.step4Title, text: t.home.step4Text },
+    { icon: MapPinned, photo: "travel-assistance", title: t.home.step1Title, text: t.home.step1Text },
+    { icon: ScrollText, photo: "document-preparation", title: t.home.step2Title, text: t.home.step2Text },
+    { icon: FileCheck, photo: "administrative-forms", title: t.home.step3Title, text: t.home.step3Text },
+    { icon: UserRoundCheck, photo: "appointment-guidance", title: t.home.step4Title, text: t.home.step4Text },
   ];
   const whys = [
     { icon: Wallet, title: t.home.why1Title, text: t.home.why1Text },
@@ -195,15 +195,15 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           <div className="reveal-stagger mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {featuredServices.map((s, i) =>
               i === 0 ? (
-                <Link key={s.id} href={l(`/services/${s.slug}`)} className="group relative flex flex-col justify-between overflow-hidden rounded-3xl bg-navy-800 p-7 text-white shadow-premium sm:col-span-2 lg:row-span-2 lg:col-span-1">
-                  <div className="relative">
-                    <span className="inline-flex items-center rounded-full bg-gold-500/15 px-3 py-1 text-xs font-semibold text-gold-300">{t.services.categories[s.category]}</span>
-                    <h3 className="mt-5 font-display text-3xl font-semibold leading-tight">{tr(s.name, locale)}</h3>
-                    <p className="mt-3 text-navy-100">{tr(s.shortDescription, locale)}</p>
-                  </div>
-                  <div className="relative mt-10 flex items-center justify-between">
-                    <Plane className="h-16 w-16 -rotate-12 text-gold-400/80 transition duration-700 group-hover:-translate-y-2 group-hover:translate-x-3 rtl:group-hover:-translate-x-3" />
-                    <span className="flex items-center gap-2 rounded-full bg-gold-500 px-4 py-2 text-sm font-bold text-navy-900">{t.common.learnMore} <ArrowRight className="rtl-flip h-4 w-4" /></span>
+                <Link key={s.id} href={l(`/services/${s.slug}`)} className="group relative isolate flex min-h-[420px] flex-col justify-end overflow-hidden rounded-3xl bg-navy-900 p-7 text-white shadow-premium sm:col-span-2 lg:col-span-1 lg:row-span-2">
+                  <ServicePhotoImg slug={s.slug} tall sizes="(min-width: 1024px) 400px, 100vw" className="absolute inset-0 -z-10 h-full w-full object-cover object-top transition duration-700 group-hover:scale-105" />
+                  <div className="absolute inset-0 -z-10 bg-gradient-to-t from-navy-950 via-navy-950/55 via-35% to-transparent to-70%" aria-hidden />
+                  <span className="absolute start-7 top-7 rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-navy-800 shadow-sm">{t.services.categories[s.category]}</span>
+                  <h3 className="font-display text-3xl font-semibold leading-tight">{tr(s.name, locale)}</h3>
+                  <p className="mt-3 text-white/85">{tr(s.shortDescription, locale)}</p>
+                  <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+                    <ServicePrice s={s} locale={locale} dict={t} light />
+                    <span className="flex items-center gap-2 rounded-full bg-gold-500 px-4 py-2 text-sm font-bold text-navy-900 transition group-hover:bg-gold-400">{t.common.learnMore} <ArrowRight className="rtl-flip h-4 w-4" /></span>
                   </div>
                 </Link>
               ) : (
@@ -220,19 +220,21 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       {/* ───────────── How it works ───────────── */}
       <section className="container py-20 sm:py-24">
         <SectionHeading eyebrow="1 · 2 · 3 · 4" title={t.home.howTitle} subtitle={t.home.howSubtitle} center className="reveal" />
-        <ol className="reveal-stagger relative mt-14 grid gap-6 md:grid-cols-4">
-          <svg aria-hidden viewBox="0 0 1000 20" preserveAspectRatio="none" className="absolute inset-x-[12%] top-6 hidden h-5 w-[76%] text-gold-300 md:block">
-            <path d="M2 12c120-9 230 5 340-2s210-8 320 0 210 7 336-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeDasharray="8 10" strokeLinecap="round" />
-          </svg>
+        <ol className="reveal-stagger relative mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((s, i) => (
-            <li key={s.title} className="group relative rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-premium">
-              <div className="relative mx-auto flex h-16 w-16 items-center justify-center">
-                <span className="absolute inset-0 rounded-2xl bg-navy-800 transition duration-500 group-hover:rotate-12 group-hover:bg-gold-500" />
-                <s.icon className="relative h-7 w-7 text-gold-400 transition group-hover:text-navy-900" />
-                <span className="absolute -end-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-gold-500 text-xs font-bold text-navy-900 ring-4 ring-white">{i + 1}</span>
+            <li key={s.title} className="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-soft transition duration-300 hover:-translate-y-1 hover:shadow-premium">
+              <div className="relative aspect-[16/10] overflow-hidden bg-sand-200">
+                <ServicePhotoImg slug={s.photo} sizes="(min-width: 768px) 25vw, 100vw" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+                <div className="absolute inset-0 bg-gradient-to-t from-navy-950/50 to-transparent" aria-hidden />
+                <span className="absolute bottom-3 start-4 font-display text-5xl font-semibold leading-none text-white drop-shadow">{i + 1}</span>
               </div>
-              <h3 className="mt-5 font-semibold text-navy-800">{s.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">{s.text}</p>
+              <div className="relative flex-1 px-6 pb-6 pt-8">
+                <span className="absolute -top-6 end-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-navy-800 text-gold-400 shadow-[0_10px_24px_-8px_rgba(16,39,71,.55)] ring-4 ring-white">
+                  <s.icon className="h-5 w-5" />
+                </span>
+                <h3 className="font-semibold text-navy-800">{s.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600">{s.text}</p>
+              </div>
             </li>
           ))}
         </ol>
@@ -244,12 +246,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           <SectionHeading eyebrow="VISA ABACHE" title={t.home.whyTitle} center className="reveal" />
           <div className="reveal-stagger mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {whys.map((w) => (
-              <div key={w.title} className="group rounded-3xl border border-sand-300/70 bg-white p-6 shadow-soft transition duration-300 hover:-translate-y-1">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-navy-800 text-gold-400 transition duration-500 group-hover:bg-gold-500 group-hover:text-navy-900">
-                  <w.icon className="h-6 w-6" />
+              <div key={w.title} className="group relative overflow-hidden rounded-3xl border border-sand-300/70 bg-white p-6 shadow-soft transition duration-300 hover:-translate-y-1 hover:border-gold-300 hover:shadow-premium">
+                <span className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-navy-800 text-gold-400 shadow-[0_10px_24px_-8px_rgba(16,39,71,.55)] ring-1 ring-gold-500/40 ring-offset-4 ring-offset-white transition duration-300 group-hover:bg-gold-500 group-hover:text-navy-900">
+                  <w.icon className="h-6 w-6" strokeWidth={2.25} />
                 </span>
-                <h3 className="mt-5 text-lg font-semibold text-navy-800">{w.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-600">{w.text}</p>
+                <h3 className="relative mt-6 text-lg font-semibold text-navy-800">{w.title}</h3>
+                <p className="relative mt-2 text-sm leading-relaxed text-slate-600">{w.text}</p>
               </div>
             ))}
           </div>

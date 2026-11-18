@@ -9,6 +9,7 @@ import { toNumber, cn } from "@/lib/utils";
 import { Card, Flag, Badge } from "@/components/ui/misc";
 import { DynamicIcon } from "@/components/ui/icons";
 import { ButtonLink } from "@/components/ui/button";
+import { servicePhotoSrc, servicePhotoTallSrc } from "@/lib/service-photos";
 
 export function CountryCard({ c, locale, dict }: { c: Country; locale: Locale; dict: Dictionary }) {
   return (
@@ -26,32 +27,69 @@ export function CountryCard({ c, locale, dict }: { c: Country; locale: Locale; d
   );
 }
 
-export function ServicePrice({ s, locale, dict }: { s: Pick<Service, "priceType" | "price">; locale: Locale; dict: Dictionary }) {
-  if (s.priceType === "QUOTE" || s.price == null) return <span className="text-sm font-semibold text-navy-700">{dict.common.onQuote}</span>;
+export function ServicePrice({ s, locale, dict, light }: { s: Pick<Service, "priceType" | "price">; locale: Locale; dict: Dictionary; light?: boolean }) {
+  if (s.priceType === "QUOTE" || s.price == null) return <span className={cn("text-sm font-semibold", light ? "text-white" : "text-navy-700")}>{dict.common.onQuote}</span>;
   return (
-    <span className="text-sm text-slate-500">
+    <span className={cn("text-sm", light ? "text-white/80" : "text-slate-500")}>
       {s.priceType === "FROM" && <>{dict.common.from} </>}
-      <span className="text-base font-bold text-navy-800">{formatMAD(toNumber(s.price), locale)}</span>
+      <span className={cn("text-base font-bold", light ? "text-white" : "text-navy-800")}>{formatMAD(toNumber(s.price), locale)}</span>
     </span>
   );
 }
 
-export function ServiceCard({ s, locale, dict }: { s: Service; locale: Locale; dict: Dictionary }) {
+/** Photo for a service (16:10, self-hosted webp), or null when the service has none. */
+export function ServicePhotoImg({ slug, className, sizes, priority, tall }: { slug: string; className?: string; sizes: string; priority?: boolean; tall?: boolean }) {
+  const small = servicePhotoSrc(slug, 480);
+  if (!small) return null;
+  // Tall cards: the portrait crop on narrow screens' landscape layout would be cut; use it from the lg breakpoint.
+  const portrait = tall ? servicePhotoTallSrc(slug) : null;
   return (
-    <Link href={`/${locale}/services/${s.slug}`} className="group">
-      <Card className="spotlight flex h-full flex-col rounded-3xl p-6 transition duration-300 group-hover:-translate-y-1 group-hover:border-gold-200 group-hover:shadow-premium">
-        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-navy-800 text-gold-400 transition duration-500 group-hover:rotate-6 group-hover:scale-110 group-hover:bg-gold-500 group-hover:text-navy-900">
-          <DynamicIcon name={s.icon} className="h-6 w-6" />
+    <picture className="contents">
+      {portrait && <source media="(min-width: 1024px)" srcSet={portrait} />}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+      src={small}
+      srcSet={`${small} 480w, ${servicePhotoSrc(slug, 960)} 960w`}
+      sizes={sizes}
+      alt=""
+      width={480}
+      height={300}
+      loading={priority ? "eager" : "lazy"}
+      decoding="async"
+      className={className}
+      />
+    </picture>
+  );
+}
+
+export function ServiceCard({ s, locale, dict }: { s: Service; locale: Locale; dict: Dictionary }) {
+  const hasPhoto = !!servicePhotoSrc(s.slug, 480);
+  return (
+    <Link href={`/${locale}/services/${s.slug}`} className="group block h-full">
+      <article className="flex h-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-soft transition duration-300 group-hover:-translate-y-1 group-hover:border-gold-300 group-hover:shadow-premium">
+        <div className="relative aspect-[16/10] overflow-hidden bg-sand-200">
+          {hasPhoto ? (
+            <ServicePhotoImg slug={s.slug} sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+          ) : (
+            <div className="flex h-full items-center justify-center text-navy-300"><DynamicIcon name={s.icon} className="h-14 w-14" /></div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-navy-950/40 via-transparent to-transparent" aria-hidden />
+          <span className="absolute start-4 top-4 rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-navy-800 shadow-sm">{dict.services.categories[s.category]}</span>
         </div>
-        <h3 className="text-lg font-semibold text-navy-800">{tr(s.name, locale)}</h3>
-        <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600">{tr(s.shortDescription, locale)}</p>
-        <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
-          <ServicePrice s={s} locale={locale} dict={dict} />
-          <span className="flex items-center gap-1 text-sm font-semibold text-gold-700">
-            {dict.common.learnMore} <ArrowRight className="rtl-flip h-4 w-4" />
+        <div className="relative flex flex-1 flex-col px-6 pb-6 pt-9">
+          <span className="absolute -top-7 start-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-navy-800 text-gold-400 shadow-[0_10px_24px_-8px_rgba(16,39,71,.55)] ring-4 ring-white transition duration-300 group-hover:bg-gold-500 group-hover:text-navy-900">
+            <DynamicIcon name={s.icon} className="h-6 w-6" />
           </span>
+          <h3 className="text-lg font-semibold leading-snug text-navy-800">{tr(s.name, locale)}</h3>
+          <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600">{tr(s.shortDescription, locale)}</p>
+          <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
+            <ServicePrice s={s} locale={locale} dict={dict} />
+            <span className="flex items-center gap-1 text-sm font-semibold text-gold-700">
+              {dict.common.learnMore} <ArrowRight className="rtl-flip h-4 w-4 transition group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5" />
+            </span>
+          </div>
         </div>
-      </Card>
+      </article>
     </Link>
   );
 }
