@@ -35,11 +35,16 @@ const wrangler = JSON.parse(readFileSync("wrangler.jsonc", "utf8").replace(/^\s*
 const env = { ...process.env, ...wrangler.vars, NODE_ENV: "production", NEON_HTTP: "1", PORT: String(PORT), NEXT_TELEMETRY_DISABLED: "1" };
 for (const k of ["DATABASE_URL", "SESSION_SECRET", "DOCUMENT_ENCRYPTION_KEY"]) if (!env[k]) throw new Error(`${k} is required`);
 
-const server = spawn("npx", ["next", "start", "-p", String(PORT), "-H", "127.0.0.1"], { env, stdio: ["ignore", "pipe", "pipe"] });
+const server = spawn("npx", ["next", "start", "-p", String(PORT), "-H", "127.0.0.1"], { env, stdio: ["ignore", "pipe", "pipe"], detached: true });
 let log = "";
 server.stdout.on("data", (d) => (log += d));
 server.stderr.on("data", (d) => (log += d));
-const stop = () => server.kill("SIGTERM");
+// npx starts next-server as a grandchild: stop the whole process group, or the script never exits.
+const stop = () => {
+  try {
+    process.kill(-server.pid, "SIGTERM");
+  } catch {}
+};
 process.on("exit", stop);
 
 try {
@@ -88,3 +93,4 @@ try {
 } finally {
   stop();
 }
+process.exit(0);
