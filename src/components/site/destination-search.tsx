@@ -1,6 +1,5 @@
 "use client";
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 
 type Item = { slug: string; name: string; iso: string };
@@ -8,14 +7,13 @@ type Item = { slug: string; name: string; iso: string };
 export function DestinationSearch({ items, locale, placeholder, button }: { items: Item[]; locale: string; placeholder: string; button: string }) {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
-  const router = useRouter();
   const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   const matches = useMemo(() => (q.trim() ? items.filter((i) => norm(i.name).includes(norm(q.trim())) || i.slug.includes(norm(q.trim()))).slice(0, 6) : []), [q, items]);
 
   function go(slug?: string) {
-    if (slug) router.push(`/${locale}/visas/${slug}`);
-    else if (matches[0]) router.push(`/${locale}/visas/${matches[0].slug}`);
-    else router.push(`/${locale}/visas${q ? `?q=${encodeURIComponent(q)}` : ""}`);
+    if (slug) window.location.assign(`/${locale}/visas/${slug}`);
+    else if (matches[0]) window.location.assign(`/${locale}/visas/${matches[0].slug}`);
+    else window.location.assign(`/${locale}/visas${q ? `?q=${encodeURIComponent(q)}` : ""}`);
   }
 
   return (

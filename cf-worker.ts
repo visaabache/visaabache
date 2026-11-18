@@ -112,15 +112,22 @@ function secured(res: Response, url: URL, env: Env): Response {
 }
 
 /* ───────────────────────────── Page cache ─────────────────────────────
- * Every page is rendered on demand by Next.js, which costs CPU time on each visit. Public marketing pages are
- * identical for every anonymous visitor, so their HTML is stored in KV and served without running Next.js.
- *  - Only GET requests without query string, without a session cookie and without Next.js client-navigation
- *    headers are served from / stored in the cache. Logged-in users always get a fresh page.
- *  - Keys include the deployment version (a new deploy never serves old HTML) and a content version that is
- *    bumped whenever the admin area saves something (POST under /{locale}/admin), so edits show up at once.
- *  - Entries expire after PAGE_TTL so time-based content (banners, dates) refreshes on its own.
+ * Every page is rendered on demand by Next.js, which costs CPU time on each visit (Workers Free allows ~10 ms per
+ * request, with a small burst allowance). Public marketing pages are identical for every anonymous visitor, so
+ * their HTML is stored in KV and served without running Next.js.
+ *  - Only GET requests without query string (once tracking parameters such as fbclid / utm_* are removed), without
+ *    a session cookie and without Next.js client-navigation headers use the cache. Logged-in users get fresh pages.
+ *  - Keys include the deployment version: a new deploy never serves HTML from an older build (whose Server Action
+ *    ids and script chunks differ). scripts/cf-warm.mjs re-fills the cache after a deploy.
+ *  - Admin saves (POST under /{locale}/admin) bump a content version. Pages rendered before it are served
+ *    *stale* and re-rendered in the background — at most one re-render every REVALIDATE_GAP_MS per isolate — so a
+ *    save no longer makes every visitor trigger a full render at the same moment (which exhausted the CPU
+ *    allowance and caused error 1102). Entries older than PAGE_FRESH_MS are refreshed the same way.
  */
-const PAGE_TTL = 12 * 60 * 60;
+const PAGE_FRESH_MS = 12 * 60 * 60 * 1000;
+const PAGE_KEEP_SECONDS = 7 * 24 * 60 * 60;
+const REVALIDATE_GAP_MS = 20_000;
+let lastRevalidation = 0;
 const CONTENT_VERSION_KEY = "pagecache:content-version";
 const CACHEABLE_PAGE = /^\/(fr|ar|en)(\/(visas|services|blog)(\/[a-z0-9-]+)?|\/legal\/[a-z0-9-]+|\/(pricing|faq|about|contact|track|credits))?\/?$/;
 const ADMIN_PATH = /^\/(fr|ar|en)\/admin(\/|$)/;
@@ -129,6 +136,21 @@ const KEPT_HEADERS = [
   "referrer-policy", "permissions-policy", "cross-origin-opener-policy", "cross-origin-resource-policy",
   "x-permitted-cross-domain-policies", "strict-transport-security", "vary", "link",
 ];
+// Added by social networks, ads and newsletters; the site never reads them. ("ref" is NOT here: /track uses it.)
+const TRACKING_PARAM = /^(utm_[a-z_]+|fbclid|gclid|gbraid|wbraid|dclid|msclkid|yclid|igshid|igsh|ttclid|twclid|li_fat_id|mc_cid|mc_eid|_ga|_gl|srsltid)$/i;
+
+function withoutTracking(url: URL): URL | null {
+  let changed = false;
+  for (const k of [...url.searchParams.keys()]) {
+    if (TRACKING_PARAM.test(k)) {
+      url.searchParams.delete(k);
+      changed = true;
+    }
+  }
+  if (!changed) return null;
+  if (![...url.searchParams.keys()].length) url.search = "";
+  return url;
+}
 
 function isCacheableRequest(request: Request, url: URL) {
   if (request.method !== "GET" || url.search) return false;
@@ -138,36 +160,88 @@ function isCacheableRequest(request: Request, url: URL) {
   return !/(?:^|;\s*)va_session=/.test(h.get("cookie") || "");
 }
 
-async function pageKey(env: Env, kv: KV, pathname: string) {
-  const content = (await kv.get(CONTENT_VERSION_KEY, { type: "text", cacheTtl: 60 })) || "0";
-  const deploy = env.CF_VERSION_METADATA?.id || "dev";
-  return `pagecache:${deploy}:${content}:${pathname.replace(/\/$/, "") || "/"}`;
+type PageMeta = { h: Record<string, string>; cv: string; t: number };
+
+async function renderPage(request: Request, env: Env, ctx: Ctx, kv: KV, key: string, cv: string): Promise<{ res: Response; body?: string }> {
+  const res: Response = await nextWorker.fetch(request, withAssets(env), ctx);
+  const type = res.headers.get("content-type") || "";
+  if (res.status !== 200 || !type.startsWith("text/html") || res.headers.has("set-cookie")) return { res };
+  const body = await res.text();
+  const h: Record<string, string> = {};
+  for (const name of KEPT_HEADERS) {
+    const v = res.headers.get(name);
+    if (v) h[name] = v;
+  }
+  h["cache-control"] = "private, no-cache";
+  const meta: PageMeta = { h, cv, t: Date.now() };
+  ctx.waitUntil(kv.put(key, `${JSON.stringify(meta)}\n${body}`, { expirationTtl: PAGE_KEEP_SECONDS }).catch(() => {}));
+  return { res, body };
 }
 
 async function cachedPage(request: Request, env: Env, ctx: Ctx, url: URL): Promise<Response> {
   const kv = env.STATIC_ASSETS!;
-  const key = await pageKey(env, kv, url.pathname);
-  const hit = await kv.get(key, { type: "text" });
+  const deploy = env.CF_VERSION_METADATA?.id || "dev";
+  const key = `pc2:${deploy}:${url.pathname.replace(/\/$/, "") || "/"}`;
+  const [cv, hit] = await Promise.all([
+    kv.get(CONTENT_VERSION_KEY, { type: "text", cacheTtl: 60 }).then((v) => v || "0"),
+    kv.get(key, { type: "text", cacheTtl: 60 }),
+  ]);
   if (hit) {
     const nl = hit.indexOf("\n");
-    const headers = new Headers(JSON.parse(hit.slice(0, nl)) as Record<string, string>);
-    headers.set("x-page-cache", "HIT");
+    const meta = JSON.parse(hit.slice(0, nl)) as PageMeta;
+    const stale = meta.cv !== cv || Date.now() - meta.t > PAGE_FRESH_MS;
+    if (stale && Date.now() - lastRevalidation > REVALIDATE_GAP_MS) {
+      lastRevalidation = Date.now();
+      ctx.waitUntil(renderPage(request, env, ctx, kv, key, cv).catch(() => {}));
+    }
+    const headers = new Headers(meta.h);
+    headers.set("x-page-cache", stale ? "STALE" : "HIT");
     return new Response(hit.slice(nl + 1), { status: 200, headers });
   }
-  const res: Response = await nextWorker.fetch(request, withAssets(env), ctx);
-  const type = res.headers.get("content-type") || "";
-  if (res.status !== 200 || !type.startsWith("text/html") || res.headers.has("set-cookie")) return res;
-  const body = await res.text();
-  const kept: Record<string, string> = {};
-  for (const name of KEPT_HEADERS) {
-    const v = res.headers.get(name);
-    if (v) kept[name] = v;
-  }
-  kept["cache-control"] = "private, no-cache";
-  ctx.waitUntil(kv.put(key, `${JSON.stringify(kept)}\n${body}`, { expirationTtl: PAGE_TTL }).catch(() => {}));
+  const { res, body } = await renderPage(request, env, ctx, kv, key, cv);
+  if (body === undefined) return res;
   const headers = new Headers(res.headers);
   headers.set("x-page-cache", "MISS");
   return new Response(body, { status: 200, headers });
+}
+
+/* Small files that Next.js would otherwise generate on every request (icons ~150–400 ms of CPU each, sitemap
+ * queries the database): kept in Cloudflare's edge cache (Cache API), per deployment. The query string (Next adds
+ * a hash to icon URLs) is ignored. */
+const EDGE_CACHED: Record<string, number> = {
+  "/favicon.ico": 86400, "/icon.png": 86400, "/apple-icon.png": 86400, "/manifest.webmanifest": 86400,
+  "/robots.txt": 21600, "/sitemap.xml": 21600,
+};
+
+async function edgeCached(request: Request, env: Env, ctx: Ctx, url: URL, ttl: number): Promise<Response> {
+  const cache = (globalThis as unknown as { caches: { default: { match(r: Request): Promise<Response | undefined>; put(r: Request, res: Response): Promise<void> } } }).caches.default;
+  const key = new Request(`https://${url.host}${url.pathname}?deploy=${env.CF_VERSION_METADATA?.id || "dev"}`);
+  const hit = await cache.match(key);
+  if (hit) return hit;
+  const res: Response = await nextWorker.fetch(request, withAssets(env), ctx);
+  if (res.status !== 200) return res;
+  const out = new Response(res.body, res);
+  out.headers.set("cache-control", `public, max-age=${ttl}`);
+  out.headers.delete("set-cookie");
+  ctx.waitUntil(cache.put(key, out.clone()).catch(() => {}));
+  return out;
+}
+
+/* "/" → "/{locale}" answered here (same rules as src/middleware.ts) instead of booting Next.js for a redirect. */
+const LOCALES = ["fr", "ar", "en"];
+function rootRedirect(request: Request, url: URL): Response {
+  const cookie = /(?:^|;\s*)NEXT_LOCALE=(fr|ar|en)/.exec(request.headers.get("cookie") || "")?.[1];
+  let locale = cookie || "";
+  if (!locale) {
+    for (const part of (request.headers.get("accept-language") || "").split(",")) {
+      const code = part.split(";")[0].trim().slice(0, 2).toLowerCase();
+      if (LOCALES.includes(code)) {
+        locale = code;
+        break;
+      }
+    }
+  }
+  return new Response(null, { status: 302, headers: { location: `/${locale || "fr"}${url.search}`, "cache-control": "private, no-cache", vary: "accept-language, cookie" } });
 }
 
 export default {
@@ -175,7 +249,12 @@ export default {
     const url = new URL(rawRequest.url);
     const blocked = edgeGuard(rawRequest, url, env);
     if (blocked) return secured(blocked, url, env);
-    const request = trustedRequest(rawRequest);
+    let request = trustedRequest(rawRequest);
+    // Same page with or without ?fbclid=… / ?utm_…: drop them so these visits use the page cache.
+    if (request.method === "GET" && url.search) {
+      const clean = withoutTracking(url);
+      if (clean) request = new Request(clean.toString(), request);
+    }
     return secured(await handle(request, env, ctx, url), url, env);
   },
 
@@ -196,6 +275,8 @@ async function handle(request: Request, env: Env, ctx: Ctx, url: URL): Promise<R
       const asset = await serveAsset(env, pathname);
       return asset ?? new Response("Not found", { status: 404 });
     }
+    if (request.method === "GET" && pathname === "/") return rootRedirect(request, url);
+    if (request.method === "GET" && EDGE_CACHED[pathname]) return edgeCached(request, env, ctx, url, EDGE_CACHED[pathname]);
     if (env.STATIC_ASSETS && isCacheableRequest(request, url)) {
       return cachedPage(request, env, ctx, url);
     }
