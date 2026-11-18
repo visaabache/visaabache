@@ -63,7 +63,7 @@ To update: `git pull && docker compose up -d --build`.
 
 ## 3D. Cloudflare Workers + Neon (current test deployment)
 
-Live test URL: **https://app.visa-abache.workers.dev**. Worker `app`, Cloudflare account *Flyabroadevisa*; database: Neon project `visa-abache` (Frankfurt).
+Live site: **https://visaabache.site** (the old https://app.visa-abache.workers.dev address 301-redirects to it). Worker `app`, Cloudflare account *Flyabroadevisa*; database: Neon project `visa-abache` (Frankfurt).
 
 | Piece | How it is set up |
 |---|---|
@@ -86,6 +86,8 @@ DATABASE_URL=<neon url> node scripts/neon-migrate.mjs   # when new migrations ex
 ```
 
 Custom domain (**visaabache.site**): the domain is a zone on the Flyabroadevisa Cloudflare account and is attached to the Worker as a *Custom Domain* (apex + `www`). `APP_URL` and `CANONICAL_HOST` in `wrangler.jsonc` point to it; `cf-worker.ts` then 301-redirects every other host (`*.workers.dev`, `www.`) to it, so search engines only see one site.
+
+Zone settings applied on visaabache.site: Always Use HTTPS, TLS 1.2 minimum + TLS 1.3, SSL Full (strict), Automatic HTTPS Rewrites, Browser Integrity Check, security level Medium. Recommended in the dashboard (needs more API permissions than the deploy token has): Security → Bots → **Bot Fight Mode** on; DNS → Settings → **DNSSEC** on.
 
 Two-step verification reset (staff member lost their phone):
 

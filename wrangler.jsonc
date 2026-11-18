@@ -7,6 +7,11 @@
   // Static build files are served from Workers KV by cf-worker.ts (uploaded by scripts/cf-upload-assets.mjs).
   "kv_namespaces": [{ "binding": "STATIC_ASSETS", "id": "fb967ffb2e284be0b85b9080d8987d5f" }],
   "workers_dev": true,
+  // Custom domains (Cloudflare zone visaabache.site on the same account)
+  "routes": [
+    { "pattern": "visaabache.site", "custom_domain": true },
+    { "pattern": "www.visaabache.site", "custom_domain": true }
+  ],
   "preview_urls": false,
   "observability": { "enabled": true },
   // Deployment id, used by the page cache in cf-worker.ts so a new deploy never serves HTML from an older one.
@@ -16,7 +21,9 @@
   // Non-secret configuration. Secrets (DATABASE_URL, SESSION_SECRET, DOCUMENT_ENCRYPTION_KEY, CRON_SECRET…)
   // are set with `wrangler secret put` and never committed.
   "vars": {
-    "APP_URL": "https://app.visa-abache.workers.dev",
+    "APP_URL": "https://visaabache.site",
+    // Every other host (workers.dev, www.) is 301-redirected here by cf-worker.ts
+    "CANONICAL_HOST": "visaabache.site",
     "STORAGE_DRIVER": "db",
     "EMAIL_DRIVER": "console",
     "UPLOAD_MAX_MB": "4",
