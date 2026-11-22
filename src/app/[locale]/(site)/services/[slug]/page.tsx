@@ -8,7 +8,7 @@ import { getSettings } from "@/lib/settings";
 import { getCurrentUser } from "@/lib/auth/session";
 import { renderMarkdown } from "@/lib/markdown";
 import { JsonLd, pageMetadata } from "@/lib/seo";
-import { toNumber, toWhatsAppNumber, whatsappLink } from "@/lib/utils";
+import { appUrl, toNumber, toWhatsAppNumber, whatsappLink } from "@/lib/utils";
 import { onlineFormsEnabled } from "@/lib/features";
 import { WhatsAppCta } from "@/components/site/whatsapp-cta";
 import { submitInquiry } from "@/actions/public";
@@ -53,7 +53,7 @@ export default async function ServicePage({ params }: { params: Promise<{ locale
           "@type": "Service",
           name,
           description: tr(s.shortDescription, locale),
-          provider: { "@type": "ProfessionalService", name: "VISA ABACHE" },
+          provider: { "@id": appUrl("/#organization") },
           areaServed: "MA",
           ...(s.price && s.priceType !== "QUOTE" ? { offers: { "@type": "Offer", price: toNumber(s.price), priceCurrency: "MAD" } } : {}),
         }}

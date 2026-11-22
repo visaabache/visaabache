@@ -37,11 +37,17 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   if (!c) return {};
   const name = tr(c.name, locale);
   const t = getDictionary(locale);
+  // Title/description written for what Moroccans search ("visa France Maroc documents", "فيزا فرنسا").
+  // A title or description set in the admin wins, except the generic ones created by the initial seed.
+  const dbTitle = tr(c.seoTitle, locale);
+  const seededTitle = /assistance dossier|application assistance|مساعدة في الملف/i.test(dbTitle);
+  const photo = photoFor(c.slug);
   return pageMetadata({
     locale,
     path: `/visas/${slug}`,
-    title: tr(c.seoTitle, locale) || `${t.nav.visas} ${name}`,
-    description: tr(c.seoDescription, locale) || tr(c.summary, locale),
+    title: dbTitle && !seededTitle ? dbTitle : fmt(t.seo.countryTitle, { country: name }),
+    description: tr(c.seoDescription, locale) || fmt(t.seo.countryDesc, { country: name }),
+    image: photo ? appUrl(`/images/destinations/${c.slug}-1280-${photo.v}.webp`) : undefined,
   });
 }
 
@@ -65,7 +71,16 @@ export default async function CountryPage({ params }: { params: Promise<{ locale
   const t = getDictionary(locale);
   const c = await load(slug);
   if (!c) notFound();
-  const [packages, settings] = await Promise.all([packagesForCountry(c.slug), getSettings()]);
+  const [packages, settings, others] = await Promise.all([
+    packagesForCountry(c.slug),
+    getSettings(),
+    prisma.country.findMany({
+      where: { isActive: true, NOT: { id: c.id }, ...(c.isSchengen ? { isSchengen: true } : { region: c.region }) },
+      orderBy: [{ isPopular: "desc" }, { sortOrder: "asc" }],
+      take: 8,
+      select: { slug: true, name: true, isoCode: true },
+    }),
+  ]);
   const name = tr(c.name, locale);
   const typeName = (code: string) => c.visaTypes.find((v) => v.code === code)?.name;
   const waText = `${tr(settings.whatsapp.defaultMessage, locale)} (${t.nav.visas}: ${name})`;
@@ -95,14 +110,14 @@ export default async function CountryPage({ params }: { params: Promise<{ locale
             itemListElement: [
               { "@type": "ListItem", position: 1, name: t.nav.home, item: appUrl(`/${locale}`) },
               { "@type": "ListItem", position: 2, name: t.nav.visas, item: appUrl(`/${locale}/visas`) },
-              { "@type": "ListItem", position: 3, name, item: appUrl(`/${locale}/visas/${c.slug}`) },
+              { "@type": "ListItem", position: 3, name: fmt(t.seo.countryH1, { country: name }), item: appUrl(`/${locale}/visas/${c.slug}`) },
             ],
           },
           {
             "@context": "https://schema.org",
             "@type": "Service",
             name: `${t.common.applyForAssistance} — ${name}`,
-            provider: { "@type": "ProfessionalService", name: "VISA ABACHE" },
+            provider: { "@id": appUrl("/#organization") },
             areaServed: "MA",
             offers: packages.map((p) => ({ "@type": "Offer", name: tr(p.name, locale), price: toNumber(p.price), priceCurrency: "MAD" })),
           },
@@ -129,7 +144,7 @@ export default async function CountryPage({ params }: { params: Promise<{ locale
           <div className="flex flex-wrap items-center gap-5">
             <Flag code={c.isoCode} className="h-14 w-20 animate-float rounded-md shadow-premium" alt={name} />
             <div>
-              <h1 className="font-display text-4xl font-semibold sm:text-5xl">{t.nav.visas} — {name}</h1>
+              <h1 className="font-display text-4xl font-semibold sm:text-5xl">{fmt(t.seo.countryH1, { country: name })}</h1>
               <div className="mt-2 flex flex-wrap gap-2">
                 {c.isSchengen && <Badge tone="gold">{t.visas.schengen}</Badge>}
                 <Badge tone="navy" className="bg-white/10 text-white ring-white/20">{t.regions[c.region]}</Badge>
@@ -285,6 +300,22 @@ export default async function CountryPage({ params }: { params: Promise<{ locale
             <section>
               <h2 className="mb-4 font-display text-2xl font-semibold text-navy-800">{t.country.faq}</h2>
               <FaqList items={c.faqs} locale={locale} />
+            </section>
+          )}
+
+          {others.length > 0 && (
+            <section>
+              <h2 className="mb-4 font-display text-2xl font-semibold text-navy-800">{c.isSchengen ? t.seo.relatedSchengen : t.seo.related}</h2>
+              <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {others.map((o) => (
+                  <li key={o.slug}>
+                    <Link href={`/${locale}/visas/${o.slug}`} className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-navy-800 shadow-sm transition hover:border-gold-300 hover:shadow-soft">
+                      <Flag code={o.isoCode} className="h-4 w-6 rounded-[3px]" />
+                      <span className="truncate">{fmt(t.seo.visaFor, { country: tr(o.name, locale) })}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </section>
           )}
 

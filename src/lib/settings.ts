@@ -143,14 +143,14 @@ export const DEFAULT_SETTINGS: SettingsMap = {
   },
   seo: {
     siteTitle: {
-      fr: "VISA ABACHE — Assistance visa & services administratifs au Maroc",
-      ar: "VISA ABACHE — خدمات المساعدة في التأشيرات والخدمات الإدارية بالمغرب",
-      en: "VISA ABACHE — Visa assistance & administrative services in Morocco",
+      fr: "Agence visa au Maroc : Schengen, France, Espagne, USA, Canada | VISA ABACHE",
+      ar: "فيزا شنغن، فرنسا، إسبانيا، أمريكا وكندا من المغرب | VISA ABACHE",
+      en: "Visa assistance in Morocco: Schengen, France, Spain, USA, Canada | VISA ABACHE",
     },
     siteDescription: {
-      fr: "Assistance dossier visa Maroc : France, Espagne, Italie, Schengen, Canada, USA. Préparation de dossier, check-list personnalisée, suivi en ligne. Prestataire indépendant.",
-      ar: "خدمات التأشيرات في المغرب: مساعدة فيزا فرنسا، إسبانيا، إيطاليا، شنغن، كندا وأمريكا. تحضير الملف وقائمة وثائق مخصصة وتتبع الطلب عبر الإنترنت.",
-      en: "Visa application assistance in Morocco for France, Spain, Italy, Schengen, Canada, USA and more. File preparation, personalised checklists and online tracking.",
+      fr: "Assistance visa touristique depuis le Maroc : Schengen (France, Espagne, Italie…), USA, Canada, Royaume-Uni. Documents, rendez-vous et conseils d'un conseiller sur WhatsApp. Prestataire indépendant.",
+      ar: "مساعدة في التأشيرة السياحية من المغرب: شنغن (فرنسا، إسبانيا، إيطاليا…)، أمريكا، كندا، بريطانيا. الوثائق، الموعد ونصائح مستشار عبر واتساب. مقدم خدمة مستقل.",
+      en: "Tourist visa assistance from Morocco: Schengen (France, Spain, Italy…), USA, Canada, UK. Documents, appointments and advice from an advisor on WhatsApp. Independent provider.",
     },
     keywords: {
       fr: "visa France Maroc, visa Espagne Maroc, visa Italie Maroc, visa Schengen Maroc, prendre rendez-vous visa, assistance dossier visa Maroc, visa Canada Maroc, visa USA Maroc, assistance administrative Maroc",

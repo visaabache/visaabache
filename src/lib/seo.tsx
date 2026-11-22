@@ -43,3 +43,37 @@ export async function pageMetadata(opts: {
 export function JsonLd({ data }: { data: unknown }) {
   return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }} />;
 }
+
+/**
+ * Business profile for search engines (schema.org TravelAgency, a LocalBusiness): name, logo, city, phone, opening
+ * hours, social profiles and the Moroccan cities served. One node with a stable @id, referenced by other pages.
+ */
+export function businessJsonLd(s: Awaited<ReturnType<typeof getSettings>>, locale: Locale, areaServedText: string) {
+  const b = s.business;
+  const phone = b.phone ? (b.phone.trim().startsWith("0") ? `+212${b.phone.replace(/\D/g, "").slice(1)}` : b.phone.trim()) : undefined;
+  return {
+    "@context": "https://schema.org",
+    "@type": "TravelAgency",
+    "@id": appUrl("/#organization"),
+    name: b.name || "VISA ABACHE",
+    url: appUrl(`/${locale}`),
+    logo: appUrl("/brand/visa-abache-icon-512.png"),
+    image: appUrl("/brand/visa-abache-social-1200x630.jpg"),
+    description: tr(s.seo.siteDescription, locale),
+    telephone: phone,
+    address: { "@type": "PostalAddress", streetAddress: b.address || undefined, addressLocality: b.city || undefined, addressCountry: "MA" },
+    areaServed: [{ "@type": "Country", name: "Morocco" }, { "@type": "Place", name: areaServedText }],
+    knowsLanguage: ["fr", "ar", "en"],
+    priceRange: "MAD",
+    currenciesAccepted: "MAD",
+    openingHoursSpecification: [
+      {
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+        opens: "09:00",
+        closes: "19:00",
+      },
+    ],
+    sameAs: Object.values(s.seo.social).filter(Boolean),
+  };
+}

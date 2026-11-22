@@ -1017,6 +1017,19 @@ const fr: Dictionary = {
     contactWaText: "Posez votre question à un conseiller. Aucune information personnelle n'est demandée sur ce site.",
     consultationCta: "Réserver une consultation sur WhatsApp",
   },
+  seo: {
+    countryH1: "Visa {country} depuis le Maroc",
+    countryTitle: "Visa {country} depuis le Maroc : documents, rendez-vous, prix",
+    countryDesc: "Visa touristique {country} depuis le Maroc : liste des documents, prise de rendez-vous, délais et frais officiels expliqués simplement. Un conseiller vous répond sur WhatsApp.",
+    visasH1: "Visas depuis le Maroc : toutes les destinations",
+    visasTitle: "Visa depuis le Maroc : France, Espagne, USA, Canada et +20 pays",
+    visasDesc: "Visa touristique, visite familiale ou affaires depuis le Maroc : documents demandés, rendez-vous et frais officiels pour l'espace Schengen, les USA, le Canada, le Royaume-Uni et plus de 20 destinations.",
+    relatedSchengen: "Autres visas Schengen depuis le Maroc",
+    related: "Autres destinations",
+    footerDestinations: "Visas populaires",
+    visaFor: "Visa {country}",
+    areaServed: "Casablanca, Rabat, Marrakech, Tanger, Fès, Agadir, Meknès, Oujda, Kénitra, Tétouan et tout le Maroc",
+  },
 };
 
 export default fr;

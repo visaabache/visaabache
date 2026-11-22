@@ -9,7 +9,7 @@ import { VisaDirectory } from "@/components/site/visa-directory";
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const locale = asLocale((await params).locale);
   const t = getDictionary(locale);
-  return pageMetadata({ locale, path: "/visas", title: t.visas.title, description: t.visas.subtitle });
+  return pageMetadata({ locale, path: "/visas", title: t.seo.visasTitle, description: t.seo.visasDesc });
 }
 
 export default async function VisasPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ q?: string }> }) {
@@ -19,7 +19,7 @@ export default async function VisasPage({ params, searchParams }: { params: Prom
   const countries = await activeCountries();
   return (
     <>
-      <PageHero title={t.visas.title} subtitle={t.visas.subtitle} />
+      <PageHero title={t.seo.visasH1} subtitle={t.visas.subtitle} />
       <section className="container py-14">
         <VisaDirectory
           locale={locale}

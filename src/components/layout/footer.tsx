@@ -10,7 +10,7 @@ import { whatsappLink } from "@/lib/utils";
 import { Logo } from "./logo";
 import { CookieSettingsLink } from "./cookie-consent";
 
-export function Footer({ locale, dict, settings }: { locale: Locale; dict: Dictionary; settings: SettingsMap }) {
+export function Footer({ locale, dict, settings, popular = [] }: { locale: Locale; dict: Dictionary; settings: SettingsMap; popular?: { slug: string; name: string }[] }) {
   const l = (p: string) => `/${locale}${p}`;
   const b = settings.business;
   const socials = Object.entries(settings.seo.social).filter(([, url]) => url);
@@ -110,6 +110,18 @@ export function Footer({ locale, dict, settings }: { locale: Locale; dict: Dicti
           </ul>
         </div>
       </div>
+      {popular.length > 0 && (
+        <div className="border-t border-white/10">
+          <nav className="container flex flex-wrap items-center gap-x-4 gap-y-2 py-5 text-sm" aria-label={dict.seo.footerDestinations}>
+            <span className="text-xs font-semibold uppercase tracking-wider text-white">{dict.seo.footerDestinations}</span>
+            {popular.map((c) => (
+              <Link key={c.slug} href={l(`/visas/${c.slug}`)} className="hover:text-white">
+                {dict.seo.visaFor.replace("{country}", c.name)}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      )}
       <div className="border-t border-white/10">
         <div className="container space-y-2 py-6 text-xs text-navy-300">
           <p className="leading-relaxed">{dict.common.independentNotice}</p>

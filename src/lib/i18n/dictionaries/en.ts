@@ -1016,6 +1016,19 @@ const en = {
     contactWaText: "Ask an advisor your question. We never ask for personal information on this website.",
     consultationCta: "Book a consultation on WhatsApp",
   },
+  seo: {
+    countryH1: "{country} visa from Morocco",
+    countryTitle: "{country} visa from Morocco: documents, appointment, fees",
+    countryDesc: "{country} tourist visa from Morocco: required documents, appointment booking, processing times and official fees explained simply. An advisor answers you on WhatsApp.",
+    visasH1: "Visas from Morocco: all destinations",
+    visasTitle: "Visa from Morocco: France, Spain, USA, Canada and 20+ countries",
+    visasDesc: "Tourist, family-visit or business visa from Morocco: required documents, appointments and official fees for the Schengen area, the USA, Canada, the UK and 20+ destinations.",
+    relatedSchengen: "Other Schengen visas from Morocco",
+    related: "Other destinations",
+    footerDestinations: "Popular visas",
+    visaFor: "{country} visa",
+    areaServed: "Casablanca, Rabat, Marrakech, Tangier, Fez, Agadir, Meknes, Oujda, Kenitra, Tetouan and all of Morocco",
+  },
 };
 
 export default en;
