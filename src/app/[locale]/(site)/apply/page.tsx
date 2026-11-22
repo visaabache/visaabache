@@ -8,18 +8,23 @@ import { pageMetadata } from "@/lib/seo";
 import { toNumber, toWhatsAppNumber } from "@/lib/utils";
 import { ApplyWizard, type WizardData } from "@/components/apply/wizard";
 import { countryWizardExtra, mapQuestion } from "@/lib/wizard-data";
-import { customerAccountsEnabled } from "@/lib/features";
+import { customerAccountsEnabled, onlineFormsEnabled } from "@/lib/features";
+import { ApplyInfo } from "@/components/site/apply-info";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const locale = asLocale((await params).locale);
   const t = getDictionary(locale);
-  return pageMetadata({ locale, path: "/apply", title: t.apply.title, description: t.apply.subtitle });
+  return onlineFormsEnabled()
+    ? pageMetadata({ locale, path: "/apply", title: t.apply.title, description: t.apply.subtitle })
+    : pageMetadata({ locale, path: "/apply", title: t.info.applyTitle, description: t.info.applySubtitle });
 }
 
 export default async function ApplyPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ country?: string; type?: string; package?: string; draft?: string }> }) {
   const locale = asLocale((await params).locale);
-  const sp = await searchParams;
   const t = getDictionary(locale);
+  // Informational website: no application form, visitors talk to an advisor on WhatsApp.
+  if (!onlineFormsEnabled()) return <ApplyInfo locale={locale} t={t} />;
+  const sp = await searchParams;
   const accounts = customerAccountsEnabled();
   const [countries, globalQs, packages, user, settings] = await Promise.all([
     prisma.country.findMany({

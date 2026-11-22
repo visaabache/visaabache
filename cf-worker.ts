@@ -13,7 +13,7 @@ type KV = {
   getWithMetadata(key: string, type: "arrayBuffer"): Promise<{ value: ArrayBuffer | null; metadata: { ct?: string } | null }>;
   put(key: string, value: string, opts?: { expirationTtl?: number }): Promise<void>;
 };
-type Env = { CRON_SECRET?: string; APP_URL?: string; STATIC_ASSETS?: KV; CF_VERSION_METADATA?: { id?: string }; CANONICAL_HOST?: string; [k: string]: unknown };
+type Env = { CRON_SECRET?: string; APP_URL?: string; STATIC_ASSETS?: KV; CF_VERSION_METADATA?: { id?: string }; CANONICAL_HOST?: string; ONLINE_FORMS?: string; [k: string]: unknown };
 type Ctx = { waitUntil(p: Promise<unknown>): void };
 
 const STATIC_PREFIXES = ["/_next/static/", "/flags/", "/brand/", "/images/", "/.well-known/"];
@@ -152,9 +152,14 @@ function withoutTracking(url: URL): URL | null {
   return url;
 }
 
-function isCacheableRequest(request: Request, url: URL) {
-  if (request.method !== "GET" || url.search) return false;
-  if (!CACHEABLE_PAGE.test(url.pathname)) return false;
+// With online forms off, /apply is an information page that only reads ?country= / ?package= in the browser.
+const APPLY_PAGE = /^\/(fr|ar|en)\/apply\/?$/;
+
+function isCacheableRequest(request: Request, url: URL, env: Env) {
+  if (request.method !== "GET") return false;
+  const infoApply = env.ONLINE_FORMS === "off" && APPLY_PAGE.test(url.pathname);
+  if (url.search && !infoApply) return false;
+  if (!infoApply && !CACHEABLE_PAGE.test(url.pathname)) return false;
   const h = request.headers;
   if (h.get("rsc") || h.get("next-router-prefetch") || h.get("next-router-state-tree") || h.get("next-action")) return false;
   return !/(?:^|;\s*)va_session=/.test(h.get("cookie") || "");
@@ -277,7 +282,7 @@ async function handle(request: Request, env: Env, ctx: Ctx, url: URL): Promise<R
     }
     if (request.method === "GET" && pathname === "/") return rootRedirect(request, url);
     if (request.method === "GET" && EDGE_CACHED[pathname]) return edgeCached(request, env, ctx, url, EDGE_CACHED[pathname]);
-    if (env.STATIC_ASSETS && isCacheableRequest(request, url)) {
+    if (env.STATIC_ASSETS && isCacheableRequest(request, url, env)) {
       return cachedPage(request, env, ctx, url);
     }
     const res: Response = await nextWorker.fetch(request, withAssets(env), ctx);

@@ -5,7 +5,9 @@ import { tr } from "@/lib/i18n/localized";
 import { getSettings } from "@/lib/settings";
 import { getCurrentUser } from "@/lib/auth/session";
 import { pageMetadata } from "@/lib/seo";
-import { whatsappLink } from "@/lib/utils";
+import { toWhatsAppNumber, whatsappLink } from "@/lib/utils";
+import { onlineFormsEnabled } from "@/lib/features";
+import { WhatsAppCta } from "@/components/site/whatsapp-cta";
 import { submitInquiry } from "@/actions/public";
 import { PageHero } from "@/components/site/cards";
 import { Card } from "@/components/ui/misc";
@@ -26,6 +28,36 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
   const wa = s.whatsapp.enabled ? whatsappLink(s.whatsapp.number, tr(s.whatsapp.defaultMessage, locale)) : "";
   const labels = { name: t.common.name, email: t.common.email, phone: t.common.phone, subject: t.contact.subject, message: t.common.message, consent: t.contact.consent, send: t.common.send, privacy: t.footer.privacy };
   const defaults = user ? { name: `${user.firstName} ${user.lastName}`, email: user.email, phone: user.phone || "" } : undefined;
+  if (!onlineFormsEnabled()) {
+    // Informational website: no form, visitors reach an advisor on WhatsApp (or by phone / e-mail).
+    const number = s.whatsapp.enabled ? toWhatsAppNumber(s.whatsapp.number) : "";
+    return (
+      <>
+        <PageHero title={t.contact.title} subtitle={t.contact.subtitle} />
+        <section className="container grid grid-cols-1 gap-8 py-14 lg:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="space-y-6">
+            <Card className="p-6 sm:p-8">
+              <h2 className="font-display text-2xl font-semibold text-navy-800">{t.info.contactWaTitle}</h2>
+              <p className="mb-6 mt-2 text-slate-600">{t.info.contactWaText}</p>
+              <WhatsAppCta number={number} message={t.info.waMessageGeneric} label={t.info.waCta} hint={t.info.waHint} />
+            </Card>
+            <Card className="p-6 sm:p-8">
+              <h2 className="font-display text-2xl font-semibold text-navy-800">{t.contact.consultationTitle}</h2>
+              <p className="mb-6 mt-2 text-slate-600">{t.contact.consultationText}</p>
+              <WhatsAppCta number={number} message={t.info.waMessageConsultation} label={t.info.consultationCta} />
+            </Card>
+          </div>
+          <Card className="h-fit space-y-4 p-6 text-sm">
+            <h2 className="font-semibold text-navy-800">{t.contact.office}</h2>
+            <p className="flex items-center gap-3"><Phone className="h-4 w-4 text-gold-600" /><a dir="ltr" href={`tel:${b.phone.replace(/\s/g, "")}`}>{b.phone}</a></p>
+            <p className="flex items-center gap-3"><Mail className="h-4 w-4 text-gold-600" /><a href={`mailto:${b.email}`}>{b.email}</a></p>
+            <p className="flex items-start gap-3"><MapPin className="mt-0.5 h-4 w-4 text-gold-600" /><span>{[b.address, b.city].filter(Boolean).join(", ")}<br /><span className="text-xs text-slate-500">{t.contact.byAppointment}</span></span></p>
+            <p className="flex items-center gap-3"><Clock className="h-4 w-4 text-gold-600" />{tr(b.hours, locale)}</p>
+          </Card>
+        </section>
+      </>
+    );
+  }
   return (
     <>
       <PageHero title={t.contact.title} subtitle={t.contact.subtitle} />

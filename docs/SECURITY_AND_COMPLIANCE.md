@@ -25,6 +25,8 @@
 | Vulnerability reports | `/.well-known/security.txt` (RFC 9116) | `public/.well-known/security.txt` |
 | Traceability | Audit log for logins, document access by staff, exports, status changes, payments, refunds, settings, roles | `lib/audit.ts` |
 
+**Data minimisation (current configuration):** with `ONLINE_FORMS=off` the public website collects no personal data at all: no application, contact or service-request form; visitors write to an advisor on WhatsApp. The server rejects the form actions even if called directly. Personal data only exists in the admin area (files entered by the team) and in WhatsApp conversations.
+
 ## Law 09-08 (Morocco) / GDPR checklist
 
 | Requirement | How the platform supports it | Owner action |

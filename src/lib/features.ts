@@ -11,3 +11,12 @@ export function customerAccountsEnabled() {
 export function customerApplicationPath(locale: string, app: { id: string; reference: string }) {
   return customerAccountsEnabled() ? `/${locale}/account/applications/${app.id}` : `/${locale}/track?code=${encodeURIComponent(app.reference)}`;
 }
+
+/**
+ * Online forms (application wizard, contact / consultation / service request forms) — OFF on the live site: the
+ * website is informational only and never asks visitors for personal data; visitors talk to an advisor on
+ * WhatsApp instead. The server actions behind these forms refuse requests too. Set ONLINE_FORMS=on to restore them.
+ */
+export function onlineFormsEnabled() {
+  return process.env.ONLINE_FORMS !== "off";
+}

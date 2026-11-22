@@ -19,7 +19,7 @@ import { getSettings } from "@/lib/settings";
 import { audit } from "@/lib/audit";
 import { emailSchema, LEGAL_VERSION, nameSchema, phoneSchema } from "@/lib/validation";
 import { countryWizardExtra } from "@/lib/wizard-data";
-import { customerApplicationPath } from "@/lib/features";
+import { customerApplicationPath, onlineFormsEnabled } from "@/lib/features";
 import { round2, toNumber } from "@/lib/utils";
 import type { ActionState } from "@/lib/action-state";
 
@@ -58,6 +58,7 @@ export type DraftInput = z.input<typeof draftSchema>;
 export async function saveDraftAction(localeRaw: string, input: DraftInput): Promise<ActionState> {
   const locale = asLocale(localeRaw);
   const t = getDictionary(locale);
+  if (!onlineFormsEnabled()) return { error: t.common.error }; // website is informational only (see lib/features.ts)
   const { ip, userAgent } = await getRequestMeta();
   if (!(await rateLimit(`draft:${ip}`, 30, 3600))) return { error: t.common.tooManyRequests };
   const parsed = draftSchema.safeParse(input);
@@ -164,6 +165,7 @@ export async function uploadDocumentAction(localeRaw: string, fd: FormData): Pro
 }
 
 export async function checkDiscountAction(code: string, packageSlug: string): Promise<{ ok: boolean; amount?: number }> {
+  if (!onlineFormsEnabled()) return { ok: false };
   const user = await getCurrentUser();
   const { ip } = await getRequestMeta();
   if (!(await rateLimit(`discount:${user?.id || ip}`, 20, 3600))) return { ok: false };
@@ -190,6 +192,7 @@ const submitSchema = z.object({
 export async function submitApplicationAction(localeRaw: string, input: z.input<typeof submitSchema>): Promise<ActionState> {
   const locale = asLocale(localeRaw);
   const t = getDictionary(locale);
+  if (!onlineFormsEnabled()) return { error: t.common.error }; // website is informational only (see lib/features.ts)
   const user = await getCurrentUser();
   if (!user) return { error: t.errors.forbidden };
   const parsed = submitSchema.safeParse(input);
@@ -279,6 +282,7 @@ export type GuestApplicationInput = z.input<typeof guestSchema>;
 export async function submitGuestApplicationAction(localeRaw: string, input: GuestApplicationInput): Promise<ActionState> {
   const locale = asLocale(localeRaw);
   const t = getDictionary(locale);
+  if (!onlineFormsEnabled()) return { error: t.common.error }; // website is informational only (see lib/features.ts)
   const { ip, userAgent } = await getRequestMeta();
   if (!(await rateLimit(`guest-apply:${ip}`, 8, 3600)) || !(await rateLimit("guest-apply:all", 300, 3600))) return { error: t.common.tooManyRequests };
   const parsed = guestSchema.safeParse(input);

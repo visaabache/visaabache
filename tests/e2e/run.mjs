@@ -87,7 +87,29 @@ const customer = await browser.newPage({ viewport: { width: 1280, height: 900 },
 customer.on("pageerror", (e) => errors.push(`${customer.url()}: ${e.message.slice(0, 120)}`));
 const email = `e2e${Date.now()}@example.com`;
 let reference = "";
-await step("guest application (no account, no upload) → tracking code", async () => {
+// ONLINE_FORMS=off: informational website (no application / contact forms, WhatsApp only).
+const formsOff = await (async () => {
+  await customer.goto(BASE + "/fr/apply");
+  return (await customer.content()).includes("Aucun formulaire à remplir"); // subtitle of the information page
+})();
+if (formsOff) {
+  console.log("  (online forms are off: informational website)");
+  await step("no page asks for personal data; WhatsApp with a pre-written message instead", async () => {
+    for (const path of ["/fr/apply?country=france", "/fr/contact", "/fr/services/visa-application-assistance", "/ar/apply", "/en/contact"]) {
+      await customer.goto(BASE + path);
+      await customer.waitForTimeout(400);
+      const fields = await customer.$$('input[type=email], input[type=tel], input[name=name], input[name=firstName], input[name=passportNumber], textarea');
+      if (fields.length) throw new Error(`${path}: ${fields.length} personal-data field(s)`);
+      const wa = await customer.getAttribute('a[href^="https://wa.me/"]', "href");
+      if (!wa || !wa.includes("text=")) throw new Error(`${path}: no WhatsApp link`);
+    }
+    await customer.goto(BASE + "/fr/apply?country=france");
+    await customer.waitForTimeout(500);
+    const wa = decodeURIComponent((await customer.getAttribute('a[href^="https://wa.me/"]', "href")) || "");
+    if (!wa.includes("France")) throw new Error(`message does not name the destination: ${wa}`);
+  });
+}
+if (!formsOff) await step("guest application (no account, no upload) → tracking code", async () => {
   await customer.goto(BASE + "/fr/apply?country=france");
   await customer.click("text=Tout accepter").catch(() => {});
   await customer.click('button:has-text("Court séjour — Tourisme")');
@@ -111,7 +133,7 @@ await step("guest application (no account, no upload) → tracking code", async 
   reference = (await customer.textContent('[data-testid="reference"]')).trim();
   if (!/^VA-\d{2}-[A-Z0-9]{6}$/.test(reference)) throw new Error(`bad reference ${reference}`);
 });
-await step("tracking page by code shows status, checklist and amount due", async () => {
+if (!formsOff) await step("tracking page by code shows status, checklist and amount due", async () => {
   await customer.goto(BASE + "/fr/track");
   await customer.fill("input[name=code]", reference.toLowerCase());
   await customer.click('button:has-text("Suivre")');
@@ -160,7 +182,7 @@ if (!ADMIN_PASSWORD) {
       if (r.status() !== 200) throw new Error(`${p} → ${r.status()}`);
     }
   });
-  await step("change status, request documents, record payment", async () => {
+  if (!formsOff) await step("change status, request documents, record payment", async () => {
     await admin.goto(BASE + `/fr/admin/applications?q=${reference}`);
     await admin.click(`a:has-text("${reference}")`);
     await admin.selectOption("select[name=statusId]", { label: "En cours d'étude ✉" });
@@ -175,7 +197,7 @@ if (!ADMIN_PASSWORD) {
     await admin.click('details button:has-text("Enregistrer")');
     await admin.waitForSelector("text=Payée");
   });
-  await step("tracking page shows new status, requested documents and payment", async () => {
+  if (!formsOff) await step("tracking page shows new status, requested documents and payment", async () => {
     await customer.goto(BASE + `/fr/track?code=${reference}`);
     await customer.waitForSelector("text=En cours d'étude");
     await customer.waitForSelector("text=Documents demandés par votre conseiller");
@@ -193,7 +215,7 @@ if (!ADMIN_PASSWORD) {
     const secret = (await admin.locator("code").first().innerText()).replace(/\s/g, "");
     await admin.fill("#code", totp(secret));
     await admin.click('button:has-text("Activer la validation en deux étapes")');
-    await admin.waitForSelector("text=Désactiver la validation en deux étapes");
+    await admin.waitForSelector("text=La validation en deux étapes est activée");
     const ctx = await browser.newContext();
     const p = await ctx.newPage();
     const login = async (code) => {
@@ -209,16 +231,21 @@ if (!ADMIN_PASSWORD) {
     await login("000000");
     await p.waitForSelector("text=Code invalide ou expiré");
     // The code used to enable 2FA cannot be replayed; the next time step's code is accepted (±30 s drift window).
+    const loginStep = Math.floor(Date.now() / 30000) + 1;
     await login(totp(secret, 1));
     await p.waitForURL("**/admin");
     await ctx.close();
+    // Disabling needs a code that was never used: wait until the step after the one used to sign in has started.
+    while (Math.floor(Date.now() / 30000) <= loginStep) await new Promise((r) => setTimeout(r, 1000));
     await admin.goto(BASE + "/fr/admin/security");
     await admin.click("summary");
     await admin.fill("#password", ADMIN_PASSWORD);
-    await new Promise((r) => setTimeout(r, 31000)); // a fresh, unused code
-    await admin.fill("#dcode", totp(secret, 1));
+    await admin.fill("#dcode", totp(secret, 0));
     await admin.click('button:has-text("Désactiver la 2FA")');
-    await admin.waitForSelector("text=Activer la validation en deux étapes");
+    // On success the page refreshes into the "not enabled" state (the confirmation disappears with the form).
+    await admin.waitForSelector("text=La validation en deux étapes n'est pas activée");
+    await admin.goto(BASE + "/fr/admin/security");
+    await admin.waitForSelector("text=La validation en deux étapes n'est pas activée");
   });
 }
 

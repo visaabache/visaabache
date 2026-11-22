@@ -1,3 +1,4 @@
+import { onlineFormsEnabled } from "@/lib/features";
 import Link from "@/components/ui/link";
 import { Clock, Mail, MapPin, Phone } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
@@ -40,7 +41,7 @@ export function Footer({ locale, dict, settings }: { locale: Locale; dict: Dicti
               [l("/services"), dict.nav.services],
               [l("/pricing"), dict.nav.pricing],
               [l("/apply"), dict.common.applyForAssistance],
-              [l("/track"), dict.nav.track],
+              ...(onlineFormsEnabled() ? [[l("/track"), dict.nav.track]] : []),
               [l("/blog"), dict.nav.blog],
               [l("/faq"), dict.nav.faq],
             ].map(([href, label]) => (

@@ -1,4 +1,5 @@
 "use server";
+import { onlineFormsEnabled } from "@/lib/features";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { asLocale } from "@/lib/i18n/config";
@@ -27,6 +28,7 @@ const inquirySchema = z.object({
 export async function submitInquiry(localeRaw: string, _prev: ActionState, fd: FormData): Promise<ActionState> {
   const locale = asLocale(localeRaw);
   const t = getDictionary(locale);
+  if (!onlineFormsEnabled()) return { error: t.common.error }; // website is informational only (see lib/features.ts)
   const { ip, userAgent } = await getRequestMeta();
   if (!(await rateLimit(`inquiry:${ip}`, 8, 3600)) || !(await rateLimit("inquiry:all", 150, 3600))) return { error: t.common.tooManyRequests };
   const parsed = inquirySchema.safeParse(formToObject(fd));

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Check, Info } from "lucide-react";
+import { Check, Info, ShieldCheck } from "lucide-react";
 import { asLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n";
 import { tr, trList } from "@/lib/i18n/localized";
@@ -8,7 +8,9 @@ import { getSettings } from "@/lib/settings";
 import { getCurrentUser } from "@/lib/auth/session";
 import { renderMarkdown } from "@/lib/markdown";
 import { JsonLd, pageMetadata } from "@/lib/seo";
-import { toNumber, whatsappLink } from "@/lib/utils";
+import { toNumber, toWhatsAppNumber, whatsappLink } from "@/lib/utils";
+import { onlineFormsEnabled } from "@/lib/features";
+import { WhatsAppCta } from "@/components/site/whatsapp-cta";
 import { submitInquiry } from "@/actions/public";
 import { Card, Prose, Alert } from "@/components/ui/misc";
 import { DynamicIcon, WhatsAppIcon } from "@/components/ui/icons";
@@ -99,23 +101,32 @@ export default async function ServicePage({ params }: { params: Promise<{ locale
           {s.faqs.length > 0 && <FaqList items={s.faqs} locale={locale} />}
         </div>
         <aside className="lg:sticky lg:top-24 lg:self-start">
+          {onlineFormsEnabled() ? (
           <Card className="p-6">
-            <h2 className="font-display text-2xl font-semibold text-navy-800">{t.services.inquiryTitle}</h2>
-            <p className="mb-5 mt-1 text-sm text-slate-500">{t.services.inquiryText}</p>
-            <InquiryForm
-              action={submitInquiry.bind(null, locale)}
-              type="SERVICE"
-              serviceId={s.id}
-              privacyHref={`/${locale}/legal/privacy`}
-              defaults={user ? { name: `${user.firstName} ${user.lastName}`, email: user.email, phone: user.phone || "" } : undefined}
-              labels={{ name: t.common.name, email: t.common.email, phone: t.common.phone, subject: t.contact.subject, message: t.common.message, consent: t.contact.consent, send: t.common.send, privacy: t.footer.privacy }}
-            />
-            {wa && (
-              <a href={wa} target="_blank" rel="noopener noreferrer" className="mt-4 flex h-11 items-center justify-center gap-2 rounded-lg bg-[#25D366] text-sm font-semibold text-white hover:bg-[#1ebe5b]">
-                <WhatsAppIcon className="h-4 w-4" /> {t.common.chatOnWhatsApp}
-              </a>
-            )}
-          </Card>
+              <h2 className="font-display text-2xl font-semibold text-navy-800">{t.services.inquiryTitle}</h2>
+              <p className="mb-5 mt-1 text-sm text-slate-500">{t.services.inquiryText}</p>
+              <InquiryForm
+                action={submitInquiry.bind(null, locale)}
+                type="SERVICE"
+                serviceId={s.id}
+                privacyHref={`/${locale}/legal/privacy`}
+                defaults={user ? { name: `${user.firstName} ${user.lastName}`, email: user.email, phone: user.phone || "" } : undefined}
+                labels={{ name: t.common.name, email: t.common.email, phone: t.common.phone, subject: t.contact.subject, message: t.common.message, consent: t.contact.consent, send: t.common.send, privacy: t.footer.privacy }}
+              />
+              {wa && (
+                <a href={wa} target="_blank" rel="noopener noreferrer" className="mt-4 flex h-11 items-center justify-center gap-2 rounded-lg bg-[#25D366] text-sm font-semibold text-white hover:bg-[#1ebe5b]">
+                  <WhatsAppIcon className="h-4 w-4" /> {t.common.chatOnWhatsApp}
+                </a>
+              )}
+            </Card>
+          ) : (
+            <Card className="p-6">
+              <h2 className="font-display text-2xl font-semibold text-navy-800">{t.info.serviceCtaTitle}</h2>
+              <p className="mb-5 mt-1 text-sm text-slate-500">{t.info.serviceCtaText}</p>
+              <WhatsAppCta number={settings.whatsapp.enabled ? toWhatsAppNumber(settings.whatsapp.number) : ""} message={t.info.waMessageService.replace("{service}", name)} label={t.info.waCta} hint={t.info.waHint} />
+              <p className="mt-5 flex items-start gap-2 text-xs text-slate-500"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" /> {t.info.privacyNote}</p>
+            </Card>
+          )}
         </aside>
       </div>
     </>

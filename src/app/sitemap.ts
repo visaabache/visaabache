@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/db";
 import { locales } from "@/lib/i18n/config";
 import { appUrl } from "@/lib/utils";
+import { onlineFormsEnabled } from "@/lib/features";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/faq", priority: 0.6 },
     { path: "/contact", priority: 0.6 },
     { path: "/about", priority: 0.5 },
-    { path: "/track", priority: 0.4 },
+    ...(onlineFormsEnabled() ? [{ path: "/track", priority: 0.4 }] : []),
     ...countries.map((c) => ({ path: `/visas/${c.slug}`, lastModified: c.updatedAt, priority: 0.9 })),
     ...services.map((s) => ({ path: `/services/${s.slug}`, lastModified: s.updatedAt, priority: 0.7 })),
     ...articles.map((a) => ({ path: `/blog/${a.slug}`, lastModified: a.updatedAt, priority: 0.6 })),

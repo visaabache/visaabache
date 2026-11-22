@@ -58,7 +58,9 @@ try {
   const cvRes = await fetch(`${api}/values/pagecache:content-version`, { headers: auth, signal: AbortSignal.timeout(30_000) });
   const cv = cvRes.ok ? (await cvRes.text()) || "0" : "0";
   const xml = await (await fetch(`${local}/sitemap.xml`, { signal: AbortSignal.timeout(90_000) })).text();
-  const paths = [...new Set([...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1]).pathname.replace(/\/$/, "")))].filter((p) => CACHEABLE_PAGE.test(p));
+  const APPLY_PAGE = /^\/(fr|ar|en)\/apply$/; // cached too when online forms are off (information page)
+  const paths = [...new Set([...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1]).pathname.replace(/\/$/, "")))]
+    .filter((p) => CACHEABLE_PAGE.test(p) || (env.ONLINE_FORMS === "off" && APPLY_PAGE.test(p)));
   const entries = [];
   for (const [n, p] of paths.entries()) {
     let res, body;

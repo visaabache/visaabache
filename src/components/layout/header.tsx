@@ -10,7 +10,7 @@ import { Logo } from "./logo";
 import { LanguageSwitcher } from "./language-switcher";
 import { MobileMenu } from "./mobile-menu";
 import { FloatingHeader } from "@/components/motion/floating-header";
-import { customerAccountsEnabled } from "@/lib/features";
+import { customerAccountsEnabled, onlineFormsEnabled } from "@/lib/features";
 
 export function Header({ locale, dict, user }: { locale: Locale; dict: Dictionary; user: CurrentUser | null }) {
   const l = (p: string) => `/${locale}${p}`;
@@ -25,6 +25,8 @@ export function Header({ locale, dict, user }: { locale: Locale; dict: Dictionar
   const staff = user && isStaffRole(user.role);
   // Customer accounts off: customers follow their file with a tracking code; only staff sign in (via /admin/login).
   const accounts = customerAccountsEnabled();
+  // Informational website (no online applications): no tracking link either.
+  const tracking = onlineFormsEnabled();
 
   return (
     <FloatingHeader>
@@ -53,9 +55,11 @@ export function Header({ locale, dict, user }: { locale: Locale; dict: Dictionar
                   <ShieldCheck className="h-4 w-4" /> {dict.nav.admin}
                 </Link>
               )}
-              <Link href={l("/track")} className="flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-navy-700 hover:text-navy-900">
-                <Search className="h-4 w-4" /> {dict.nav.track}
-              </Link>
+              {tracking && (
+                <Link href={l("/track")} className="flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-navy-700 hover:text-navy-900">
+                  <Search className="h-4 w-4" /> {dict.nav.track}
+                </Link>
+              )}
             </>
           ) : user ? (
             <>
@@ -92,9 +96,11 @@ export function Header({ locale, dict, user }: { locale: Locale; dict: Dictionar
             </ButtonLink>
             {!accounts ? (
               <>
-                <ButtonLink href={l("/track")} variant="outline" size="lg">
-                  <Search className="h-4 w-4" /> {dict.nav.track}
-                </ButtonLink>
+                {tracking && (
+                  <ButtonLink href={l("/track")} variant="outline" size="lg">
+                    <Search className="h-4 w-4" /> {dict.nav.track}
+                  </ButtonLink>
+                )}
                 {staff && (
                   <ButtonLink href={l("/admin")} variant="ghost" size="lg">
                     <LayoutDashboard className="h-4 w-4" /> {dict.nav.admin}
