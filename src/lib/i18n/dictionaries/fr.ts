@@ -72,7 +72,7 @@ const fr: Dictionary = {
     of: "sur",
     yesNo: { yes: "Oui", no: "Non" },
     independentNotice:
-      "VISA ABACHE est une entreprise indépendante d'assistance. Nous ne sommes ni une ambassade, ni un consulat, ni un centre de visa, ni une autorité gouvernementale. Les décisions de visa relèvent exclusivement des autorités compétentes et aucune obtention ne peut être garantie.",
+      "VISA ABACHE est un service indépendant d'assistance visa. Nous ne sommes ni une ambassade, ni un consulat, ni un centre de visa, ni une autorité gouvernementale. Les décisions de visa relèvent exclusivement des autorités compétentes et aucune obtention ne peut être garantie.",
     noGuarantee: "Nous ne garantissons jamais l'obtention d'un visa.",
   },
   nav: {
@@ -319,7 +319,7 @@ const fr: Dictionary = {
     consentData:
       "J'autorise VISA ABACHE à traiter mes données personnelles et mes documents d'identité uniquement pour fournir l'assistance demandée, conformément à la Politique de confidentialité et à la loi 09-08.",
     consentIndependent:
-      "Je comprends que VISA ABACHE est une entreprise d'assistance indépendante, et non une autorité publique, et que l'obtention du visa ne peut être garantie.",
+      "Je comprends que VISA ABACHE est un service d'assistance indépendant, et non une autorité publique, et que l'obtention du visa ne peut être garantie.",
     consentWhatsapp: "J'accepte de recevoir le suivi de mon dossier sur WhatsApp.",
     submitApplication: "Envoyer ma demande",
     successTitle: "Votre demande a bien été envoyée !",
@@ -515,15 +515,15 @@ const fr: Dictionary = {
     subject: "Objet",
     sent: "Merci ! Votre message a bien été reçu. Nous vous répondrons rapidement.",
     consent: "J'accepte que mes données soient utilisées pour répondre à ma demande (voir Politique de confidentialité).",
-    office: "Notre bureau",
-    byAppointment: "Visites uniquement sur rendez-vous.",
+    office: "Nous contacter",
+    byAppointment: "Service en ligne, partout au Maroc.",
     consultationTitle: "Réserver une consultation",
     consultationText: "Vous ne savez pas par où commencer ? Demandez une consultation, nous vous rappelons.",
   },
   about: {
     title: "À propos de VISA ABACHE",
     intro:
-      "VISA ABACHE est une entreprise indépendante basée au Maroc, spécialisée dans l'assistance aux demandes de visa et les services administratifs digitaux. Notre mission : rendre les démarches internationales plus claires, mieux organisées et moins stressantes pour les voyageurs, étudiants et résidents au Maroc.",
+      "VISA ABACHE est un service indépendant d'assistance visa, proposé en ligne depuis le Maroc par son fondateur et une équipe de conseillers. Nous accompagnons les demandes de visa et les démarches administratives digitales. Notre mission : rendre les démarches internationales plus claires, mieux organisées et moins stressantes pour les voyageurs, étudiants et résidents au Maroc.",
     missionTitle: "Ce que nous faisons",
     mission:
       "Nous vous aidons à comprendre les exigences officielles, à constituer un dossier complet et bien organisé, à remplir les formulaires et à préparer vos rendez-vous — tout en vous laissant le contrôle de votre demande.",
@@ -643,7 +643,7 @@ const fr: Dictionary = {
       revenueChart: "Chiffre d'affaires — 6 derniers mois",
       setupChecklist: "Configuration",
       setupWhatsapp: "Renseigner votre vrai numéro WhatsApp",
-      setupBusiness: "Compléter l'identité de l'entreprise (ICE, RC, adresse)",
+      setupBusiness: "Compléter vos coordonnées (ville, téléphone)",
       setupBank: "Ajouter les coordonnées bancaires",
       setupVerify: "Vérifier les informations des destinations auprès des sources officielles",
       setupEmail: "Configurer un service d'e-mails transactionnels",
@@ -863,7 +863,7 @@ const fr: Dictionary = {
     },
     settings: {
       title: "Paramètres",
-      business: "Identité de l'entreprise",
+      business: "Coordonnées",
       whatsapp: "WhatsApp",
       payments: "Paiements & facturation",
       notifications: "Notifications & relances",

@@ -127,13 +127,10 @@ export function Footer({ locale, dict, settings, popular = [] }: { locale: Local
           <p className="leading-relaxed">{dict.common.independentNotice}</p>
           <p className="flex flex-wrap justify-between gap-2">
             <span>
-              © {new Date().getFullYear()} {b.legalName || b.name}. {dict.footer.rights}
-              {b.ice ? ` · ICE ${b.ice}` : ""}
-              {b.rc ? ` · RC ${b.rc}` : ""}
+              © {new Date().getFullYear()} {b.name}. {dict.footer.rights}
             </span>
             <span>
               {dict.footer.cndp}
-              {b.cndpDeclaration ? ` CNDP: ${b.cndpDeclaration}` : ""}
             </span>
           </p>
         </div>

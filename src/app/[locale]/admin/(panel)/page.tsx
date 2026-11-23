@@ -61,7 +61,7 @@ export default async function AdminDashboard({ params, searchParams }: { params:
 
   const setup = [
     { done: settings.whatsapp.number !== "212600000000", label: d.setupWhatsapp, href: a("/settings#whatsapp") },
-    { done: Boolean(settings.business.ice && settings.business.address), label: d.setupBusiness, href: a("/settings#business") },
+    { done: Boolean(settings.business.city && settings.business.phone), label: d.setupBusiness, href: a("/settings#business") },
     { done: Boolean(settings.payments.bankRib), label: d.setupBank, href: a("/settings#payments") },
     { done: unverifiedCountries === 0, label: `${d.setupVerify} (${unverifiedCountries})`, href: a("/countries") },
     { done: (process.env.EMAIL_DRIVER || "console") !== "console", label: d.setupEmail, href: a("/settings") },

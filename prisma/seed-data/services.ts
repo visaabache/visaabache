@@ -185,9 +185,9 @@ export const generalFaqs = [
   {
     q: L("VISA ABACHE est-il une ambassade ou un centre de visa ?", "هل VISA ABACHE سفارة أو مركز تأشيرات؟", "Is VISA ABACHE an embassy or visa centre?"),
     a: L(
-      "Non. VISA ABACHE est une entreprise indépendante d'assistance. Nous ne sommes affiliés à aucune ambassade, consulat, centre de visa ou autorité publique. Les décisions sont prises exclusivement par les autorités compétentes.",
-      "لا. VISA ABACHE مقاولة مستقلة لتقديم المساعدة. لسنا تابعين لأي سفارة أو قنصلية أو مركز تأشيرات أو سلطة عمومية. القرارات تتخذها السلطات المختصة حصرياً.",
-      "No. VISA ABACHE is an independent assistance business. We are not affiliated with any embassy, consulate, visa centre or public authority. Decisions are made exclusively by the competent authorities.",
+      "Non. VISA ABACHE est un service indépendant d'assistance visa. Nous ne sommes affiliés à aucune ambassade, consulat, centre de visa ou autorité publique. Les décisions sont prises exclusivement par les autorités compétentes.",
+      "لا. VISA ABACHE خدمة مستقلة للمساعدة في التأشيرات. لسنا تابعين لأي سفارة أو قنصلية أو مركز تأشيرات أو سلطة عمومية. القرارات تتخذها السلطات المختصة حصرياً.",
+      "No. VISA ABACHE is an independent visa assistance service. We are not affiliated with any embassy, consulate, visa centre or public authority. Decisions are made exclusively by the competent authorities.",
     ),
     home: true,
   },

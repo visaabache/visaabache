@@ -23,7 +23,7 @@ export default async function LegalPage({ params }: { params: Promise<{ locale: 
   const p = await prisma.legalPage.findUnique({ where: { slug } });
   if (!p) notFound();
   const b = (await getSettings()).business;
-  const identity = [b.legalName || b.name, b.address, b.city, b.ice && `ICE ${b.ice}`, b.rc && `RC ${b.rc}`, b.ifNumber && `IF ${b.ifNumber}`, b.patente && `Patente ${b.patente}`, b.cndpDeclaration && `CNDP ${b.cndpDeclaration}`, b.email].filter(Boolean);
+  const identity = [b.name, b.city, b.email].filter(Boolean);
   return (
     <>
       <PageHero title={tr(p.title, locale)} subtitle={`${t.common.lastUpdated}: ${formatDate(p.updatedAt, locale)} · v${p.version}`} />

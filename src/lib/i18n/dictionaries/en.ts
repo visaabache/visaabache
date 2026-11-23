@@ -71,7 +71,7 @@ const en = {
     of: "of",
     yesNo: { yes: "Yes", no: "No" },
     independentNotice:
-      "VISA ABACHE is an independent assistance business. We are not an embassy, consulate, visa centre or government authority. Visa decisions are made exclusively by the competent authorities and no approval can be guaranteed.",
+      "VISA ABACHE is an independent visa assistance service. We are not an embassy, consulate, visa centre or government authority. Visa decisions are made exclusively by the competent authorities and no approval can be guaranteed.",
     noGuarantee: "We never guarantee visa approval.",
   },
   nav: {
@@ -318,7 +318,7 @@ const en = {
     consentData:
       "I consent to VISA ABACHE processing my personal data and identity documents solely to provide the requested assistance, in accordance with the Privacy policy and Law 09-08.",
     consentIndependent:
-      "I understand that VISA ABACHE is an independent assistance business, not a government authority, and that visa approval cannot be guaranteed.",
+      "I understand that VISA ABACHE is an independent assistance service, not a government authority, and that visa approval cannot be guaranteed.",
     consentWhatsapp: "I agree to receive updates about my application on WhatsApp.",
     submitApplication: "Submit my application",
     successTitle: "Your application has been submitted!",
@@ -514,15 +514,15 @@ const en = {
     subject: "Subject",
     sent: "Thank you! Your message has been received. We'll reply shortly.",
     consent: "I agree that my data will be used to answer my request (see Privacy policy).",
-    office: "Our office",
-    byAppointment: "Visits by appointment only.",
+    office: "Contact us",
+    byAppointment: "Online service, everywhere in Morocco.",
     consultationTitle: "Book a consultation",
     consultationText: "Not sure where to start? Request a consultation and we'll call you back.",
   },
   about: {
     title: "About VISA ABACHE",
     intro:
-      "VISA ABACHE is a Morocco-based independent business offering visa application assistance and digital administrative services. Our mission: make international procedures clearer, more organised and less stressful for Moroccan travellers, students and residents.",
+      "VISA ABACHE is an independent visa assistance service, run online from Morocco by its founder and a team of advisors. We help with visa applications and digital administrative procedures. Our mission: make international procedures clearer, more organised and less stressful for Moroccan travellers, students and residents.",
     missionTitle: "What we do",
     mission:
       "We help you understand the official requirements, build a complete and well-organised file, prepare forms, and guide you through appointments — while you keep full control of your application.",
@@ -642,7 +642,7 @@ const en = {
       revenueChart: "Revenue — last 6 months",
       setupChecklist: "Setup checklist",
       setupWhatsapp: "Set your real WhatsApp number",
-      setupBusiness: "Complete business identity (ICE, RC, address)",
+      setupBusiness: "Complete your contact details (city, phone)",
       setupBank: "Add bank transfer details",
       setupVerify: "Verify destination information against official sources",
       setupEmail: "Configure a transactional email provider",
@@ -862,7 +862,7 @@ const en = {
     },
     settings: {
       title: "Settings",
-      business: "Business identity",
+      business: "Contact details",
       whatsapp: "WhatsApp",
       payments: "Payments & invoicing",
       notifications: "Notifications & reminders",

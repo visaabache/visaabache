@@ -1,0 +1,173 @@
+{
+  "_comment": "Exact sentence replacements in the legal pages: VISA ABACHE is an independent online service (founder + team of advisors), not a registered company; no customer accounts. Applied by scripts/legal-update.mjs.",
+  "replacements": {
+    "disclaimer": {
+      "fr": [
+        [
+          "Le site est édité par VISA ABACHE, entreprise indépendante établie au Maroc. Raison sociale, adresse, ICE, RC et coordonnées : voir le pied de page et la page Contact.",
+          "Le site est édité par VISA ABACHE, un service indépendant d'assistance visa proposé en ligne par son fondateur, avec une équipe de conseillers. Pour nous joindre : WhatsApp, téléphone et e-mail indiqués en bas de page et sur la page Contact."
+        ],
+        [
+          "- VISA ABACHE est une **entreprise indépendante d'assistance**. Elle n'est **ni une ambassade, ni un consulat, ni un centre de visa, ni une administration**, et n'a aucun lien officiel avec ces organismes.",
+          "- VISA ABACHE est un **service indépendant d'assistance**. Il n'est **ni une ambassade, ni un consulat, ni un centre de visa, ni une administration**, et n'a aucun lien officiel avec ces organismes."
+        ]
+      ],
+      "en": [
+        [
+          "This website is published by VISA ABACHE, an independent business established in Morocco. Legal name, address, ICE, RC and contact details: see the footer and the Contact page.",
+          "This website is published by VISA ABACHE, an independent online visa assistance service run by its founder with a team of advisors. To reach us: WhatsApp, phone and email shown in the footer and on the Contact page."
+        ],
+        [
+          "- VISA ABACHE is an **independent assistance business**. It is **not an embassy, consulate, visa centre or government administration**, and has no official link with these bodies.",
+          "- VISA ABACHE is an **independent assistance service**. It is **not an embassy, consulate, visa centre or government administration**, and has no official link with these bodies."
+        ]
+      ],
+      "ar": [
+        [
+          "ينشر هذا الموقع VISA ABACHE، مقاولة مستقلة مقرها بالمغرب. الاسم القانوني والعنوان وICE وRC ومعلومات الاتصال: انظر أسفل الصفحة وصفحة الاتصال.",
+          "ينشر هذا الموقع VISA ABACHE، خدمة مستقلة للمساعدة في التأشيرات تُقدَّم عبر الإنترنت من طرف مؤسسها مع فريق من المستشارين. للتواصل معنا: واتساب والهاتف والبريد الإلكتروني المذكورة أسفل الصفحة وفي صفحة الاتصال."
+        ],
+        [
+          "- VISA ABACHE **مقاولة مستقلة للمساعدة**. **ليست سفارة ولا قنصلية ولا مركز تأشيرات ولا إدارة**، ولا تربطها أي علاقة رسمية بهذه الجهات.",
+          "- VISA ABACHE **خدمة مستقلة للمساعدة**. **ليست سفارة ولا قنصلية ولا مركز تأشيرات ولا إدارة**، ولا تربطها أي علاقة رسمية بهذه الجهات."
+        ]
+      ]
+    },
+    "terms": {
+      "fr": [
+        [
+          "VISA ABACHE est une **entreprise indépendante**. Elle n'est **ni une ambassade, ni un consulat, ni un centre de visa, ni une autorité publique**, et n'agit pas en leur nom.",
+          "VISA ABACHE est un **service indépendant**, proposé en ligne par son fondateur avec une équipe de conseillers. Il n'est **ni une ambassade, ni un consulat, ni un centre de visa, ni une autorité publique**, et n'agit pas en leur nom."
+        ],
+        [
+          "Une facture est émise pour chaque prestation.",
+          "Un reçu est remis pour chaque prestation."
+        ]
+      ],
+      "en": [
+        [
+          "VISA ABACHE is an **independent business**. It is **not an embassy, consulate, visa centre or public authority**, and does not act on their behalf.",
+          "VISA ABACHE is an **independent service**, offered online by its founder with a team of advisors. It is **not an embassy, consulate, visa centre or public authority**, and does not act on their behalf."
+        ],
+        [
+          "An invoice is issued for each service.",
+          "A receipt is provided for each service."
+        ]
+      ],
+      "ar": [
+        [
+          "VISA ABACHE **مقاولة مستقلة**. **ليست سفارة ولا قنصلية ولا مركز تأشيرات ولا سلطة عمومية**، ولا تتصرف باسمها.",
+          "VISA ABACHE **خدمة مستقلة** يقدمها مؤسسها عبر الإنترنت مع فريق من المستشارين. **ليست سفارة ولا قنصلية ولا مركز تأشيرات ولا سلطة عمومية**، ولا تتصرف باسمها."
+        ],
+        [
+          "تُصدر فاتورة عن كل خدمة.",
+          "يُسلَّم وصل عن كل خدمة."
+        ]
+      ]
+    },
+    "privacy": {
+      "fr": [
+        [
+          "Les coordonnées et identifiants légaux de l'entreprise figurent en bas de chaque page.",
+          "Nos coordonnées figurent en bas de chaque page et sur la page Contact."
+        ],
+        [
+          "- Factures et pièces comptables : durée légale applicable ;\n",
+          ""
+        ],
+        [
+          "- Compte client : jusqu'à sa suppression ou après une longue période d'inactivité.",
+          "- Échanges avec votre conseiller : le temps nécessaire au suivi de votre demande."
+        ],
+        [
+          "Vous pouvez télécharger vos données et demander la suppression de votre compte depuis votre espace, ou nous écrire à l'adresse de contact dédiée aux données personnelles.",
+          "Pour exercer ces droits, écrivez-nous sur WhatsApp ou par e-mail."
+        ]
+      ],
+      "en": [
+        [
+          "The company's contact details and legal identifiers appear at the bottom of every page.",
+          "Our contact details appear at the bottom of every page and on the Contact page."
+        ],
+        [
+          "- Invoices and accounting records: applicable legal period;\n",
+          ""
+        ],
+        [
+          "You can download your data and request account deletion from your dashboard, or write to our personal data contact address.",
+          "To exercise these rights, write to us on WhatsApp or by email."
+        ]
+      ],
+      "ar": [
+        [
+          "تظهر معلومات الاتصال والمعرفات القانونية للمقاولة أسفل كل صفحة.",
+          "تظهر معلومات الاتصال الخاصة بنا أسفل كل صفحة وفي صفحة الاتصال."
+        ],
+        [
+          "يمكنك تحميل معطياتك وطلب حذف حسابك من حسابك، أو مراسلتنا عبر عنوان التواصل المخصص للمعطيات الشخصية.",
+          "لممارسة هذه الحقوق، راسلنا عبر واتساب أو البريد الإلكتروني."
+        ]
+      ]
+    },
+    "refunds": {
+      "fr": [
+        [
+          "Demandez l'annulation par écrit (espace client ou e-mail).",
+          "Demandez l'annulation par écrit (WhatsApp ou e-mail)."
+        ]
+      ],
+      "en": [
+        [
+          "Request cancellation in writing (client dashboard or email).",
+          "Request cancellation in writing (WhatsApp or email)."
+        ]
+      ],
+      "ar": [
+        [
+          "اطلب الإلغاء كتابة (من حسابك أو عبر البريد الإلكتروني).",
+          "اطلب الإلغاء كتابة (عبر واتساب أو البريد الإلكتروني)."
+        ]
+      ]
+    },
+    "cookies": {
+      "fr": [
+        [
+          "| va_session | Connexion sécurisée à votre espace (essentiel) | 14 jours max. |",
+          "| va_session | Connexion sécurisée de l'équipe à l'administration (essentiel) | 12 heures max. |"
+        ]
+      ],
+      "en": [
+        [
+          "| va_session | Secure login to your dashboard (essential) | max. 14 days |",
+          "| va_session | Secure team login to the administration (essential) | max. 12 hours |"
+        ]
+      ],
+      "ar": [
+        [
+          "| va_session | الاتصال الآمن بحسابك (ضروري) | 14 يوماً كحد أقصى |",
+          "| va_session | الاتصال الآمن للفريق بالإدارة (ضروري) | 12 ساعة كحد أقصى |"
+        ]
+      ]
+    }
+  },
+  "faqAnswers": {
+    "fr": [
+      [
+        "VISA ABACHE est une entreprise indépendante d'assistance. Nous ne sommes affiliés",
+        "VISA ABACHE est un service indépendant d'assistance visa. Nous ne sommes affiliés"
+      ]
+    ],
+    "ar": [
+      [
+        "VISA ABACHE مقاولة مستقلة لتقديم المساعدة. لسنا تابعين",
+        "VISA ABACHE خدمة مستقلة للمساعدة في التأشيرات. لسنا تابعين"
+      ]
+    ],
+    "en": [
+      [
+        "VISA ABACHE is an independent assistance business. We are not affiliated",
+        "VISA ABACHE is an independent visa assistance service. We are not affiliated"
+      ]
+    ]
+  }
+}

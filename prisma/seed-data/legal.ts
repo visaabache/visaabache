@@ -9,7 +9,7 @@ export const legalPages: { slug: string; title: L; content: L }[] = [
     title: L("Politique de confidentialité", "سياسة الخصوصية", "Privacy policy"),
     content: L(
       `## 1. Responsable du traitement
-VISA ABACHE (ci-après « nous ») est responsable du traitement des données personnelles collectées sur ce site. Les coordonnées et identifiants légaux de l'entreprise figurent en bas de chaque page.
+VISA ABACHE (ci-après « nous ») est responsable du traitement des données personnelles collectées sur ce site. Nos coordonnées figurent en bas de chaque page et sur la page Contact.
 
 Nos traitements sont réalisés conformément à la **loi n° 09-08** relative à la protection des personnes physiques à l'égard du traitement des données à caractère personnel, et font l'objet des formalités requises auprès de la **CNDP**. Lorsque le RGPD européen s'applique, nous respectons également ses exigences.
 
@@ -39,16 +39,15 @@ Connexion chiffrée (HTTPS), documents chiffrés au repos (AES-256), mots de pas
 ## 7. Durées de conservation
 - Documents d'identité et pièces justificatives : supprimés après la clôture du dossier, selon le délai indiqué dans nos paramètres de conservation (par défaut 90 jours) ;
 - Brouillons abandonnés : 30 jours ;
-- Factures et pièces comptables : durée légale applicable ;
-- Compte client : jusqu'à sa suppression ou après une longue période d'inactivité.
+- Échanges avec votre conseiller : le temps nécessaire au suivi de votre demande.
 
 ## 8. Vos droits
-Conformément à la loi 09-08, vous disposez d'un droit d'**accès**, de **rectification**, d'**opposition** et de suppression. Vous pouvez télécharger vos données et demander la suppression de votre compte depuis votre espace, ou nous écrire à l'adresse de contact dédiée aux données personnelles. Vous pouvez également saisir la **CNDP** (www.cndp.ma).
+Conformément à la loi 09-08, vous disposez d'un droit d'**accès**, de **rectification**, d'**opposition** et de suppression. Pour exercer ces droits, écrivez-nous sur WhatsApp ou par e-mail. Vous pouvez également saisir la **CNDP** (www.cndp.ma).
 
 ## 9. Modifications
 Cette politique peut être mise à jour. La date de dernière mise à jour figure en haut de la page.`,
       `## 1. المسؤول عن المعالجة
-VISA ABACHE (يشار إليها بـ«نحن») مسؤولة عن معالجة المعطيات الشخصية المجمعة عبر هذا الموقع. تظهر معلومات الاتصال والمعرفات القانونية للمقاولة أسفل كل صفحة.
+VISA ABACHE (يشار إليها بـ«نحن») مسؤولة عن معالجة المعطيات الشخصية المجمعة عبر هذا الموقع. تظهر معلومات الاتصال الخاصة بنا أسفل كل صفحة وفي صفحة الاتصال.
 
 تتم معالجاتنا وفقاً **للقانون رقم 09-08** المتعلق بحماية الأشخاص الذاتيين تجاه معالجة المعطيات ذات الطابع الشخصي، وتخضع للإجراءات المطلوبة لدى **اللجنة الوطنية لمراقبة حماية المعطيات ذات الطابع الشخصي (CNDP)**. وعندما يكون النظام الأوروبي RGPD مطبقاً، نحترم متطلباته أيضاً.
 
@@ -82,12 +81,12 @@ VISA ABACHE (يشار إليها بـ«نحن») مسؤولة عن معالجة 
 - حساب العميل: إلى حين حذفه أو بعد فترة طويلة من عدم النشاط.
 
 ## 8. حقوقك
-وفقاً للقانون 09-08، لك الحق في **الولوج** و**التصحيح** و**التعرض** والحذف. يمكنك تحميل معطياتك وطلب حذف حسابك من حسابك، أو مراسلتنا عبر عنوان التواصل المخصص للمعطيات الشخصية. يمكنك أيضاً اللجوء إلى **CNDP** ‏(www.cndp.ma).
+وفقاً للقانون 09-08، لك الحق في **الولوج** و**التصحيح** و**التعرض** والحذف. لممارسة هذه الحقوق، راسلنا عبر واتساب أو البريد الإلكتروني. يمكنك أيضاً اللجوء إلى **CNDP** ‏(www.cndp.ma).
 
 ## 9. التعديلات
 قد يتم تحديث هذه السياسة. يظهر تاريخ آخر تحديث أعلى الصفحة.`,
       `## 1. Data controller
-VISA ABACHE ("we") is the controller of personal data collected on this website. The company's contact details and legal identifiers appear at the bottom of every page.
+VISA ABACHE ("we") is the controller of personal data collected on this website. Our contact details appear at the bottom of every page and on the Contact page.
 
 Our processing complies with Moroccan **Law No. 09-08** on the protection of individuals with regard to the processing of personal data and is subject to the required formalities with the **CNDP**. Where the EU GDPR applies, we also comply with its requirements.
 
@@ -117,11 +116,10 @@ Encrypted connection (HTTPS), documents encrypted at rest (AES-256), hashed pass
 ## 7. Retention periods
 - Identity and supporting documents: deleted after the file is closed, within the period set in our retention settings (90 days by default);
 - Abandoned drafts: 30 days;
-- Invoices and accounting records: applicable legal period;
 - Client account: until deleted, or after a long period of inactivity.
 
 ## 8. Your rights
-Under Law 09-08 you have the right of **access**, **rectification**, **objection** and deletion. You can download your data and request account deletion from your dashboard, or write to our personal data contact address. You may also contact the **CNDP** (www.cndp.ma).
+Under Law 09-08 you have the right of **access**, **rectification**, **objection** and deletion. To exercise these rights, write to us on WhatsApp or by email. You may also contact the **CNDP** (www.cndp.ma).
 
 ## 9. Changes
 This policy may be updated. The last update date is shown at the top of the page.`,
@@ -135,7 +133,7 @@ This policy may be updated. The last update date is shown at the top of the page
 Les présentes conditions régissent les services d'assistance proposés par VISA ABACHE : information, préparation et organisation de dossiers, aide aux formulaires, accompagnement pour les rendez-vous et services annexes (voyage, études).
 
 ## 2. Statut de VISA ABACHE
-VISA ABACHE est une **entreprise indépendante**. Elle n'est **ni une ambassade, ni un consulat, ni un centre de visa, ni une autorité publique**, et n'agit pas en leur nom. VISA ABACHE ne délivre aucun visa ni document officiel et n'effectue pas les démarches réservées aux autorités ou au demandeur lui-même.
+VISA ABACHE est un **service indépendant**, proposé en ligne par son fondateur avec une équipe de conseillers. Il n'est **ni une ambassade, ni un consulat, ni un centre de visa, ni une autorité publique**, et n'agit pas en leur nom. VISA ABACHE ne délivre aucun visa ni document officiel et n'effectue pas les démarches réservées aux autorités ou au demandeur lui-même.
 
 ## 3. Absence de garantie de résultat
 La décision d'accorder ou de refuser un visa relève **exclusivement** des autorités compétentes. VISA ABACHE est tenue d'une obligation de moyens et **ne garantit pas l'obtention d'un visa**, ni des délais de traitement ou la disponibilité des rendez-vous.
@@ -147,7 +145,7 @@ Le client fournit des informations exactes, complètes et à jour, ainsi que des
 Les prix sont indiqués en dirhams (MAD) et couvrent **uniquement les services d'assistance de VISA ABACHE**. Les frais officiels (frais de visa, frais de service des centres de visa), traductions, assurances et réservations sont réglés séparément aux organismes concernés.
 
 ## 6. Paiement
-Le paiement s'effectue par virement, en espèces ou par carte bancaire lorsque ce moyen est proposé. Un paiement n'est considéré comme effectué qu'après confirmation par la banque/passerelle ou vérification par VISA ABACHE. Une facture est émise pour chaque prestation.
+Le paiement s'effectue par virement, en espèces ou par carte bancaire lorsque ce moyen est proposé. Un paiement n'est considéré comme effectué qu'après confirmation par la banque/passerelle ou vérification par VISA ABACHE. Un reçu est remis pour chaque prestation.
 
 ## 7. Annulation et remboursement
 Voir la Politique de remboursement et d'annulation.
@@ -164,7 +162,7 @@ Les présentes conditions sont soumises au droit marocain. En cas de litige, une
 تنظم هذه الشروط خدمات المساعدة التي تقدمها VISA ABACHE: الإخبار، تحضير وتنظيم الملفات، المساعدة في الاستمارات، التوجيه بخصوص المواعيد والخدمات الملحقة (السفر، الدراسة).
 
 ## 2. صفة VISA ABACHE
-VISA ABACHE **مقاولة مستقلة**. **ليست سفارة ولا قنصلية ولا مركز تأشيرات ولا سلطة عمومية**، ولا تتصرف باسمها. لا تصدر VISA ABACHE أي تأشيرة أو وثيقة رسمية ولا تقوم بالإجراءات المخصصة للسلطات أو لصاحب الطلب نفسه.
+VISA ABACHE **خدمة مستقلة** يقدمها مؤسسها عبر الإنترنت مع فريق من المستشارين. **ليست سفارة ولا قنصلية ولا مركز تأشيرات ولا سلطة عمومية**، ولا تتصرف باسمها. لا تصدر VISA ABACHE أي تأشيرة أو وثيقة رسمية ولا تقوم بالإجراءات المخصصة للسلطات أو لصاحب الطلب نفسه.
 
 ## 3. عدم ضمان النتيجة
 قرار منح التأشيرة أو رفضها يعود **حصرياً** للسلطات المختصة. تلتزم VISA ABACHE ببذل العناية و**لا تضمن الحصول على التأشيرة**، ولا آجال المعالجة ولا توفر المواعيد.
@@ -176,7 +174,7 @@ VISA ABACHE **مقاولة مستقلة**. **ليست سفارة ولا قنصل
 الأسعار محددة بالدرهم وتغطي **خدمات المساعدة لـ VISA ABACHE فقط**. الرسوم الرسمية (رسوم التأشيرة ورسوم مراكز التأشيرات) والترجمة والتأمين والحجوزات تُدفع بشكل منفصل للجهات المعنية.
 
 ## 6. الأداء
-يتم الأداء بالتحويل أو نقداً أو بالبطاقة البنكية عند توفرها. لا يُعتبر الأداء منجزاً إلا بعد تأكيده من البنك/البوابة أو التحقق منه من طرف VISA ABACHE. تُصدر فاتورة عن كل خدمة.
+يتم الأداء بالتحويل أو نقداً أو بالبطاقة البنكية عند توفرها. لا يُعتبر الأداء منجزاً إلا بعد تأكيده من البنك/البوابة أو التحقق منه من طرف VISA ABACHE. يُسلَّم وصل عن كل خدمة.
 
 ## 7. الإلغاء والاسترجاع
 انظر سياسة الاسترجاع والإلغاء.
@@ -193,7 +191,7 @@ VISA ABACHE **مقاولة مستقلة**. **ليست سفارة ولا قنصل
 These terms govern the assistance services offered by VISA ABACHE: information, file preparation and organisation, form assistance, appointment guidance and related services (travel, studies).
 
 ## 2. Status of VISA ABACHE
-VISA ABACHE is an **independent business**. It is **not an embassy, consulate, visa centre or public authority**, and does not act on their behalf. VISA ABACHE does not issue visas or official documents and does not carry out procedures reserved to the authorities or to the applicant.
+VISA ABACHE is an **independent service**, offered online by its founder with a team of advisors. It is **not an embassy, consulate, visa centre or public authority**, and does not act on their behalf. VISA ABACHE does not issue visas or official documents and does not carry out procedures reserved to the authorities or to the applicant.
 
 ## 3. No guarantee of outcome
 The decision to grant or refuse a visa rests **exclusively** with the competent authorities. VISA ABACHE has an obligation of means and **does not guarantee that a visa will be issued**, nor processing times or appointment availability.
@@ -205,7 +203,7 @@ The client provides accurate, complete and up-to-date information and genuine do
 Prices are in Moroccan dirhams (MAD) and cover **only VISA ABACHE's assistance services**. Official fees (visa fees, visa centre service charges), translations, insurance and bookings are paid separately to the relevant bodies.
 
 ## 6. Payment
-Payment is made by bank transfer, cash or bank card where offered. A payment is only considered made after confirmation by the bank/gateway or verification by VISA ABACHE. An invoice is issued for each service.
+Payment is made by bank transfer, cash or bank card where offered. A payment is only considered made after confirmation by the bank/gateway or verification by VISA ABACHE. A receipt is provided for each service.
 
 ## 7. Cancellation and refunds
 See the Refund & cancellation policy.
@@ -236,7 +234,7 @@ Un refus de visa, décidé par les autorités, **ne donne pas lieu à remboursem
 Les frais officiels, frais de centres de visa, traductions, assurances et réservations sont soumis aux conditions des organismes concernés et ne sont pas remboursables par VISA ABACHE.
 
 ## Procédure
-Demandez l'annulation par écrit (espace client ou e-mail). Les remboursements sont effectués par le moyen de paiement initial ou par virement, dans un délai indicatif de 14 jours après acceptation.`,
+Demandez l'annulation par écrit (WhatsApp ou e-mail). Les remboursements sont effectués par le moyen de paiement initial ou par virement, dans un délai indicatif de 14 jours après acceptation.`,
       `## الإلغاء من طرف العميل
 - **قبل بدء العمل على الملف**: استرجاع كامل لأتعاب المساعدة المؤداة.
 - **بعد بدء العمل** (دراسة الملف، القائمة المخصصة، التحضير): استرجاع نسبي للعمل غير المنجز بعد خصم الخدمات المنجزة.
@@ -249,7 +247,7 @@ Demandez l'annulation par écrit (espace client ou e-mail). Les remboursements s
 تخضع الرسوم الرسمية ورسوم مراكز التأشيرات والترجمة والتأمين والحجوزات لشروط الجهات المعنية ولا تسترجعها VISA ABACHE.
 
 ## المسطرة
-اطلب الإلغاء كتابة (من حسابك أو عبر البريد الإلكتروني). يتم الاسترجاع بوسيلة الأداء الأصلية أو بالتحويل في أجل تقديري قدره 14 يوماً بعد القبول.`,
+اطلب الإلغاء كتابة (عبر واتساب أو البريد الإلكتروني). يتم الاسترجاع بوسيلة الأداء الأصلية أو بالتحويل في أجل تقديري قدره 14 يوماً بعد القبول.`,
       `## Cancellation by the client
 - **Before work on the file has started**: full refund of the assistance fees paid.
 - **After work has started** (file review, personalised checklist, preparation): pro-rata refund of the work not performed, after deducting services already provided.
@@ -262,7 +260,7 @@ A visa refusal decided by the authorities **does not entitle you to a refund** o
 Official fees, visa centre charges, translations, insurance and bookings are subject to the conditions of the relevant bodies and are not refundable by VISA ABACHE.
 
 ## Procedure
-Request cancellation in writing (client dashboard or email). Refunds are made via the original payment method or bank transfer, within an indicative 14 days after acceptance.`,
+Request cancellation in writing (WhatsApp or email). Refunds are made via the original payment method or bank transfer, within an indicative 14 days after acceptance.`,
     ),
   },
   {
@@ -275,7 +273,7 @@ Un cookie est un petit fichier déposé sur votre appareil lors de la visite d'u
 ## Cookies utilisés
 | Cookie | Finalité | Durée |
 |---|---|---|
-| va_session | Connexion sécurisée à votre espace (essentiel) | 14 jours max. |
+| va_session | Connexion sécurisée de l'équipe à l'administration (essentiel) | 12 heures max. |
 | NEXT_LOCALE | Mémoriser votre langue (essentiel) | 1 an |
 | va_consent | Mémoriser vos choix cookies (essentiel) | 6 mois |
 | _ga, _ga_* | Mesure d'audience Google Analytics (**uniquement avec votre accord**) | jusqu'à 13 mois |
@@ -288,7 +286,7 @@ Vous pouvez modifier vos préférences à tout moment via le lien « Paramètres
 ## الملفات المستعملة
 | الملف | الغرض | المدة |
 |---|---|---|
-| va_session | الاتصال الآمن بحسابك (ضروري) | 14 يوماً كحد أقصى |
+| va_session | الاتصال الآمن للفريق بالإدارة (ضروري) | 12 ساعة كحد أقصى |
 | NEXT_LOCALE | حفظ لغتك (ضروري) | سنة |
 | va_consent | حفظ اختياراتك (ضروري) | 6 أشهر |
 | _ga, _ga_* | قياس الزيارات Google Analytics (**بموافقتك فقط**) | حتى 13 شهراً |
@@ -301,7 +299,7 @@ A cookie is a small file stored on your device when you visit a website.
 ## Cookies we use
 | Cookie | Purpose | Duration |
 |---|---|---|
-| va_session | Secure login to your dashboard (essential) | max. 14 days |
+| va_session | Secure team login to the administration (essential) | max. 12 hours |
 | NEXT_LOCALE | Remember your language (essential) | 1 year |
 | va_consent | Remember your cookie choices (essential) | 6 months |
 | _ga, _ga_* | Google Analytics audience measurement (**only with your consent**) | up to 13 months |
@@ -315,10 +313,10 @@ You can change your preferences at any time using the "Cookie settings" link at 
     title: L("Mentions légales et avertissement", "الإشعار القانوني والتنبيه", "Legal notice & disclaimer"),
     content: L(
       `## Éditeur
-Le site est édité par VISA ABACHE, entreprise indépendante établie au Maroc. Raison sociale, adresse, ICE, RC et coordonnées : voir le pied de page et la page Contact.
+Le site est édité par VISA ABACHE, un service indépendant d'assistance visa proposé en ligne par son fondateur, avec une équipe de conseillers. Pour nous joindre : WhatsApp, téléphone et e-mail indiqués en bas de page et sur la page Contact.
 
 ## Avertissement important
-- VISA ABACHE est une **entreprise indépendante d'assistance**. Elle n'est **ni une ambassade, ni un consulat, ni un centre de visa, ni une administration**, et n'a aucun lien officiel avec ces organismes.
+- VISA ABACHE est un **service indépendant d'assistance**. Il n'est **ni une ambassade, ni un consulat, ni un centre de visa, ni une administration**, et n'a aucun lien officiel avec ces organismes.
 - Les informations publiées sur ce site sont fournies à titre **général et indicatif**. Les exigences, frais et délais sont fixés par les autorités et peuvent changer à tout moment. **Seules les sources officielles font foi** ; nous indiquons leurs liens sur chaque page de destination.
 - Les délais de traitement affichés sont **indicatifs**.
 - **Aucun visa n'est garanti.**
@@ -330,10 +328,10 @@ Les contenus du site (textes, logo, design) sont protégés. Toute reproduction 
 ## Hébergement
 Les informations sur l'hébergeur sont disponibles sur simple demande.`,
       `## الناشر
-ينشر هذا الموقع VISA ABACHE، مقاولة مستقلة مقرها بالمغرب. الاسم القانوني والعنوان وICE وRC ومعلومات الاتصال: انظر أسفل الصفحة وصفحة الاتصال.
+ينشر هذا الموقع VISA ABACHE، خدمة مستقلة للمساعدة في التأشيرات تُقدَّم عبر الإنترنت من طرف مؤسسها مع فريق من المستشارين. للتواصل معنا: واتساب والهاتف والبريد الإلكتروني المذكورة أسفل الصفحة وفي صفحة الاتصال.
 
 ## تنبيه مهم
-- VISA ABACHE **مقاولة مستقلة للمساعدة**. **ليست سفارة ولا قنصلية ولا مركز تأشيرات ولا إدارة**، ولا تربطها أي علاقة رسمية بهذه الجهات.
+- VISA ABACHE **خدمة مستقلة للمساعدة**. **ليست سفارة ولا قنصلية ولا مركز تأشيرات ولا إدارة**، ولا تربطها أي علاقة رسمية بهذه الجهات.
 - المعلومات المنشورة في هذا الموقع **عامة وتقديرية**. تحدد السلطات المتطلبات والرسوم والآجال ويمكن أن تتغير في أي وقت. **المصادر الرسمية وحدها المعتمدة**؛ نضع روابطها في كل صفحة وجهة.
 - آجال المعالجة المعروضة **تقديرية**.
 - **لا نضمن أي تأشيرة.**
@@ -345,10 +343,10 @@ Les informations sur l'hébergeur sont disponibles sur simple demande.`,
 ## الاستضافة
 معلومات جهة الاستضافة متوفرة عند الطلب.`,
       `## Publisher
-This website is published by VISA ABACHE, an independent business established in Morocco. Legal name, address, ICE, RC and contact details: see the footer and the Contact page.
+This website is published by VISA ABACHE, an independent online visa assistance service run by its founder with a team of advisors. To reach us: WhatsApp, phone and email shown in the footer and on the Contact page.
 
 ## Important disclaimer
-- VISA ABACHE is an **independent assistance business**. It is **not an embassy, consulate, visa centre or government administration**, and has no official link with these bodies.
+- VISA ABACHE is an **independent assistance service**. It is **not an embassy, consulate, visa centre or government administration**, and has no official link with these bodies.
 - Information on this website is provided for **general, indicative purposes**. Requirements, fees and timelines are set by the authorities and may change at any time. **Only official sources are authoritative**; we link to them on every destination page.
 - Processing times shown are **indicative**.
 - **No visa is guaranteed.**
